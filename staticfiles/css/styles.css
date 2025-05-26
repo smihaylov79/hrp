@@ -1,0 +1,365 @@
+/* Table Design */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+    text-align: left;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Header Row */
+th {
+    background-color: #4CAF50; /* Green header */
+    color: white;
+    font-weight: bold;
+    padding: 12px;
+}
+
+/* Alternating Row Colors */
+tr:nth-child(even) {
+    background-color: #f2f2f2; /* Light grey */
+}
+tr:nth-child(odd) {
+    background-color: #ffffff; /* White */
+}
+
+/* Table Cells */
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Input Fields */
+input[type="number"] {
+    width: 80px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    text-align: center;
+}
+
+/* Save Button */
+button {
+    background: linear-gradient(to right, #ff7e5f, #feb47b); /* Warm gradient */
+    color: white;
+    font-size: 18px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: linear-gradient(to right, #feb47b, #ff7e5f);
+}
+
+
+ /* Beautiful background */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #f4f4f4, #dcdcdc); /* Soft gradient */
+            text-align: center;
+        }
+
+        /* Navbar Styling */
+        .navbar {
+            background: linear-gradient(to right, #333, #555);
+            padding: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 10px 15px;
+            font-size: 14px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: 0.3s;
+            flex: 1; /* Allows shrinking dynamically */
+            min-width: 80px; /* Prevents excessive shrinking */
+            text-align: center;
+        }
+
+        .navbar a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            text-decoration: none;
+        }
+
+        /* Main container */
+        .container {
+            padding: 30px;
+            background: white;
+            margin: 40px auto;
+            width: 80%;
+            border-radius: 12px;
+            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Datetime Box */
+        .datetime-box {
+            padding: 10px 15px;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 8px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .greeting-box {
+    color: #ffd700; /* Gold color */
+    font-size: 20px;
+    font-weight: bold;
+    background: linear-gradient(to right, #5f6cff, #feb47b); /* Warm gradient */
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Ensures proper vertical alignment */
+    width: 100%; /* Expands to the width of the navbar */
+    text-align: center;
+            gap: 10px;
+}
+
+.product-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Defines 3 equal columns */
+    gap: 20px;
+}
+
+.product-card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+
+}
+
+.product-card {
+    transform: scale(0.75); /* Shrinks everything inside to 75% of original size */
+    width: 75%; /* Adjusts width */
+    max-width: 250px; /* Limits max size */
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    flex-direction: column; /* Stack elements neatly */
+}
+
+.product-card img {
+    width: 75px; /* Reduce image size */
+    height: auto;
+    border-radius: 6px;
+}
+
+.product-info h3 {
+    font-size: 18px; /* Scale down the heading */
+    margin-bottom: 5px;
+}
+
+.price {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+input[type="number"] {
+    width: 60px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+button {
+    font-size: 14px;
+    padding: 8px;
+}
+
+.shopping-button {
+    display: inline-block;
+    background: linear-gradient(to right, #5f6cff, #feb47b); /* Soft gradient */
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    transition: all 0.3s ease-in-out;
+    border: none;
+    cursor: pointer;
+}
+
+.shopping-button:hover {
+    background: linear-gradient(to right, #feb47b, #5f6cff);
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+    transform: scale(1.05);
+}
+
+.modal {
+    display: none; /* Hide modal until triggered */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    z-index: 1000;
+}
+
+a.button-link {
+    display: inline-block;
+    background: linear-gradient(to right, #ff7e5f, #feb47b); /* Same warm gradient */
+    color: white;
+    font-size: 18px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+a.button-link:hover {
+    background: linear-gradient(to right, #feb47b, #ff7e5f);
+}
+
+/* Shopping List Table */
+.shopping-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+    text-align: left;
+}
+
+.shopping-table th, .shopping-table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.shopping-table th {
+    background-color: #007BFF;
+    color: white;
+}
+
+.shopping-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.view-list-button, .send-list-button {
+    padding: 8px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.view-list-button {
+    background: #4CAF50;
+    color: white;
+}
+
+.send-list-button {
+    background: #FFA500;
+    color: white;
+}
+
+.recipe-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* ✅ Two columns */
+    gap: 20px; /* ✅ Space between cards */
+    justify-content: center; /* ✅ Center alignment */
+}
+
+.recipe-card {
+    width: 100%; /* ✅ Each card fills half the row */
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.recipe-info ul {
+    list-style-type: none; /* ✅ Removes bullets */
+    padding: 0;
+    margin: 0;
+}
+
+.ingredient-list {
+    list-style-type: none; /* ✅ Removes bullets */
+    padding: 0;
+    margin: 0;
+    text-align: left;
+}
+
+.available {
+    color: green; /* ✅ Highlights available products in green */
+    font-weight: bold;
+}
+
+.low-stock {
+    color: red; /* ✅ Highlights ingredients in red if unavailable */
+    font-weight: bold;
+}
+
+.generate-list-btn {
+    background-color: #ff5722;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.generate-list-btn:hover {
+    background-color: #e64a19;
+}
+
+.category-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.category-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 200px;
+    height: 150px;
+    text-align: center;
+    font-size: 1.5em;
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.category-box:hover {
+    transform: scale(1.1);
+}
+
+/* Individual category colors */
+.travel { background-color: #4CAF50; }   /* Green */
+.reading { background-color: #2196F3; } /* Blue */
+.movies { background-color: #FF5722; }  /* Orange */
+.games { background-color: #9C27B0; }   /* Purple */
+
+
