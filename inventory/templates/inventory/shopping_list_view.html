@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Shopping List (Generated on {{ shopping_list.date_generated }})</h2>
+
+    <!-- Display Shopping List Items -->
+    <form method="POST" action="{% url 'update_shopping_list' shopping_list.id %}">
+        {% csrf_token %}
+        <ul>
+            {% for item in shopping_list.items %}
+                <li>
+                    {{ item }}
+                    <button type="submit" name="remove_item" value="{{ item }}">❌ Remove</button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Add Item to Shopping List -->
+        <label for="new_item">Add Item:</label>
+        <input type="text" name="new_item" placeholder="Enter product or category">
+        <button type="submit" name="add_item">➕ Add</button>
+    </form>
+
+    <!-- Send Shopping List via Email -->
+    {% if not shopping_list.sent %}
+        <a href="{% url 'send_shopping_list' shopping_list.id %}" class="button-link">📧 Send via Email</a>
+    {% endif %}
+
+    <a href="{% url 'inventory' %}" class="button-link">🔙 Back to Inventory</a>
+{% endblock %}

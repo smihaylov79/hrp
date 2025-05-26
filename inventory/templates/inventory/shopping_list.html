@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 style="text-align: center; font-size: 24px; color: #2a2a2a;">
+        🛒 Лист за пазаруване (Създаден на {{ shopping_list.date_generated }})
+    </h2>
+
+    <div style="max-width: 600px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
+        <form method="POST" action="{% url 'update_shopping_list' shopping_list.id %}">
+            {% csrf_token %}
+
+            <ul style="list-style-type: none; padding: 0;">
+                {% for item in shopping_list.items %}
+                    <li style="display: flex; justify-content: space-between; align-items: center;
+                               background: white; padding: 10px; margin: 5px 0;
+                               border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <span style="font-size: 18px; color: #333;">{{ item }}</span>
+                        <button type="submit" name="remove_item" value="{{ item }}"
+                                style="background: none; border: none; font-size: 16px; cursor: pointer; color: red;">
+                            ❌
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <div style="margin-top: 15px;">
+                <label for="new_item" style="font-size: 16px; font-weight: bold;">➕ Add Item:</label>
+                <input type="text" name="new_item" placeholder="Enter product or category"
+                       style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;">
+                <button type="submit" name="add_item"
+                        style="width: 100%; padding: 10px; margin-top: 10px;
+                               background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Add to List
+                </button>
+            </div>
+        </form>
+
+        {% if not shopping_list.sent %}
+            <a href="{% url 'send_shopping_list' shopping_list.id %}"
+               style="display: block; text-align: center; margin-top: 15px;
+                      background: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">
+                📧 Send via Email
+            </a>
+        {% endif %}
+
+        <a href="{% url 'inventory' %}"
+           style="display: block; text-align: center; margin-top: 10px;
+                  background: #FFA500; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">
+            🔙 Back to Inventory
+        </a>
+    </div>
+{% endblock %}

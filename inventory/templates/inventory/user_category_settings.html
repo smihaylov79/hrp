@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Настройка на категории</h2>
+<form method="POST">
+    {% csrf_token %}
+    <table>
+        <tr>
+            <th>Category</th>
+            <th>Direct Planning</th>
+            <th>Daily Consumption</th>
+            <th>Minimum Quantity</th>
+        </tr>
+        {% for category in user_categories %}
+        <tr>
+            <td>{{ category.product_category.name }}</td>
+            <td><input type="checkbox" name="direct_planning_{{ category.id }}" {% if category.direct_planning %}checked{% endif %}></td>
+            <td><input type="number" step="0.001" name="daily_consumption_{{ category.id }}" value="{{ category.daily_consumption }}"></td>
+            <td><input type="number" step="0.001" name="minimum_quantity_{{ category.id }}" value="{{ category.minimum_quantity }}"></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <button type="submit">Запази</button>
+</form>
+{% endblock %}

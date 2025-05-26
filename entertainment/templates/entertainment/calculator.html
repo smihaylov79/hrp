@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>🎮 Loyalty Calculator</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label>🏅 Current Loyalty:</label>
+        <input type="number" name="current_loyalty" value="0"><br>
+
+        <label>🎯 Target Loyalty:</label>
+        <input type="number" name="target_loyalty" value="0"><br>
+
+        <label>💰 Available Resources:</label>
+        <input type="number" name="available_resources" value="0"><br>
+
+        <label>🏕️ AC1 Current Level:</label>
+        <input type="number" name="AC1" value="1"><br>
+
+        <label>🏕️ AC2 Current Level:</label>
+        <input type="number" name="AC2" value="1"><br>
+
+        <label>🏕️ AC3 Current Level:</label>
+        <input type="number" name="AC3" value="1"><br>
+
+        <label>🏕️ AC4 Current Level:</label>
+        <input type="number" name="AC4" value="1"><br>
+
+<h3>⏳ Raw Materials</h3>
+    <table>
+        <tr>
+            <th>Resource</th>
+            <th>Available Amount</th>
+            <th>Income per Hour</th>
+        </tr>
+        <tr>
+            <td>Empty</td>
+            <td><input type="number" name="empty_available" value="0"></td>
+            <td><input type="number" name="empty_income" value="0"></td>
+        </tr>
+        <tr>
+            <td>Food</td>
+            <td><input type="number" name="food_available" value="0"></td>
+            <td><input type="number" name="food_income" value="0"></td>
+        </tr>
+        <tr>
+            <td>Marble</td>
+            <td><input type="number" name="marble_available" value="0"></td>
+            <td><input type="number" name="marble_income" value="0"></td>
+        </tr>
+        <tr>
+            <td>Ale</td>
+            <td><input type="number" name="ale_available" value="0"></td>
+            <td><input type="number" name="ale_income" value="0"></td>
+        </tr>
+    </table>
+
+        <h3>🏭 Workshop Processing</h3>
+<label>🔧 Number of Workshops:</label>
+<input type="number" name="workshop_count" value="1"><br>
+
+<label>⚙️ Processing Amount per Workshop per Hour:</label>
+<input type="number" name="processing_rate" value="100"><br>
+
+    <button type="submit">⚡ Calculate Everything</button>
+</form>
+
+{% if upgrade_result %}
+    <h3>📊 Upgrade Path:</h3>
+    <div class="upgrade-path">
+        {% for cob, levels in upgrade_result.upgrade_path.items %}
+            <p><strong>{{ cob }}</strong> ➝ Levels {{ levels }}</p>
+        {% endfor %}
+    </div>
+
+    <p>✅ Total Resources Spent: {{ upgrade_result.total_resources_spent }}</p>
+    <p>⚠️ Additional Resources Needed: {{ upgrade_result.additional_resources_needed }}</p>
+{% endif %}
+
+{% if needed_gathering_time is not None %}
+    <h3>⏳ Time Required to Gather Missing Resources:</h3>
+    <p>🕒 Estimated Hours: {{ needed_gathering_time }} hours</p>
+{% endif %}
+
+    {% if needed_processing_time %}
+    <h3>🏭 Time Required for Processing:</h3>
+    <p>⚙️ Estimated Hours: {{ needed_processing_time }} hours</p>
+{% endif %}
+
+{% endblock %}

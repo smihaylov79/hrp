@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+    <h2>🛍️ All Shopping Lists</h2>
+
+    <!-- ✅ Filter Button -->
+    <button onclick="toggleFilter()" class="filter-button">🚫 Show Unsent Only</button>
+
+    <table class="shopping-table">
+        <thead>
+            <tr>
+                <th>Date / Recipe</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="shopping-list-table">
+            {% for shopping_list in shopping_lists %}
+                <tr class="list-row {% if shopping_list.sent %}sent{% else %}unsent{% endif %}">
+                    <td>{{ shopping_list.date_generated }}</td>
+                    <td>
+                        {% if shopping_list.sent %}
+                            ✅ Sent
+                        {% else %}
+                            ❌ Not Sent
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="view-list-button">🔍 View</a>
+                        {% if not shopping_list.sent %}
+                            <a href="{% url 'send_shopping_list' shopping_list.id %}" class="send-list-button">📧 Send</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+
+            {% for recipe_list in recipe_shopping_lists %}
+                <tr class="list-row {% if recipe_list.sent %}sent{% else %}unsent{% endif %}">
+                    <td>{{ recipe_list.recipe_name }}</td>
+                    <td>
+                        {% if recipe_list.sent %}
+                            ✅ Sent
+                        {% else %}
+                            ❌ Not Sent
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="view-list-button">🔍 View</a>
+                        {% if not recipe_list.sent %}
+                            <a href="{% url 'send_recipe_shopping_list' recipe_list.id %}" class="send-list-button">📧 Send</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'inventory' %}" class="back-button">🔙 Back to Inventory</a>
+
+    <!-- ✅ JavaScript for Filtering -->
+    <script>
+        function toggleFilter() {
+            let rows = document.querySelectorAll(".list-row");
+            let button = document.querySelector(".filter-button");
+            let showingUnsentOnly = button.textContent.includes("Show All");
+
+            rows.forEach(row => {
+                if (row.classList.contains("sent")) {
+                    row.style.display = showingUnsentOnly ? "table-row" : "none";
+                }
+            });
+
+            button.textContent = showingUnsentOnly ? "🚫 Show Unsent Only" : "🔁 Show All Lists";
+        }
+    </script>
+{% endblock %}

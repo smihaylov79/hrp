@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Създай нова рецепта</h2>
+
+<form method="post" action="{% url 'save_recipe' %}">
+    {% csrf_token %}
+
+    <h3>Детайли</h3>
+    <label for="name">Име:</label>
+    <input type="text" name="name" class="form-control" required>
+
+    <label for="category_id">Категория:</label>
+    <select name="category_id" class="form-control" required>
+        {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="time_to_prepare">Време (mins):</label>
+    <input type="number" name="time_to_prepare" class="form-control" required>
+
+    <label for="instructions">Инструкции:</label>
+<textarea name="instructions" class="form-control" rows="10" style="width: 100%;"></textarea>
+
+
+    <label for="url_link">URL Link (optional):</label>
+    <input type="url" name="url_link" class="form-control" style="width: 80%;">
+
+    <h3>Ingredients</h3>
+    <table id="ingredientTable">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <select name="product_id[]" class="form-control">
+                        {% for product in products %}
+                            <option value="{{ product.id }}">{{ product.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" name="quantity[]" class="form-control" step="0.001" required></td>
+                <td><input type="text" name="unit[]" class="form-control" placeholder="optional"></td>
+                <td><button type="button" class="removeRow btn btn-danger">✖</button></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="button" id="addRow" class="btn btn-primary">➕ Add Ingredient</button>
+    <button type="submit" class="btn btn-success">Save Recipe</button>
+</form>
+
+<script>
+document.getElementById("addRow").addEventListener("click", function() {
+    let table = document.getElementById("ingredientTable").getElementsByTagName("tbody")[0];
+    let newRow = table.rows[0].cloneNode(true);
+
+    // Reset values in the cloned row
+    newRow.querySelectorAll("input, select").forEach(input => {
+        input.value = "";
+    });
+
+    table.appendChild(newRow);
+});
+
+document.querySelectorAll(".removeRow").forEach(button => {
+    button.addEventListener("click", function() {
+        this.closest("tr").remove();
+    });
+});
+</script>
+
+
+{% endblock %}

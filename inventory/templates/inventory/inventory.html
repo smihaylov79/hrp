@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <a href="{% url 'inventory_reports' %}" class="button-link">Справки</a>
+    <a href="{% url 'generate_shopping_list' %}" class="button-link">Generate Shopping List</a>
+    <a href="{% url 'all_shopping_lists' %}" class="button-link">View All Shopping Lists</a>
+    <form method="GET" action="{% url 'inventory' %}">
+    <label for="category">Филтрирай категория:</label>
+    <select name="category">
+        <option value="">Всички категории</option>
+        {% for category in user_categories %}
+        <option value="{{ category.product_category.id }}">{{ category.product_category.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="search">Търси продукт:</label>
+    <input type="text" name="search" placeholder="Продукт">
+
+    <button type="submit">Покажи</button>
+</form>
+
+    <h2>Твоите продукти</h2>
+
+    <form id="inventory-form" method="POST" action="{% url 'update_inventory' %}">
+        {% csrf_token %}
+        <table>
+            <tr>
+                <th>Product</th>
+                <th>Avg. Price</th>
+                <th>Quantity</th>
+                <th>Amount</th>
+
+                <th>Daily Consumption</th>
+                <th>Min. Quantity</th>
+            </tr>
+            {% for item in inventory_items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.average_price }} лв.</td>
+                <td>
+                    <input type="number" name="quantity_{{ item.id }}" value="{{ item.quantity }}" step="0.001">
+                </td>
+                <td>
+                    <input type="number" name="amount_{{ item.id }}" value="{{ item.amount }}" step="0.01">
+                </td>
+
+                <td>
+                    <input type="number" name="daily_consumption_{{ item.id }}" value="{{ item.daily_consumption }}" step="0.001">
+                </td>
+                <td>
+                    <input type="number" name="minimum_quantity_{{ item.id }}" value="{{ item.minimum_quantity }}" step="0.001">
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6">Няма налични продукти</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit">Запази</button>
+        <a href="{% url 'user_category_settings' %}" class="button-link">Управление на категории</a>
+
+    </form>
+{% endblock %}

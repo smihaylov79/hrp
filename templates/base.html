@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Resource Planner</title>
+
+</head>
+<body>
+
+    <div class="navbar">
+
+        {% if user.is_authenticated %}
+            <span class="greeting-box">Здравей, {{ user.first_name }}!
+            <div id="current-time" class="datetime-box">
+          {{ now|date:"d-m-Y H:i" }}
+    </div>
+            </span>
+
+        {% endif %}
+
+        <a href="/">Home</a>
+        <a href="/shopping/">Shopping</a>
+        {% if request.resolver_match.view_name == "shopping" %}
+            {% if user.is_authenticated %}
+                <a href="{% url 'basket' %}">Basket ({{ basket_item_count }})</a>
+            {% endif %}
+        {% endif %}
+        <a href="/inventory/">Inventory</a>
+        <a href="/cooking/">Cooking</a>
+        <a href="/finance/">Finance</a>
+        <a href="/entertainment/">Entertainment</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}">Register</a>
+        {% endif %}
+    </div>
+
+    <div class="container">
+        {% block content %}
+        <!-- Content from child templates goes here -->
+        {% endblock %}
+    </div>
+</body>
+</html>

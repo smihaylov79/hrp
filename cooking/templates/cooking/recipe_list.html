@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% load custom_filters %}
+
+{% block content %}
+    <h2>Рецепти</h2>
+    <a href="{% url 'create_recipe' %}" class="shopping-button">Добави рецепта</a>
+
+    <div class="recipe-list">
+        {% for recipe in recipes %}
+            <div class="recipe-card">
+                {% if recipe.image %}
+                    <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">
+                {% else %}
+                    <img src="/media/recipe_images/no_image.png" alt="Default Image">
+                {% endif %}
+
+                <div class="recipe-info">
+                    <h3>{{ recipe.name }}</h3>
+                    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>
+                    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
+
+                    <p><strong>Съставки:</strong></p>
+<ul class="ingredient-list">
+    {% for ingredient in recipe.ingredients_list %}
+        {% with available_quantity=user_inventory|dict_lookup:ingredient.product.id %}
+        <li class="{% if available_quantity is not None and available_quantity < ingredient.quantity %}low-stock{% else %}available{% endif %}">
+            {{ ingredient.product.name }} - {{ ingredient.quantity }}
+            (наличност: {{ available_quantity|default_if_none:0 }})
+        </li>
+        {% endwith %}
+    {% endfor %}
+</ul>
+
+                    <p><strong>Цена:</strong> {{ recipe.user_cost }} лв.</p>
+                    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
+
+                    {% if recipe.check_availability == "OK" %}
+                        <p style="color: green;">✅ Всички продукти налични</p>
+                    {% else %}
+                        <p style="color: red;">❌ Липсващи продукти</p>
+                    {% endif %}
+
+                    {% if not recipe.user_availability %}
+    <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>
+    </form>
+{% endif %}
+
+                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit">Приготви</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
