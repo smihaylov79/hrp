@@ -1,47 +1,112 @@
 {% extends "base.html" %}
 
+{% load custom_filters %}
+
 {% block content %}
     <h2>Отчет на разходите</h2>
+
+    <!-- Report Selection Buttons -->
+    <div>
+        <button onclick="showReport('category')">Spending by Category</button>
+        <button onclick="showReport('price_changes')">Price Comparison</button>
+    </div>
+
+    <!-- Filtering Form -->
     <form method="GET" action="{% url 'inventory_reports' %}">
         <label for="category">Filter by Category:</label>
         <select name="category">
             <option value="">All Categories</option>
             {% for category in user_categories %}
-                <option value="{{ category.product_category.id }}">{{ category.product_category.name }}</option>
+                <option value="{{ category.product_category.id }}" {% if category_filter == category.product_category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.product_category.name }}
+                </option>
             {% endfor %}
         </select>
 
         <label for="date">Filter by Date:</label>
-        <input type="date" name="date">
+        <input type="date" name="date" value="{{ date_filter }}">
 
         <label for="shop">Filter by Shop:</label>
         <select name="shop">
             <option value="">All Shops</option>
             {% for shop in user_shops %}
-                <option value="{{ shop.id }}">{{ shop.name }}</option>
+                <option value="{{ shop.id }}" {% if shop_filter == shop.id|stringformat:"s" %}selected{% endif %}>
+                    {{ shop.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <!-- Multi-select Shops for Comparison -->
+        <label for="shops">Compare Prices by Shop:</label>
+        <select name="shops" multiple>
+            {% for shop in user_shops %}
+                <option value="{{ shop.id }}" {% if shop.id|stringformat:"s" in selected_shops %}selected{% endif %}>
+                    {{ shop.name }}
+                </option>
             {% endfor %}
         </select>
 
         <button type="submit">Apply Filters</button>
     </form>
 
-    <h3>Total Spent: {{ total_spent }} лв.</h3>
+    <!-- Total Spending -->
+    <h3>Total Spent: {{ total_spent|default:"0.00" }} лв.</h3>
 
-    <h3>Price Tracking</h3>
-    <table>
-        <tr>
-            <th>Product</th>
-            <th>Average Price</th>
-        </tr>
-        {% for item in avg_price_changes %}
-        <tr>
-            <td>{{ item.product__name }}</td>
-            <td>{{ item.avg_price }} лв.</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="2">No price changes recorded.</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <!-- Pie Chart for Spending by Category -->
+    <div id="categoryReport">
+        {{ plot_div|safe }}
+    </div>
+
+    <!-- Price Comparison Table -->
+    <div id="priceTrackingReport" style="display: none;">
+        <h3>Price Comparison</h3>
+        <table>
+            <tr>
+                <th>Product</th>
+                <th>Average Purchase Price</th>
+                {% for shop in user_shops %}
+                    <th class="shop-column shop-{{ shop.id }}">{{ shop.name }}</th>
+                {% endfor %}
+            </tr>
+            {% for product in avg_price_changes %}
+<tr>
+    <td>{{ product.product__name }}</td>
+    <td>{{ product.avg_price }} лв.</td>
+    {% for shop in shop_price_changes %}
+        <td class="shop-column shop-{{ shop.shop_id }}">
+    {% if product.product__name in shop.prices %}
+        {{ shop.prices|dict_key:product.product__name }} лв.
+    {% else %}
+        N/A
+    {% endif %}
+</td>
+
+    {% endfor %}
+</tr>
+{% empty %}
+<tr>
+    <td colspan="100%">No price changes recorded.</td>
+</tr>
+{% endfor %}
+
+        </table>
+    </div>
+
+    <!-- JavaScript for Report Switching & Dynamic Shop Columns -->
+    <script>
+        function showReport(reportType) {
+            document.getElementById("categoryReport").style.display = (reportType === "category") ? "block" : "none";
+            document.getElementById("priceTrackingReport").style.display = (reportType === "price_changes") ? "block" : "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            let selectedShops = {{ selected_shops|safe }};
+            document.querySelectorAll(".shop-column").forEach(column => {
+                if (!selectedShops.includes(column.classList[1].split('-')[1])) {
+                    column.style.display = "none"; // Hide non-selected shops
+                }
+            });
+        });
+    </script>
+
 {% endblock %}

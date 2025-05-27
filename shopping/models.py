@@ -95,7 +95,7 @@ class ShoppingList(models.Model):
     items = models.JSONField(default=list)
 
     def __str__(self):
-        return f"Shopping List for {self.user.username} - {self.date_generated}"
+        return f"Shopping List for {self.user.first_name} - {self.date_generated}"
 
 
 class RecipeShoppingList(models.Model):
@@ -105,4 +105,4 @@ class RecipeShoppingList(models.Model):
     items = models.JSONField(default=list)  # ✅ Stores missing products as a list of names
 
     def __str__(self):
-        return f"Shopping List for {self.user.username} - {self.recipe_name}"
+        return f"Shopping List for {self.user.first_name} - {self.recipe_name}"

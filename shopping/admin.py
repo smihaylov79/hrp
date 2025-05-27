@@ -29,3 +29,20 @@ class ShoppingAdmin(admin.ModelAdmin):
 @admin.register(ShoppingProduct)
 class ShoppingProductAdmin(admin.ModelAdmin):
     list_display = ('product', 'quantity', 'price', 'discount', 'amount')
+
+@admin.register(ShoppingList)
+class ShoppingListAdmin(admin.ModelAdmin):
+    list_display = ('user__first_name', 'date_generated', 'sent', 'items')
+
+@admin.register(RecipeShoppingList)
+class RecipeShoppingListAdmin(admin.ModelAdmin):
+    ...
+
+@admin.register(BasketItem)
+class BasketItemAdmin(admin.ModelAdmin):
+    ...
+
+
+@admin.register(Basket)
+class BasketAdmin(admin.ModelAdmin):
+    ...

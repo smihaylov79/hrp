@@ -38,7 +38,7 @@ class InventoryProduct(models.Model):
                                                         "minimum_quantity"])
 
     def __str__(self):
-        return f"{self.name} - {self.quantity} units - Avg Price: {self.average_price}"
+        return f"{self.product.name} - {self.quantity} units - Avg Price: {self.average_price}"
 
 
 class UserProductCategory(models.Model):
@@ -49,4 +49,4 @@ class UserProductCategory(models.Model):
     minimum_quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0.000)
 
     def __str__(self):
-        return self.name
+        return self.product_category.name

@@ -3,8 +3,8 @@
 
 {% block content %}
     <a href="{% url 'inventory_reports' %}" class="button-link">Справки</a>
-    <a href="{% url 'generate_shopping_list' %}" class="button-link">Generate Shopping List</a>
-    <a href="{% url 'all_shopping_lists' %}" class="button-link">View All Shopping Lists</a>
+    <a href="{% url 'generate_shopping_list' %}" class="button-link">Генерирай списък</a>
+    <a href="{% url 'all_shopping_lists' %}" class="button-link">Преглед на списъци</a>
     <form method="GET" action="{% url 'inventory' %}">
     <label for="category">Филтрирай категория:</label>
     <select name="category">
@@ -26,13 +26,13 @@
         {% csrf_token %}
         <table>
             <tr>
-                <th>Product</th>
-                <th>Avg. Price</th>
-                <th>Quantity</th>
-                <th>Amount</th>
+                <th>Продукт</th>
+                <th>Средна цена</th>
+                <th>Наличност</th>
+                <th>Стойност</th>
 
-                <th>Daily Consumption</th>
-                <th>Min. Quantity</th>
+                <th>Дневна консумация</th>
+                <th>Минимална наличност</th>
             </tr>
             {% for item in inventory_items %}
             <tr>
