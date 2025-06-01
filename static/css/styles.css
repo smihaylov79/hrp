@@ -362,4 +362,20 @@ a.button-link:hover {
 .movies { background-color: #FF5722; }  /* Orange */
 .games { background-color: #9C27B0; }   /* Purple */
 
+.filter-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
 
+.filter-item {
+    flex: 1;
+    min-width: 200px;
+    text-align: left;
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+}

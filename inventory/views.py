@@ -1,6 +1,7 @@
 from datetime import date
 from decimal import Decimal
 from email.mime.text import MIMEText
+import os
 
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -11,7 +12,7 @@ import smtplib
 from plotly.offline import plot
 import plotly.graph_objs as go
 
-from shopping.models import ShoppingProduct, Shop, Shopping, ShoppingList, RecipeShoppingList
+from shopping.models import ShoppingProduct, Shop, Shopping, ShoppingList, RecipeShoppingList, MainCategory
 from .models import *
 
 @login_required
@@ -22,41 +23,38 @@ def inventory_list(request):
     category_filter = request.GET.get("category")
     search_query = request.GET.get("search")
 
-    # Apply category filter separately
     if category_filter and category_filter.strip() != "":
         inventory_items = inventory_items.filter(category_id=category_filter).order_by('id')
 
-    # Apply search filter separately
     if search_query and search_query.strip() != "":
         inventory_items = inventory_items.filter(product__name__icontains=search_query)
 
     return render(request, "inventory/inventory.html", {
         "inventory_items": inventory_items,
-        "user_categories": user_categories,  # Ensure categories are available
+        "user_categories": user_categories,
     })
 
 def update_inventory(request):
     if request.method == "POST":
-        data = {}  # Store updates per product
+        data = {}
 
         for key, value in request.POST.items():
             if "_" in key:
-                parts = key.rsplit("_", 1)  # Splits at the **last** underscore
-                if len(parts) == 2 and parts[1].isdigit():  # Ensures valid numeric ID
+                parts = key.rsplit("_", 1)
+                if len(parts) == 2 and parts[1].isdigit():
                     field, product_id = parts
                 else:
-                    continue  # Skip invalid keys
+                    continue
                 if product_id not in data:
-                    data[product_id] = {}  # Initialize sub-dictionary
+                    data[product_id] = {}
 
-                data[product_id][field] = float(value)  # Convert input to float
+                data[product_id][field] = float(value)
 
-        # Apply bulk updates
         InventoryProduct.bulk_update_inventory(data)
 
-        return redirect("inventory")  # Redirect after saving
+        return redirect("inventory")
 
-    return redirect("inventory")  # Fallback redirect
+    return redirect("inventory")
 
 
 def user_category_settings(request):
@@ -78,8 +76,11 @@ def user_category_settings(request):
 def inventory_reports(request):
     user_categories = UserProductCategory.objects.filter(user=request.user)
 
+    main_categories = MainCategory.objects.all()
+
     user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=request.user).values("shop")).distinct()
 
+    main_category_filter = request.GET.get("main_category")
     category_filter = request.GET.get("category")
     date_filter = request.GET.get("date")
     shop_filter = request.GET.get("shop")
@@ -87,6 +88,9 @@ def inventory_reports(request):
     selected_shops = request.GET.getlist("shops")
 
     shopping_data = ShoppingProduct.objects.filter(shopping__user=request.user)
+
+    if main_category_filter and main_category_filter.strip():
+        shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
 
     if category_filter and category_filter.strip():
         shopping_data = shopping_data.filter(product__category_id=category_filter)
@@ -116,16 +120,25 @@ def inventory_reports(request):
 
         shop_price_changes.append(shop_data)
 
-    category_spending = shopping_data.values("product__category__name").annotate(total_spent=Sum("amount"))
+    main_category_spending = shopping_data.values("product__category__main_category__name").annotate(
+        total_spent=Sum("amount"))
+    subcategory_spending = shopping_data.values("product__category__name").annotate(total_spent=Sum("amount"))
 
-    labels = [entry["product__category__name"] for entry in category_spending]
-    values = [entry["total_spent"] for entry in category_spending]
+    main_labels = [entry["product__category__main_category__name"] for entry in main_category_spending]
+    main_values = [entry["total_spent"] for entry in main_category_spending]
+    sub_labels = [entry["product__category__name"] for entry in subcategory_spending]
+    sub_values = [entry["total_spent"] for entry in subcategory_spending]
 
-    pie_chart = go.Figure(
-        data=[go.Pie(labels=labels, values=values, textinfo="label+percent")]
+    pie_chart_main = go.Figure(
+        data=[go.Pie(labels=main_labels, values=main_values, textinfo="label+percent")]
     )
 
-    plot_div = plot(pie_chart, output_type="div")
+    pie_chart_sub = go.Figure(
+        data=[go.Pie(labels=sub_labels, values=sub_values, textinfo="label+percent")]
+    )
+
+    plot_maincategory = plot(pie_chart_main, output_type="div")
+    plot_subcategory = plot(pie_chart_sub, output_type="div")
 
     context = {
         "shopping_data": shopping_data,
@@ -135,10 +148,13 @@ def inventory_reports(request):
         "user_categories": user_categories,
         "user_shops": user_shops,
         "selected_shops": selected_shops,
-        "plot_div": plot_div,
+        "plot_maincategory": plot_maincategory,
+        "plot_subcategory": plot_subcategory,
         "category_filter": category_filter,
         "date_filter": date_filter,
         "shop_filter": shop_filter,
+        "main_categories": main_categories,
+        "main_category_filter": main_category_filter
     }
 
     return render(request, "inventory/reports.html", context)
@@ -150,12 +166,11 @@ def generate_shopping_list(request):
     today = date.today()
 
     last_list = ShoppingList.objects.filter(user=user).order_by("-date_generated").first()
-    days_since_last = (today - last_list.date_generated).days if last_list else 7  # Default: 7 days
+    days_since_last = (today - last_list.date_generated).days if last_list else 7
 
     inventory_items = InventoryProduct.objects.filter(user=user)
     shopping_list = ShoppingList.objects.create(user=user, items=[])
 
-    # Handle direct planning categories first
     user_direct_categories = UserProductCategory.objects.filter(user=user, direct_planning=True)
     user_indirect_categories = UserProductCategory.objects.filter(user=user, direct_planning=False)
 
@@ -229,19 +244,22 @@ def send_shopping_list(request, list_id):
     new_date = shopping_list.date_generated
     items = shopping_list.items
     email = request.user.email
+    password = os.getenv('EMAIL_PASSWORD')
+    smtp_server = os.getenv('SMTP_SERVER')
+    login = os.getenv('LOGIN_USER')
 
 
-    server = smtplib.SMTP_SSL('smtp.abv.bg', 465)
-    server.login('shopping_tracker_app@abv.bg', 'c2hvvGKTKgVH9C_')
+    server = smtplib.SMTP_SSL(smtp_server, 465)
+    server.login(login, password)
     msg = MIMEText('\n'.join(items))
 
     msg['Subject'] = f'Списък за пазаруване: {new_date}'
-    msg['From'] = 'shopping_tracker_app@abv.bg'  # Ensure this matches EMAIL_HOST_USER
+    msg['From'] = login
     msg['To'] = email
 
     server.sendmail(
-        'shopping_tracker_app@abv.bg',
-        ['stoyan.mihaylov@live.com', email],
+        login,
+        [email],
         msg.as_string()
     )
 
@@ -249,6 +267,8 @@ def send_shopping_list(request, list_id):
     shopping_list.save()
 
     return redirect("shopping_list_view", list_id=list_id)
+
+
 
 
 @login_required
@@ -283,17 +303,21 @@ def send_recipe_shopping_list(request, list_id):
     items = recipe_list.items
     email = request.user.email
 
-    server = smtplib.SMTP_SSL('smtp.abv.bg', 465)
-    server.login('shopping_tracker_app@abv.bg', 'c2hvvGKTKgVH9C_')
+    password = os.getenv('EMAIL_PASSWORD')
+    smtp_server = os.getenv('SMTP_SERVER')
+    login = os.getenv('LOGIN_USER')
+
+    server = smtplib.SMTP_SSL(smtp_server, 465)
+    server.login(login, password)
     msg = MIMEText('\n'.join(items))
 
     msg['Subject'] = f'Списък за пазаруване за рецепта: {recipe_name}'
-    msg['From'] = 'shopping_tracker_app@abv.bg'
+    msg['From'] = login
     msg['To'] = email
 
     server.sendmail(
-        'shopping_tracker_app@abv.bg',
-        ['stoyan.mihaylov@live.com', email],
+        login,
+        [email],
         msg.as_string()
     )
 

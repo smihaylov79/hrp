@@ -7,87 +7,113 @@
 
     <!-- Report Selection Buttons -->
     <div>
-        <button onclick="showReport('category')">Spending by Category</button>
-        <button onclick="showReport('price_changes')">Price Comparison</button>
+        <button onclick="showReport('category')">Графика</button>
+        <button onclick="showReport('price_changes')">Таблично сравнение</button>
     </div>
 
     <!-- Filtering Form -->
     <form method="GET" action="{% url 'inventory_reports' %}">
-        <label for="category">Filter by Category:</label>
-        <select name="category">
-            <option value="">All Categories</option>
-            {% for category in user_categories %}
-                <option value="{{ category.product_category.id }}" {% if category_filter == category.product_category.id|stringformat:"s" %}selected{% endif %}>
-                    {{ category.product_category.name }}
-                </option>
-            {% endfor %}
-        </select>
+        <div class="filter-container">
+            <div class="filter-item">
+                <label for="main_category">Категория:</label>
+                <select name="main_category">
+                    <option value="">Всички категории</option>
+                    {% for category in main_categories %}
+                        <option value="{{ category.id }}"
+                                {% if request.GET.main_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="category">Подкатегория:</label>
+                <select name="category">
+                    <option value="">Всички категории</option>
+                    {% for category in user_categories %}
+                        <option value="{{ category.product_category.id }}"
+                                {% if category_filter == category.product_category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.product_category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-item">
 
-        <label for="date">Filter by Date:</label>
-        <input type="date" name="date" value="{{ date_filter }}">
 
-        <label for="shop">Filter by Shop:</label>
-        <select name="shop">
-            <option value="">All Shops</option>
-            {% for shop in user_shops %}
-                <option value="{{ shop.id }}" {% if shop_filter == shop.id|stringformat:"s" %}selected{% endif %}>
-                    {{ shop.name }}
-                </option>
-            {% endfor %}
-        </select>
+                <label for="date">Дата:</label>
+                <input type="date" name="date" value="{{ date_filter }}">
+            </div>
+            <div class="filter-item">
+                <label for="shop">По магазин:</label>
+                <select name="shop">
+                    <option value="">Всички магазини</option>
+                    {% for shop in user_shops %}
+                        <option value="{{ shop.id }}"
+                                {% if shop_filter == shop.id|stringformat:"s" %}selected{% endif %}>
+                            {{ shop.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
 
         <!-- Multi-select Shops for Comparison -->
-        <label for="shops">Compare Prices by Shop:</label>
-        <select name="shops" multiple>
-            {% for shop in user_shops %}
-                <option value="{{ shop.id }}" {% if shop.id|stringformat:"s" in selected_shops %}selected{% endif %}>
-                    {{ shop.name }}
-                </option>
-            {% endfor %}
-        </select>
+        <p>
+            <label for="shops">Цени по магазин:</label>
+            <select name="shops" multiple>
+                {% for shop in user_shops %}
+                    <option value="{{ shop.id }}"
+                            {% if shop.id|stringformat:"s" in selected_shops %}selected{% endif %}>
+                        {{ shop.name }}
+                    </option>
+                {% endfor %}
+            </select>
 
-        <button type="submit">Apply Filters</button>
+            <button type="submit">Приложи филтри</button>
+        </p>
     </form>
 
     <!-- Total Spending -->
-    <h3>Total Spent: {{ total_spent|default:"0.00" }} лв.</h3>
+    <h3>Общо разходи: {{ total_spent|default:"0.00" }} лв.</h3>
 
     <!-- Pie Chart for Spending by Category -->
     <div id="categoryReport">
-        {{ plot_div|safe }}
+        {{ plot_maincategory|safe }}
+        {{ plot_subcategory|safe }}
     </div>
 
     <!-- Price Comparison Table -->
     <div id="priceTrackingReport" style="display: none;">
-        <h3>Price Comparison</h3>
+        <h3>Детайлно сравнение на цени по магазин</h3>
         <table>
             <tr>
-                <th>Product</th>
-                <th>Average Purchase Price</th>
+                <th>Продукт</th>
+                <th>Средна цена</th>
                 {% for shop in user_shops %}
                     <th class="shop-column shop-{{ shop.id }}">{{ shop.name }}</th>
                 {% endfor %}
             </tr>
             {% for product in avg_price_changes %}
-<tr>
-    <td>{{ product.product__name }}</td>
-    <td>{{ product.avg_price }} лв.</td>
-    {% for shop in shop_price_changes %}
-        <td class="shop-column shop-{{ shop.shop_id }}">
-    {% if product.product__name in shop.prices %}
-        {{ shop.prices|dict_key:product.product__name }} лв.
-    {% else %}
-        N/A
-    {% endif %}
-</td>
+                <tr>
+                    <td>{{ product.product__name }}</td>
+                    <td>{{ product.avg_price }} лв.</td>
+                    {% for shop in shop_price_changes %}
+                        <td class="shop-column shop-{{ shop.shop_id }}">
+                            {% if product.product__name in shop.prices %}
+                                {{ shop.prices|dict_key:product.product__name }} лв.
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
 
-    {% endfor %}
-</tr>
-{% empty %}
-<tr>
-    <td colspan="100%">No price changes recorded.</td>
-</tr>
-{% endfor %}
+                    {% endfor %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="100%">Няма данни.</td>
+                </tr>
+            {% endfor %}
 
         </table>
     </div>
@@ -99,7 +125,7 @@
             document.getElementById("priceTrackingReport").style.display = (reportType === "price_changes") ? "block" : "none";
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             let selectedShops = {{ selected_shops|safe }};
             document.querySelectorAll(".shop-column").forEach(column => {
                 if (!selectedShops.includes(column.classList[1].split('-')[1])) {
