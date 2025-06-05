@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 from email.mime.text import MIMEText
 import os
+import json
 
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -9,8 +10,7 @@ from django.db.models import Sum, Avg
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 import smtplib
-from plotly.offline import plot
-import plotly.graph_objs as go
+
 
 from shopping.models import ShoppingProduct, Shop, Shopping, ShoppingList, RecipeShoppingList, MainCategory
 from .models import *
@@ -120,36 +120,27 @@ def inventory_reports(request):
 
         shop_price_changes.append(shop_data)
 
+
+    ## for the chart with highcharts
     main_category_spending = shopping_data.values("product__category__main_category__name").annotate(
         total_spent=Sum("amount"))
     subcategory_spending = shopping_data.values("product__category__name").annotate(total_spent=Sum("amount"))
 
-    main_labels = [entry["product__category__main_category__name"] for entry in main_category_spending]
-    main_values = [entry["total_spent"] for entry in main_category_spending]
-    sub_labels = [entry["product__category__name"] for entry in subcategory_spending]
-    sub_values = [entry["total_spent"] for entry in subcategory_spending]
-
-    pie_chart_main = go.Figure(
-        data=[go.Pie(labels=main_labels, values=main_values, textinfo="label+percent")]
-    )
-
-    pie_chart_sub = go.Figure(
-        data=[go.Pie(labels=sub_labels, values=sub_values, textinfo="label+percent")]
-    )
-
-    plot_maincategory = plot(pie_chart_main, output_type="div")
-    plot_subcategory = plot(pie_chart_sub, output_type="div")
+    main_chart_data = [{"name": entry["product__category__main_category__name"], "y": float(entry["total_spent"])}
+                       for entry in main_category_spending]
+    sub_chart_data = [{"name": entry["product__category__name"], "y": float(entry["total_spent"])}
+                      for entry in subcategory_spending]
 
     context = {
         "shopping_data": shopping_data,
-        "total_spent": total_spent,
+        "total_spent": float(total_spent),
         "avg_price_changes": avg_price_changes,
         "shop_price_changes": shop_price_changes,
         "user_categories": user_categories,
         "user_shops": user_shops,
         "selected_shops": selected_shops,
-        "plot_maincategory": plot_maincategory,
-        "plot_subcategory": plot_subcategory,
+        "main_chart_data": json.dumps(main_chart_data),
+        "sub_chart_data": json.dumps(sub_chart_data),
         "category_filter": category_filter,
         "date_filter": date_filter,
         "shop_filter": shop_filter,
@@ -158,6 +149,30 @@ def inventory_reports(request):
     }
 
     return render(request, "inventory/reports.html", context)
+
+
+def product_price_history(request):
+    user = request.user
+    products = Product.objects.filter(
+        shoppingproduct__shopping__user=user).distinct()
+    selected_product_id = request.GET.get("product")
+    price_data = []
+
+    if selected_product_id:
+        product = get_object_or_404(Product, id=selected_product_id)
+
+        price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
+            .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
+
+        price_data = [{"date": entry["shopping__date"].strftime("%Y-%m-%d"), "price": float(entry["avg_price"])} for entry in price_changes]
+
+    context = {
+        "products": products,
+        "selected_product_id": selected_product_id,
+        "price_data": json.dumps(price_data) if price_data else "[]"
+    }
+
+    return render(request, "inventory/price_history.html", context)
 
 
 @login_required

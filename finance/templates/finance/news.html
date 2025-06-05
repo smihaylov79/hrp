@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Финансови новини</h2>
+
+<div class="news-list">
+    {% for article in news %}
+        <div class="news-card">
+            <h3><a href="{{ article.link }}" target="_blank">{{ article.title }}</a></h3>
+            <p><strong>Източник:</strong> {{ article.publisher }}</p>
+            <p><strong>Публикувано на:</strong> {{ article.date }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

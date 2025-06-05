@@ -20,8 +20,8 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(Product, through='RecipeIngredient', related_name='recipes')
     image = models.ImageField(upload_to='recipe_images/', null=True, blank=True)
 
-    def check_availability(self):
-        user_inventory = InventoryProduct.objects.filter(
+    def check_availability(self, user):
+        user_inventory = InventoryProduct.objects.filter(user=user,
             product__in=[ingredient.product for ingredient in self.recipe_ingredients.all()])
         product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
@@ -40,8 +40,8 @@ class Recipe(models.Model):
         return round(total_cost, 2)
 
     def calculate_calories(self):
-        total_calories = sum(ingredient.product.calories for ingredient in self.recipe_ingredients.all())
-        return round(total_calories, 2)
+        total_calories = sum(ingredient.product.calories * ingredient.quantity for ingredient in self.recipe_ingredients.all())
+        return round(total_calories, 0)
 
     def __str__(self):
         return self.name

@@ -126,10 +126,10 @@ button:hover {
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     display: flex;
-    justify-content: center; /* Centers horizontally */
+    justify-content: flex-start; /* Centers horizontally */
     align-items: center; /* Ensures proper vertical alignment */
     width: 100%; /* Expands to the width of the navbar */
-    text-align: center;
+    text-align: left;
             gap: 10px;
 }
 
@@ -279,25 +279,29 @@ a.button-link:hover {
 }
 
 .recipe-list {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* ✅ Two columns */
-    gap: 20px; /* ✅ Space between cards */
-    justify-content: center; /* ✅ Center alignment */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .recipe-card {
-    width: 100%; /* ✅ Each card fills half the row */
-    padding: 15px;
-    border-radius: 10px;
-    background-color: #fff;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+    width: 30%; /* Adjust for 3 cards per row */
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.recipe-info ul {
-    list-style-type: none; /* ✅ Removes bullets */
-    padding: 0;
-    margin: 0;
+.recipe-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.recipe-info {
+    text-align: center;
 }
 
 .ingredient-list {
@@ -378,4 +382,98 @@ a.button-link:hover {
     padding: 8px;
     border-radius: 6px;
     box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+
+.profile-container {
+    max-width: 600px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+
+.profile-form, .password-form {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background: #f9f9f9;
+}
+
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
+    background: #5f6cff;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 6px;
+    z-index: 1;
+}
+
+.custom-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.finance-nav {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(to right, #5f6cff, #feb47b);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.finance-nav a {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 8px 12px;
+    transition: 0.3s;
+}
+
+.finance-nav a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+}
+
+.news-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.news-card {
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.news-card h3 a {
+    text-decoration: none;
+    color: #5f6cff;
+}
+
+.news-card p {
+    font-size: 14px;
+    color: #333;
 }

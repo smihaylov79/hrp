@@ -11,3 +11,8 @@ class RegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ['email', 'first_name', 'last_name', 'password1', 'password2']
 
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'first_name', 'last_name', 'phone_number']

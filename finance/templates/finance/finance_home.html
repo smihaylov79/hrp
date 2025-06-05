@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <div class="finance-nav">
+    <a href="{% url 'news' %}">Новини</a>
+    <a href="{% url 'markets' %}">Пазари</a>
+    <a href="{% url 'portfolio' %}">Портфейл</a>
+    <a href="{% url 'screener' %}">Радар</a>
+</div>
 This will be the finance section
 {% endblock %}

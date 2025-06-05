@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% load custom_filters_cooking %}
+
+{% block content %}
+    <h2>{{ recipe.name }}</h2>
+
+    {% if recipe.image %}
+        <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">
+    {% endif %}
+
+    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>
+    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
+    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
+
+
+    <h3>Съставки:</h3>
+
+    <ul class="ingredient-list">
+    {% for ingredient in recipe.ingredients_list %}
+        {% with available_quantity=user_inventory|dict_lookup:ingredient.product.id %}
+        <li class="{% if available_quantity is not None and available_quantity < ingredient.quantity %}low-stock{% else %}available{% endif %}">
+            {{ ingredient.product.name }} - {{ ingredient.quantity }}
+            (наличност: {{ available_quantity|default_if_none:0 }})
+        </li>
+        {% endwith %}
+    {% endfor %}
+</ul>
+<p><strong>Инструкции:</strong> </p>
+    <div>
+    {{ recipe.instructions }}
+    </div>
+
+    {% if recipe.url_link %}
+        <p><a href="{{ recipe.url_link }}" target="_blank">Виж оригиналната рецепта</a></p>
+    {% endif %}
+
+    {% if not recipe.user_availability %}
+    <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
+        {% csrf_token %}
+        <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>
+    </form>
+{% endif %}
+
+                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit">Приготви</button>
+                    </form>
+
+
+{% endblock %}

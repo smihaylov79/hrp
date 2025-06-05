@@ -9,6 +9,10 @@
     <div>
         <button onclick="showReport('category')">Графика</button>
         <button onclick="showReport('price_changes')">Таблично сравнение</button>
+        <a href="{% url 'product_price_history' %}">
+    <button>Движение на цени</button>
+    </a>
+
     </div>
 
     <!-- Filtering Form -->
@@ -60,28 +64,75 @@
 
         <!-- Multi-select Shops for Comparison -->
         <p>
-            <label for="shops">Цени по магазин:</label>
-            <select name="shops" multiple>
-                {% for shop in user_shops %}
-                    <option value="{{ shop.id }}"
-                            {% if shop.id|stringformat:"s" in selected_shops %}selected{% endif %}>
-                        {{ shop.name }}
-                    </option>
-                {% endfor %}
-            </select>
-
-            <button type="submit">Приложи филтри</button>
+            <div class="filter-item">
+    <label>Цени по магазин:</label>
+    <div class="custom-dropdown">
+        <button type="button" class="dropdown-toggle">Избери магазини ▼</button>
+        <div class="dropdown-content">
+            {% for shop in user_shops %}
+                <label>
+                    <input type="checkbox" name="shops" value="{{ shop.id }}"
+                           {% if shop.id|stringformat:"s" in selected_shops %}checked{% endif %}>
+                    {{ shop.name }}
+                </label>
+            {% endfor %}
+        </div>
+    </div>
+    <button type="submit">Приложи филтри</button>
+</div>
         </p>
     </form>
 
     <!-- Total Spending -->
     <h3>Общо разходи: {{ total_spent|default:"0.00" }} лв.</h3>
 
-    <!-- Pie Chart for Spending by Category -->
-    <div id="categoryReport">
-        {{ plot_maincategory|safe }}
-        {{ plot_subcategory|safe }}
-    </div>
+    <!-- Pie Chart for Spending by Category with plotly-->
+{#    <div id="categoryReport">#}
+{#        {{ plot_maincategory|safe }}#}
+{#        {{ plot_subcategory|safe }}#}
+{#    </div>#}
+
+    <!-- Pie Chart for Spending by Category with highcharts-->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+<div id="main-category-chart"></div>
+<div id="subcategory-chart"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Highcharts.chart('main-category-chart', {
+            chart: { type: 'pie' },
+            title: { text: 'Spending by Main Categories' },
+            series: [{
+                name: 'Amount Spent',
+                data: {{ main_chart_data|safe }}
+            }]
+        });
+
+        Highcharts.chart('subcategory-chart', {
+            chart: { type: 'pie' },
+            title: { text: 'Spending by Subcategories' },
+            series: [{
+                name: 'Amount Spent',
+                data: {{ sub_chart_data|safe }}
+            }]
+        });
+    });
+
+    document.querySelector(".dropdown-toggle").addEventListener("click", function () {
+    this.nextElementSibling.classList.toggle("show");
+});
+
+window.onclick = function(event) {
+    if (!event.target.matches('.dropdown-toggle')) {
+        document.querySelectorAll('.dropdown-content').forEach(content => {
+            content.classList.remove('show');
+        });
+    }
+};
+
+</script>
+
 
     <!-- Price Comparison Table -->
     <div id="priceTrackingReport" style="display: none;">
@@ -103,7 +154,7 @@
                             {% if product.product__name in shop.prices %}
                                 {{ shop.prices|dict_key:product.product__name }} лв.
                             {% else %}
-                                N/A
+                                -
                             {% endif %}
                         </td>
 
@@ -118,21 +169,40 @@
         </table>
     </div>
 
-    <!-- JavaScript for Report Switching & Dynamic Shop Columns -->
     <script>
-        function showReport(reportType) {
-            document.getElementById("categoryReport").style.display = (reportType === "category") ? "block" : "none";
-            document.getElementById("priceTrackingReport").style.display = (reportType === "price_changes") ? "block" : "none";
-        }
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("table tr").forEach(row => {
+            let priceCells = Array.from(row.querySelectorAll("td:nth-child(n+3)")); // Ignore first two columns
+            let prices = priceCells.map(cell => parseFloat(cell.innerText) || Infinity);
+            let minPrice = Math.min(...prices);
 
-        document.addEventListener("DOMContentLoaded", function () {
-            let selectedShops = {{ selected_shops|safe }};
-            document.querySelectorAll(".shop-column").forEach(column => {
-                if (!selectedShops.includes(column.classList[1].split('-')[1])) {
-                    column.style.display = "none"; // Hide non-selected shops
+            priceCells.forEach(cell => {
+                if (parseFloat(cell.innerText) === minPrice) {
+                    cell.style.backgroundColor = "lightgreen";
+                    cell.style.fontWeight = "bold";
                 }
             });
         });
-    </script>
+    });
+</script>
+
+    <!-- JavaScript for Report Switching & Dynamic Shop Columns -->
+   <script>
+    function showReport(reportType) {
+        document.getElementById("main-category-chart").style.display = (reportType === "category") ? "block" : "none";
+        document.getElementById("subcategory-chart").style.display = (reportType === "category") ? "block" : "none";
+        document.getElementById("priceTrackingReport").style.display = (reportType === "price_changes") ? "block" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        let selectedShops = {{ selected_shops|safe }};
+        document.querySelectorAll(".shop-column").forEach(column => {
+            if (!selectedShops.includes(column.classList[1].split('-')[1])) {
+                column.style.display = "none"; // Hide non-selected shops
+            }
+        });
+    });
+</script>
+
 
 {% endblock %}

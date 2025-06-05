@@ -7,4 +7,5 @@ urlpatterns = [
     path('recipes/save/', save_recipe, name='save_recipe'),
     path('recipes/cook/<int:recipe_id>/', cook_recipe, name='cook_recipe'),
     path('recipes/generate-shopping/<int:recipe_id>/', generate_recipe_shopping_list, name='generate_recipe_shopping_list'),
+    path('recipes/recipe_view/<int:recipe_id>/', recipe_view, name='recipe_view'),
 ]

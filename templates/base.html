@@ -13,31 +13,32 @@
     <div class="navbar">
 
         {% if user.is_authenticated %}
-            <span class="greeting-box">Здравей, {{ user.first_name }}!
+        <div class="greeting-box">
+            <a href="{% url 'profile' %}" style="text-decoration: none; color: inherit;">
+                Здравей, {{ user.first_name }}!
+            </a>
             <div id="current-time" class="datetime-box">
-          {{ now|date:"d-m-Y H:i" }}
-    </div>
-            </span>
-
-        {% endif %}
-
-        <a href="/">Home</a>
-        <a href="/shopping/">Shopping</a>
+                {{ now|date:"d-m-Y H:i" }}
+            </div>
+        </div>
+    {% endif %}
+        <a href="/">Начало</a>
+        <a href="/shopping/">Пазаруване</a>
         {% if request.resolver_match.view_name == "shopping" %}
             {% if user.is_authenticated %}
                 <a href="{% url 'basket' %}">Basket ({{ basket_item_count }})</a>
             {% endif %}
         {% endif %}
-        <a href="/inventory/">Inventory</a>
-        <a href="/cooking/">Cooking</a>
-        <a href="/finance/">Finance</a>
-        <a href="/entertainment/">Entertainment</a>
+        <a href="/inventory/">Наличности</a>
+        <a href="/cooking/">Сготви</a>
+        <a href="/finance/">Пари</a>
+        <a href="/entertainment/">Забавление</a>
 
         {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'logout' %}">Изход</a>
         {% else %}
-            <a href="{% url 'login' %}">Login</a>
-            <a href="{% url 'register' %}">Register</a>
+            <a href="{% url 'login' %}">Вход</a>
+            <a href="{% url 'register' %}">Регистрация</a>
         {% endif %}
     </div>
 

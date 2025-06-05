@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>Профил</h2>
+
+    <form method="post" class="profile-form">
+        {% csrf_token %}
+        <h3>Редактиране на профил</h3>
+        {{ profile_form.as_p }}
+        <button type="submit" name="update_profile">Запази промените</button>
+    </form>
+
+    <form method="post" class="password-form">
+        {% csrf_token %}
+        <h3>Смяна на парола</h3>
+        {{ password_form.as_p }}
+        <button type="submit" name="change_password">Смени паролата</button>
+    </form>
+</div>
+{% endblock %}

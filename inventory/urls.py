@@ -13,4 +13,5 @@ urlpatterns = [
     path("shopping_lists/", all_shopping_lists, name="all_shopping_lists"),
     path("recipe_shopping_list/<int:list_id>/", recipe_shopping_list_view, name="recipe_shopping_list_view"),
     path("recipe_shopping_list/<int:list_id>/send/", send_recipe_shopping_list, name="send_recipe_shopping_list"),
+    path("price-history/", product_price_history, name="product_price_history"),
 ]
