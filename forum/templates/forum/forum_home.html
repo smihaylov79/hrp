@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="forum-header">
+        <h1>Форум</h1>
+        <p>Съвржи се, споделяй идеи и търси съвети от други потребители.</p>
+    </div>
+
+    {% if user.is_superuser %}
+        <a href="{% url 'create_category' %}" class="button">➕ Създай нова категория</a>
+    {% endif %}
+
+    <div class="forum-container">
+        {% for category in categories %}
+            <div class="forum-card">
+                <h2>{{ category.name }}</h2>
+                <p>{{ category.description }}</p>
+                <a href="{% url 'category_threads' category.id %}">Виж теми →</a>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+

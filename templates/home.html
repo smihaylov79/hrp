@@ -1,4 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Welcome to Home Resource Planner</h2>
+
+    <div class="section-container">
+    <a href="{% url 'shopping' %}" class="section-card">
+        🛍️ Пазаруване
+    </a>
+
+    <a href="{% url 'inventory' %}" class="section-card">
+        🏬 Наличности
+    </a>
+
+    <a href="{% url 'recipe_list' %}" class="section-card">
+        🥣 Сготви
+    </a>
+
+    <a href="{% url 'finance_home' %}" class="section-card">
+        💰 Пари
+    </a>
+
+    <a href="{% url 'entertainment_home' %}" class="section-card">
+        🏝️🍹⛱️🌞 🌊 Забавление
+    </a>
+</div>
+
 {% endblock %}

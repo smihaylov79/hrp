@@ -1,0 +1,13 @@
+{% extends "forum/base_forum.html" %}
+
+
+{% block content %}
+    <div class="thread-form-container">
+        <h2>Отвори нова тема за {{ category.name }}</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Отвори тема</button>
+        </form>
+    </div>
+{% endblock %}

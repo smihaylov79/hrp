@@ -1,0 +1,15 @@
+{% extends "forum/base_forum.html" %}
+
+
+{% block content %}
+    {% if user.is_superuser %}
+        <h2>Create a New Category</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Create Category</button>
+        </form>
+    {% else %}
+        <p>You do not have permission to create categories.</p>
+    {% endif %}
+{% endblock %}

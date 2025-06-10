@@ -338,6 +338,7 @@ a.button-link:hover {
 .category-container {
     display: flex;
     justify-content: space-around;
+    gap: 20px;
     margin-top: 20px;
 }
 
@@ -365,6 +366,7 @@ a.button-link:hover {
 .reading { background-color: #2196F3; } /* Blue */
 .movies { background-color: #FF5722; }  /* Orange */
 .games { background-color: #9C27B0; }   /* Purple */
+
 
 .filter-container {
     display: flex;
@@ -455,25 +457,329 @@ a.button-link:hover {
     border-radius: 5px;
 }
 
+.finance-cards {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
+}
+
+.gainers, .losers {
+    width: 48%; /* Make sure both sections take equal space */
+}
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.finance-card {
+    background-color: #f8f8f8;
+    border-radius: 6px;
+    padding: 12px;
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.finance-card span {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #333;
+}
+
+.change-positive {
+    color: #0d3301 !important; /* Green for gainers */
+    font-weight: bold;
+}
+
+.change-negative {
+    color: #e74c3c !important; /* Red for losers */
+    font-weight: bold;
+}
+
+
 .news-list {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
+
+}
+
+.news-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .news-card {
-    padding: 15px;
-    background: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    width: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    position: relative;  /* Make this card the reference for child elements */
 }
 
-.news-card h3 a {
+
+.news-card img {
+    width: 100px;
+    height: auto;
+    position: relative;
+}
+
+.sentiment {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    font-size: 12px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 5px;
+    border-radius: 3px;
+    z-index: 10;  /* Ensure it's above other content */
+}
+
+
+.section-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 sections per row */
+    gap: 20px;
+    justify-content: center;
+    padding: 40px;
+}
+
+.section-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white;
     text-decoration: none;
-    color: #5f6cff;
+    border-radius: 8px;
+    background-color: #555; /* Simple grey */
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.news-card p {
+.section-card:hover {
+    transform: scale(1.05);
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.finance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 16px;
+}
+
+.finance-table th, .finance-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.finance-table th {
+    background-color: #f4f4f4;
+}
+
+.ticker-card {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+}
+
+.ticker-card p {
     font-size: 14px;
-    color: #333;
+    line-height: 1.6;
+}
+
+/* General Styling */
+.forum-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.forum-header h1 {
+    font-size: 2em;
+    color: #2c3e50;
+}
+
+.forum-header p {
+    color: #7f8c8d;
+}
+
+
+
+/* Forum Container */
+.forum-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    justify-items: center;
+    padding: 20px;
+}
+
+/* Forum Cards */
+.forum-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+}
+
+.forum-card h2 {
+    color: #34495e;
+}
+
+.forum-card p {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.forum-card a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.forum-card a:hover {
+    text-decoration: underline;
+}
+
+.thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.thread-card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+.thread-card:hover {
+    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.15);
+}
+
+.thread-card h3 a {
+    text-decoration: none;
+    color: #2c3e50;
+}
+
+.thread-card p {
+    color: #7f8c8d;
+}
+
+.views {
+    font-size: 12px;
+    color: #3498db;
+    float: right;
+}
+
+.thread-form-container {
+    width: 80%;
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.thread-form-container h2 {
+    margin-bottom: 15px;
+    color: #34495e;
+}
+
+.thread-form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.post-card {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+.post-card strong {
+    color: #2c3e50;
+}
+
+.post-card small {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+.form-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.forum-nav {
+    background: #2c3e50;
+    padding: 10px;
+    text-align: center;
+}
+
+.forum-nav ul {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.forum-nav li {
+    display: inline;
+}
+
+.forum-nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.forum-nav a:hover {
+    text-decoration: underline;
 }

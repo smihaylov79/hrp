@@ -1,0 +1,8 @@
+<nav class="forum-nav">
+    <ul>
+        <li><a href="{% url 'forum_home' %}">🏠 Forum Home</a></li>
+        {% for category in categories %}
+            <li><a href="{% url 'category_threads' category.id %}">{{ category.name }}</a></li>
+        {% endfor %}
+    </ul>
+</nav>

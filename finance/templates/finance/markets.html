@@ -1,10 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block content %}
+    <div class="finance-nav">
+        <a href="{% url 'finance_home' %}">Начало</a>
+        <a href="{% url 'news' %}">Новини</a>
+        <a href="{% url 'markets' %}">Пазари</a>
+        <a href="{% url 'portfolio' %}">Портфейл</a>
+        <a href="{% url 'screener' %}">Радар</a>
+    </div>
+
+{% endblock %}

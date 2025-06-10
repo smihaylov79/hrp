@@ -19,6 +19,7 @@
         <option value="$MODULE_DIR$/cooking/templates" />
         <option value="$MODULE_DIR$/entertainment/templates" />
         <option value="$MODULE_DIR$/finance/templates" />
+        <option value="$MODULE_DIR$/forum/templates" />
       </list>
     </option>
   </component>

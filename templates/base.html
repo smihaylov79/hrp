@@ -33,6 +33,7 @@
         <a href="/cooking/">Сготви</a>
         <a href="/finance/">Пари</a>
         <a href="/entertainment/">Забавление</a>
+        <a href="/forum/">Форум</a>
 
         {% if user.is_authenticated %}
             <a href="{% url 'logout' %}">Изход</a>
@@ -44,7 +45,7 @@
 
     <div class="container">
         {% block content %}
-        <!-- Content from child templates goes here -->
+
         {% endblock %}
     </div>
 </body>

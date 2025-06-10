@@ -1,0 +1,32 @@
+{% extends "forum/base_forum.html" %}
+
+
+{% block content %}
+    <h2>{{ thread.title }}</h2>
+    <p>Created by {{ thread.created_by.first_name }} {{ thread.created_by.last_name }}</p>
+    <small>Last activity: {{ thread.last_activity }}</small>
+    <span class="views">👁️ {{ thread.views }} views</span>
+
+    <hr>
+
+    <h3>Discussion</h3>
+    <div class="post-list">
+        {% for post in posts %}
+            <div class="post-card">
+                <strong>{{ post.author.first_name }} {{ post.author.last_name }}</strong>: {{ post.content }}
+                <small>{{ post.created_at }}</small>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if user.is_authenticated %}
+        <h3>Reply</h3>
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="button">Post Comment</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}">Log in</a> to reply.</p>
+    {% endif %}
+{% endblock %}

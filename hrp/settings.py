@@ -44,7 +44,8 @@ PROJECT_APPS = [
     'entertainment',
     'finance',
     'inventory',
-    'shopping'
+    'shopping',
+    'forum'
 ]
 
 INSTALLED_APPS = [
@@ -80,7 +81,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'shopping.context_processors.basket_item_count',
-                'shopping.context_processors.current_datetime'
+                'shopping.context_processors.current_datetime',
+                'forum.views.get_categories',
             ],
         },
     },
