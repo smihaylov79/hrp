@@ -1,9 +1,7 @@
 from datetime import datetime
-from alpha_vantage.timeseries import TimeSeries
-import matplotlib.pyplot as plt
 
 from django.shortcuts import render
-from .models import *
+
 import os
 import requests
 # Create your views here.
