@@ -494,7 +494,7 @@ a.button-link:hover {
 }
 
 .change-positive {
-    color: #2ecc71 !important; /* Green for gainers */
+    color: #0d3301 !important; /* Green for gainers */
     font-weight: bold;
 }
 
@@ -575,35 +575,355 @@ a.button-link:hover {
     box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.ticker-card {
-    background-color: #f8f8f8;
-    border-radius: 8px;
-    padding: 20px;
-    width: 90%;
-    max-width: 600px;
-    margin: 20px auto;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+.finance-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 16px;
+}
+
+.finance-table th, .finance-table td {
+    padding: 10px;
     text-align: left;
-}
-
-.ticker-card h2 {
-    color: #333;
-    text-align: center;
-}
-
-.ticker-card p {
-    font-size: 1em;
-    color: #444;
-    padding: 8px 0;
     border-bottom: 1px solid #ddd;
 }
 
-.ticker-card a {
-    color: #007bff;
+.finance-table th {
+    background-color: #f4f4f4;
+}
+
+.ticker-card {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+}
+
+.ticker-card p {
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* General Styling */
+.forum-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.forum-header h1 {
+    font-size: 2em;
+    color: #2c3e50;
+}
+
+.forum-header p {
+    color: #7f8c8d;
+}
+
+
+
+/* Forum Container */
+.forum-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    justify-items: center;
+    padding: 20px;
+}
+
+/* Forum Cards */
+.forum-card {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 90%;
+    max-width: 350px;
+}
+
+.forum-card h2 {
+    color: #34495e;
+}
+
+.forum-card p {
+    color: #7f8c8d;
+    margin-bottom: 10px;
+}
+
+.forum-card a {
+    color: #3498db;
     text-decoration: none;
     font-weight: bold;
 }
 
-.ticker-card a:hover {
+.forum-card a:hover {
     text-decoration: underline;
+}
+
+.thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.thread-card {
+    background: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+    transition: 0.3s;
+}
+
+.thread-card:hover {
+    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.15);
+}
+
+.thread-card h3 a {
+    text-decoration: none;
+    color: #2c3e50;
+}
+
+.thread-card p {
+    color: #7f8c8d;
+}
+
+.views {
+    font-size: 12px;
+    color: #3498db;
+    float: right;
+}
+
+.thread-form-container {
+    width: 80%;
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.thread-form-container h2 {
+    margin-bottom: 15px;
+    color: #34495e;
+}
+
+.thread-form-container form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.post-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+}
+
+.post-card {
+    background: #ffffff;
+    padding: 12px;
+    border-radius: 6px;
+    box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.1);
+}
+
+.post-card strong {
+    color: #2c3e50;
+}
+
+.post-card small {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+.form-control {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.forum-nav {
+    background: #2c3e50;
+    padding: 10px;
+    text-align: center;
+}
+
+.forum-nav ul {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.forum-nav li {
+    display: inline;
+}
+
+.forum-nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.forum-nav a:hover {
+    text-decoration: underline;
+}
+
+
+
+.market-row-container {
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.market-row {
+    display: flex;
+    gap: 15px;
+    padding-bottom: 10px;
+    min-width: max-content;
+}
+
+.market-frame {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-left: 4px solid gray;
+    border-radius: 8px;
+    padding: 12px;
+    width: 180px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.market-frame.open { border-left-color: green; }
+.market-frame.closed { border-left-color: red; }
+
+.frame-header {
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.frame-status {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.frame-times {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    gap: 3px;
+    margin-bottom: 6px;
+    color: #444;
+}
+
+.frame-countdown {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: #666;
+}
+
+.market-mini-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.market-mini {
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    width: 140px;
+    font-size: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    text-align: center;
+    flex-shrink: 0;
+    border-left: 4px solid gray;
+}
+
+.market-mini.open { border-left-color: green; }
+.market-mini.closed { border-left-color: red; }
+
+.mini-header {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.mini-times {
+    font-size: 0.7rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.mini-countdown {
+    font-style: italic;
+    font-size: 0.7rem;
+    color: #777;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.metric {
+    background: #f5f5f5;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.metric span {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+    color: #555;
+}
+
+.company-card {
+    background: #fff;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    margin-top: 30px;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.company-card h3 {
+    margin-bottom: 10px;
+}
+
+.company-card h3 span {
+    font-size: 0.9rem;
+    color: #777;
+    font-weight: normal;
+}
+
+.company-card .description {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #444;
 }

@@ -12,33 +12,35 @@
 
     <h2>{{ stock_info.name }} ({{ stock_info.symbol }}) - Детайли</h2>
 
-    <!-- Small Table for Stock Metrics -->
-    <table class="finance-table">
-        <tr><th>Market Cap</th><td>${{ stock_info.marketcapitalization }}</td></tr>
-        <tr><th>EPS</th><td>{{ stock_info.eps }}</td></tr>
-        <tr><th>Trailing P/E</th><td>{{ stock_info.trailingpe }}</td></tr>
-        <tr><th>Forward P/E</th><td>{{ stock_info.forwardpe }}</td></tr>
-        <tr><th>PEG Ratio</th><td>{{ stock_info.pegratio }}</td></tr>
-        <tr><th>EV/Revenue</th><td>{{ stock_info.evtorevenue }}</td></tr>
-        <tr><th>EV/EBITDA</th><td>{{ stock_info.evtoebitda }}</td></tr>
-        <tr><th>Beta</th><td>{{ stock_info.beta }}</td></tr>
-        <tr><th>Analyst Target Price</th><td>${{ stock_info.analysttargetprice }}</td></tr>
-        <tr><th>Revenue per Share (TTM)</th><td>${{ stock_info.revenuepersharettm }}</td></tr>
-        <tr><th>52-Week High</th><td>${{ stock_info.52weekhigh }}</td></tr>
-        <tr><th>52-Week Low</th><td>${{ stock_info.52weeklow }}</td></tr>
-        <tr><th>50-Day Moving Average</th><td>${{ stock_info.50daymovingaverage }}</td></tr>
-        <tr><th>200-Day Moving Average</th><td>${{ stock_info.200daymovingaverage }}</td></tr>
-        <tr><th>Ex-Dividend Date</th><td>{{ stock_info.exdividenddate }}</td></tr>
-    </table>
+
+    <!-- Stock Metrics Grid -->
+<div class="metrics-grid">
+    <div class="metric"><span>Market Cap:</span> ${{ stock_info.marketcapitalization }}</div>
+    <div class="metric"><span>EPS:</span> {{ stock_info.eps }}</div>
+    <div class="metric"><span>Trailing P/E:</span> {{ stock_info.trailingpe }}</div>
+    <div class="metric"><span>Forward P/E:</span> {{ stock_info.forwardpe }}</div>
+    <div class="metric"><span>PEG Ratio:</span> {{ stock_info.pegratio }}</div>
+    <div class="metric"><span>EV/Revenue:</span> {{ stock_info.evtorevenue }}</div>
+    <div class="metric"><span>EV/EBITDA:</span> {{ stock_info.evtoebitda }}</div>
+    <div class="metric"><span>Beta:</span> {{ stock_info.beta }}</div>
+    <div class="metric"><span>Target Price:</span> ${{ stock_info.analysttargetprice }}</div>
+    <div class="metric"><span>Revenue/share (TTM):</span> ${{ stock_info.revenuepersharettm }}</div>
+    <div class="metric"><span>52-Week High:</span> ${{ stock_info.52weekhigh }}</div>
+    <div class="metric"><span>52-Week Low:</span> ${{ stock_info.52weeklow }}</div>
+    <div class="metric"><span>50-Day Avg:</span> ${{ stock_info.50daymovingaverage }}</div>
+    <div class="metric"><span>200-Day Avg:</span> ${{ stock_info.200daymovingaverage }}</div>
+    <div class="metric"><span>Ex-Dividend Date:</span> {{ stock_info.exdividenddate }}</div>
+</div>
+
 
     <!-- Company Info Card -->
-    <div class="ticker-card">
-        <h3>📌 Company Information</h3>
-        <p><strong>Sector:</strong> {{ stock_info.sector }}</p>
-        <p><strong>Industry:</strong> {{ stock_info.industry }}</p>
-        <p><strong>Country:</strong> {{ stock_info.country }}</p>
-        <p><strong>EBITDA:</strong> ${{ stock_info.ebitda }}</p>
-        <p><strong>Description:</strong> {{ stock_info.description }}</p>
-        <p><strong>Official Website:</strong> <a href="{{ stock_info.official_site }}" target="_blank">Visit</a></p>
-    </div>
+    <div class="company-card">
+    <h3>{{ stock_info.name }} <span>({{ stock_info.symbol }})</span></h3>
+    <p><strong>Sector:</strong> {{ stock_info.sector }}</p>
+    <p><strong>Industry:</strong> {{ stock_info.industry }}</p>
+    <p><strong>Country:</strong> {{ stock_info.country }}</p>
+    <p><strong>EBITDA:</strong> ${{ stock_info.ebitda }}</p>
+    <p class="description">{{ stock_info.description }}</p>
+</div>
+
 {% endblock %}

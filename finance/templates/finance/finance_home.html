@@ -9,6 +9,22 @@
         <a href="{% url 'screener' %}">Радар</a>
     </div>
 
+<div class="market-mini-grid">
+    {% for market in market_data %}
+        <div class="market-mini {{ market.current_status }}">
+            <div class="mini-header">{{ market.exchange }}</div>
+            <div class="mini-times">
+                <span class="time-local" data-utc="{{ market.utc_open }}"></span>–<span class="time-local" data-utc="{{ market.utc_close }}"></span>
+            </div>
+            <div class="mini-countdown">
+                <span class="countdown" data-open="{{ market.utc_open }}" data-close="{{ market.utc_close }}"></span>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+
+
    <div class="finance-cards">
         <!-- Gainers Section -->
         <div class="gainers">
@@ -40,5 +56,50 @@
             </div>
         </div>
     </div>
+
+    <script>
+function convertToLocal(utcString) {
+    const dt = new Date(utcString);
+    return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function updateCountdowns() {
+    const now = new Date();
+    document.querySelectorAll(".countdown").forEach(el => {
+        const open = new Date(el.dataset.open);
+        const close = new Date(el.dataset.close);
+        let diff, label;
+
+        if (now < open) {
+            diff = open - now;
+            label = "Opens in";
+        } else if (now >= open && now < close) {
+            diff = close - now;
+            label = "Closes in";
+        } else {
+            el.textContent = "Market is closed";
+            return;
+        }
+
+        const h = Math.floor(diff / (1000 * 60 * 60));
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        el.textContent = `${label} ${h}h ${m}m`;
+    });
+}
+
+function displayLocalTimes() {
+    document.querySelectorAll(".time-local").forEach(el => {
+        const utc = el.dataset.utc;
+        el.textContent = convertToLocal(utc);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    displayLocalTimes();
+    updateCountdowns();
+    setInterval(updateCountdowns, 60000); // update every minute
+});
+</script>
+
 
 {% endblock %}
