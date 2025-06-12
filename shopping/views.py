@@ -27,12 +27,11 @@ def add_to_basket(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     basket, created = Basket.objects.get_or_create(user=request.user)
 
-    # Check if the product is already in the basket
     if request.method == "POST":
-        quantity = Decimal(request.POST.get('quantity', '1.000'))  # Convert input to decimal
+        quantity = Decimal(request.POST.get('quantity', '1.000'))
 
         basket_item, created = BasketItem.objects.get_or_create(basket=basket, product=product)
-        basket_item.quantity += quantity if not created else quantity  # Update quantity
+        basket_item.quantity += quantity if not created else quantity
         basket_item.save()
 
     return redirect('shopping')
@@ -41,7 +40,7 @@ def add_to_basket(request, product_id):
 @login_required
 def basket_view(request):
     basket, created = Basket.objects.get_or_create(user=request.user)
-    items = basket.basketitem_set.all()  # Get all items in the basket
+    items = basket.basketitem_set.all()
     return render(request, "shopping/basket.html", {"items": items})
 
 
@@ -73,17 +72,13 @@ def checkout(request):
             defaults={'quantity': Decimal('0.000'), 'amount': Decimal('0.00')}
         )
 
-        # Update quantity and amount
         inventory_item.quantity += item.quantity
         inventory_item.amount += item.quantity * Decimal(str(item.product.price))
-
-        # Recalculate average price
-
 
         inventory_item.save()
         inventory_item.calculate_average_price()
 
-    items.delete()  # Clear basket
+    items.delete()
 
     return redirect('inventory')
 
@@ -111,13 +106,10 @@ def save_shopping(request):
         prices = request.POST.getlist("price[]")
         discounts = request.POST.getlist("discount[]")
 
-        # Get selected shop
         shop = Shop.objects.get(id=shop_id)
 
-        # Create shopping entry
         shopping = Shopping.objects.create(user=request.user, date=date, shop=shop)
 
-        # Save each product entry
         for i in range(len(product_ids)):
             product = Product.objects.get(id=product_ids[i])
             quantity = Decimal(quantities[i])
@@ -133,7 +125,7 @@ def save_shopping(request):
                                                                                defaults={'direct_planning': False, 'daily_consumption': 0.000,
                                                                                'minimum_quantity':0.000}
             )
-            # Update inventory
+
             inventory_product, created = InventoryProduct.objects.get_or_create(
                 user=request.user, product=product, category=product.category,
                 defaults={"quantity": 0, "amount": 0}
@@ -156,7 +148,6 @@ def add_product(request):
 
         category = ProductCategory.objects.get(id=category_id)
 
-        # Create new product
         new_product = Product.objects.create(name=product_name, price=price, category=category)
 
         return JsonResponse({"id": new_product.id, "name": new_product.name})

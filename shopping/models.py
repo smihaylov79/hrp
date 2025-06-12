@@ -59,7 +59,7 @@ class Shop(models.Model):
 class Shopping(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_shopping', null=True, blank=True, default=None)
-    date = models.DateField()  # Example field to track shopping date
+    date = models.DateField()
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
 
     def total_amount(self):
@@ -90,8 +90,8 @@ class ShoppingProduct(models.Model):
 
 class ShoppingList(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    date_generated = models.DateField(auto_now_add=True)  # Auto-fill when created
-    sent = models.BooleanField(default=False)  # Track whether list was emailed
+    date_generated = models.DateField(auto_now_add=True)
+    sent = models.BooleanField(default=False)
     items = models.JSONField(default=list)
 
     def __str__(self):
@@ -100,9 +100,9 @@ class ShoppingList(models.Model):
 
 class RecipeShoppingList(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    recipe_name = models.CharField(max_length=150)  # ✅ Stores the recipe name
+    recipe_name = models.CharField(max_length=150)
     sent = models.BooleanField(default=False)
-    items = models.JSONField(default=list)  # ✅ Stores missing products as a list of names
+    items = models.JSONField(default=list)
 
     def __str__(self):
         return f"Shopping List for {self.user.first_name} - {self.recipe_name}"

@@ -45,7 +45,8 @@ PROJECT_APPS = [
     'finance',
     'inventory',
     'shopping',
-    'forum'
+    'forum',
+    'weather',
 ]
 
 INSTALLED_APPS = [
@@ -83,6 +84,7 @@ TEMPLATES = [
                 'shopping.context_processors.basket_item_count',
                 'shopping.context_processors.current_datetime',
                 'forum.views.get_categories',
+                'weather.views.weather_data_context_processor'
             ],
         },
     },

@@ -32,7 +32,7 @@ def recipe_list(request):
         recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
         recipe.user_availability_status = recipe.check_availability(user)
 
-    paginator = Paginator(recipes, 6)  # 6 recipes per page
+    paginator = Paginator(recipes, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -46,12 +46,12 @@ def recipe_list(request):
 
 
 def create_recipe(request):
-    products = Product.objects.all()  # ✅ Get all products
-    categories = RecipeCategory.objects.all()  # ✅ Get all recipe categories
+    products = Product.objects.all()
+    categories = RecipeCategory.objects.all()
 
     return render(request, "cooking/create_recipe.html", {
         "products": products,
-        "categories": categories  # ✅ Pass them to the template
+        "categories": categories
     })
 
 
@@ -68,10 +68,8 @@ def save_recipe(request):
         quantities = request.POST.getlist("quantity[]")
         units = request.POST.getlist("unit[]")
 
-        # Get recipe category
         category = RecipeCategory.objects.get(id=category_id)
 
-        # Create recipe entry
         recipe = Recipe.objects.create(
             name=recipe_name,
             category=category,
@@ -80,7 +78,6 @@ def save_recipe(request):
             url_link=url_link
         )
 
-        # ✅ Loop through all submitted ingredients and save them
         for i in range(len(product_ids)):
             product = Product.objects.get(id=product_ids[i])
             quantity = Decimal(quantities[i])
@@ -103,13 +100,11 @@ def cook_recipe(request, recipe_id):
     user_inventory = InventoryProduct.objects.filter(user=request.user)
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
-    # Check if user has all required ingredients
     for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
         if product_quantity_map.get(ingredient.product.id, 0) < ingredient.quantity:
             messages.error(request, "Не разполагате с достатъчни продукти за тази рецепта.")
             return redirect("recipe_list")
 
-    # Deduct ingredients from inventory
     for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
         inventory_product = user_inventory.get(product=ingredient.product)
         inventory_product.quantity -= ingredient.quantity
@@ -127,10 +122,8 @@ def generate_recipe_shopping_list(request, recipe_id):
     user_inventory = InventoryProduct.objects.filter(user=request.user)
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
-    # ✅ Fetch ingredients correctly
     ingredients = RecipeIngredient.objects.filter(recipe=recipe)
 
-    # ✅ Identify missing ingredients
     missing_products = [
         ingredient.product.name
         for ingredient in ingredients  # ✅ Using explicit query
@@ -138,7 +131,6 @@ def generate_recipe_shopping_list(request, recipe_id):
     ]
 
     if missing_products:
-        # ✅ Create a new shopping list entry
         RecipeShoppingList.objects.create(user=request.user, recipe_name=recipe.name, items=missing_products)
         messages.success(request, f"Списъкът с липсващи продукти за {recipe.name} е успешно генериран!")
     else:

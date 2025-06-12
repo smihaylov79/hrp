@@ -22,7 +22,6 @@ def thread_detail(request, thread_id):
 
 @login_required
 def create_category(request):
-    """ Allow superusers to create categories """
     if not request.user.is_superuser:
         return redirect("forum_home")
 
@@ -39,7 +38,6 @@ def create_category(request):
 
 @login_required
 def category_threads(request, category_id):
-    """ Display threads in a specific category """
     category = get_object_or_404(Category, id=category_id)
     threads = Thread.objects.filter(category=category).order_by("-last_activity")
 
@@ -48,7 +46,6 @@ def category_threads(request, category_id):
 
 @login_required
 def create_thread(request, category_id):
-    """ Allow users to create a new thread in a category """
     category = get_object_or_404(Category, id=category_id)
 
     if request.method == "POST":
@@ -67,7 +64,6 @@ def create_thread(request, category_id):
 
 @login_required
 def thread_detail(request, thread_id):
-    """ Display posts within a thread & allow replies """
     thread = get_object_or_404(Thread, id=thread_id)
     posts = Post.objects.filter(thread=thread).order_by("created_at")
 
@@ -82,7 +78,6 @@ def thread_detail(request, thread_id):
     else:
         form = PostForm()
 
-    # Update thread views count
     thread.views += 1
     thread.save()
 
@@ -90,5 +85,4 @@ def thread_detail(request, thread_id):
 
 
 def get_categories(request):
-    """ Ensures categories are accessible in all forum pages """
     return {"categories": Category.objects.all()}

@@ -40,7 +40,6 @@ def calculate_optimal_upgrades(current_levels, current_loyalty, target_loyalty, 
 
     cob_df = pd.DataFrame(resources)
 
-    # ✅ Reset cost for already upgraded levels
     for cob, current_level in current_levels.items():
         cob_df.loc[:current_level - 1, cob] = 0  # ✅ Set cost to zero for past upgrades
 
@@ -78,13 +77,11 @@ def calculate_optimal_upgrades(current_levels, current_loyalty, target_loyalty, 
 
 def game_calculator(request):
     if request.method == "POST":
-        # ✅ Get user input from the form
         current_levels = {key: int(request.POST.get(key, 1)) for key in ["AC1", "AC2", "AC3", "AC4"]}
         current_loyalty = int(request.POST.get("current_loyalty", 0))
         target_loyalty = int(request.POST.get("target_loyalty", 0))
         available_resources = int(request.POST.get("available_resources", 0))
 
-        # ✅ Call upgrade function and get needed materials
         upgrade_result = calculate_optimal_upgrades(current_levels, current_loyalty, target_loyalty,
                                                     available_resources)
 

@@ -94,8 +94,15 @@ def ticker_details(request, ticker):
     r = requests.get(url)
     data = r.json()
 
-    data["MarketCapitalization"] = format_market_cap(data["MarketCapitalization"])
-    data["EBITDA"] = format_market_cap(data["EBITDA"])
+    try:
+        data["MarketCapitalization"] = format_market_cap(data["MarketCapitalization"])
+    except:
+        data["MarketCapitalization"] = 'N/A'
+
+    try:
+        data["EBITDA"] = format_market_cap(data["EBITDA"])
+    except:
+        data["EBITDA"] = 'N/A'
 
 
     stock_info = {

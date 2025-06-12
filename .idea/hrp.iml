@@ -20,6 +20,7 @@
         <option value="$MODULE_DIR$/entertainment/templates" />
         <option value="$MODULE_DIR$/finance/templates" />
         <option value="$MODULE_DIR$/forum/templates" />
+        <option value="$MODULE_DIR$/weather/templates" />
       </list>
     </option>
   </component>

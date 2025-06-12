@@ -70,16 +70,35 @@ button:hover {
 
         /* Navbar Styling */
         .navbar {
-            background: linear-gradient(to right, #333, #555);
-            padding: 15px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  background-color: #f0f0f0; /* optional styling */
+  padding: 10px;
+}
+
+.navbar-left {
+  max-width: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.navbar-right {
+    flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+    justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+
 
         .navbar a {
-            color: white;
+            color: #000000;
             text-decoration: none;
             margin: 10px 15px;
             font-size: 14px;
@@ -106,19 +125,9 @@ button:hover {
             box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.2);
         }
 
-        /* Datetime Box */
-        .datetime-box {
-            padding: 10px 15px;
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            color: white;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 8px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-        }
         .greeting-box {
     color: #ffd700; /* Gold color */
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     background: linear-gradient(to right, #5f6cff, #feb47b); /* Warm gradient */
     padding: 8px 12px;
@@ -128,7 +137,8 @@ button:hover {
     display: flex;
     justify-content: flex-start; /* Centers horizontally */
     align-items: center; /* Ensures proper vertical alignment */
-    width: 100%; /* Expands to the width of the navbar */
+    width: 80%; /* Expands to the width of the navbar */
+    height: 8px;
     text-align: left;
             gap: 10px;
 }
@@ -926,4 +936,88 @@ a.button-link:hover {
     font-size: 0.9rem;
     line-height: 1.5;
     color: #444;
+}
+
+
+.weather-widget {
+    margin-top: 8px;
+    padding: 8px;
+    background: #eef;
+    border-radius: 6px;
+}
+
+.forecast-cards {
+    display: flex;
+    gap: 2px;              /* reduced from 8px */
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+
+.forecast-cards a {
+    display: block;
+    flex: 0 0 auto;        /* don't grow or shrink */
+    width: 50px;           /* slightly narrower */
+    padding: 0;
+    margin: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.forecast-card {
+    background: #fff;
+    padding: 2px;
+    font-size: 0.55rem;
+    width: 80%;           /* fill anchor exactly */
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    text-align: center;
+}
+
+
+.forecast-card img {
+    width: 24px;
+    height: auto;
+}
+
+
+.weather-widget,
+.forecast-card {
+    color: #222;
+}
+
+.current-weather {
+    font-size: 0.75rem;
+    padding: 5px 8px;
+    background: #eef;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.current-weather img {
+    width: 30px;
+    height: auto;
+}
+
+.forecast-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.summary-card {
+  background: #fff;
+  color: #333;
+  font-size: 0.8rem;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  min-width: 80px;
+  flex: 1 1 auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }

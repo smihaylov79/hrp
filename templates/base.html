@@ -12,41 +12,72 @@
 
     <div class="navbar">
 
-        {% if user.is_authenticated %}
-        <div class="greeting-box">
-            <a href="{% url 'profile' %}" style="text-decoration: none; color: inherit;">
-                Здравей, {{ user.first_name }}!
-            </a>
-            <div id="current-time" class="datetime-box">
-                {{ now|date:"d-m-Y H:i" }}
-            </div>
-        </div>
-    {% endif %}
-        <a href="/">Начало</a>
-        <a href="/shopping/">Пазаруване</a>
-        {% if request.resolver_match.view_name == "shopping" %}
-            {% if user.is_authenticated %}
-                <a href="{% url 'basket' %}">Basket ({{ basket_item_count }})</a>
-            {% endif %}
-        {% endif %}
-        <a href="/inventory/">Наличности</a>
-        <a href="/cooking/">Сготви</a>
-        <a href="/finance/">Пари</a>
-        <a href="/entertainment/">Забавление</a>
-        <a href="/forum/">Форум</a>
-
-        {% if user.is_authenticated %}
-            <a href="{% url 'logout' %}">Изход</a>
-        {% else %}
-            <a href="{% url 'login' %}">Вход</a>
-            <a href="{% url 'register' %}">Регистрация</a>
-        {% endif %}
+       <div class="navbar-left">
+    {% if user.is_authenticated %}
+    <div class="greeting-box">
+      <a href="{% url 'profile' %}" style="text-decoration: none; color: inherit;">
+        Здравей, {{ user.first_name }}!
+      </a>
     </div>
+
+            {% if weather_data %}
+<div class="weather-widget">
+    <div class="current-weather">
+        <small style="font-size: 0.65rem;">{{ now|date:"d M, H:i" }}</small>
+        {{ weather_data.location.name }}: {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
+        <img src="{{ weather_data.current.condition.icon }}" alt="Weather icon">
+    </div>
+    <div class="forecast-cards">
+        {% for day in weather_data.forecast.forecastday|slice:":3" %}
+            <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}" style="text-decoration: none; color: inherit;">
+            <div class="forecast-card">
+                <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
+                min {{ day.day.mintemp_c }}°C <br>
+                max {{ day.day.maxtemp_c }}°C<br>
+                {{ day.day.condition.text }}
+                <img src="{{ day.day.condition.icon }}" alt="Icon">
+            🌧️{{ day.day.daily_chance_of_rain }}
+            </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+       {% endif %}
+
+        </div>
+
+        <div class="navbar-right">
+    <a href="/">Начало</a>
+    <a href="/shopping/">Пазаруване</a>
+
+    <a href="/inventory/">Наличности</a>
+    <a href="/cooking/">Сготви</a>
+    <a href="/finance/">Пари</a>
+    <a href="/entertainment/">Забавление</a>
+    <a href="/forum/">Форум</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'logout' %}">Изход</a>
+        {% if request.resolver_match.view_name == "shopping" and user.is_authenticated %}
+      <a href="{% url 'basket' %}">Basket ({{ basket_item_count }})</a>
+    {% endif %}
+    {% else %}
+      <a href="{% url 'login' %}">Вход</a>
+      <a href="{% url 'register' %}">Регистрация</a>
+    {% endif %}
+  </div>
+</div>
 
     <div class="container">
         {% block content %}
 
         {% endblock %}
     </div>
+<script>
+navigator.geolocation.getCurrentPosition(function(position) {
+    fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
+});
+</script>
+
 </body>
 </html>

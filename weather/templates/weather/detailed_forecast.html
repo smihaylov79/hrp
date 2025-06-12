@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+    <h2>Прогноза за {{ location.name }} {{ formated_day.date|date:'d M Y' }}</h2>
+    <div class="forecast-summary-cards">
+        <div class="summary-card">t° max: {{ forecast_day.day.maxtemp_c }}°C</div>
+        <div class="summary-card">t° min: {{ forecast_day.day.mintemp_c }}°C</div>
+        <div class="summary-card">Вятър: {{ forecast_day.day.maxwind_kph }} км/ч</div>
+        <div class="summary-card">Влажност: {{ forecast_day.day.avghumidity }}%</div>
+        <div class="summary-card">UV: {{ forecast_day.day.uv }}</div>
+        <div class="summary-card">Изгрев: {{ forecast_day.astro.sunrise }}</div>
+        <div class="summary-card">Залез: {{ forecast_day.astro.sunset }}</div>
+        <div class="summary-card">Изгрев Луна: {{ forecast_day.astro.moonrise }}</div>
+        <div class="summary-card">Залез Луна: {{ forecast_day.astro.moonset }}</div>
+
+    </div>
+
+    <canvas id="hourlyTempChart" width="100%" height="60"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('hourlyTempChart').getContext('2d');
+        const tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [
+                    {% for hour in forecast_day.hour %}
+                        "{{ hour.time|slice:'11:' }}"{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: "Темп. по часове (°C)",
+                    data: [
+                        {% for hour in forecast_day.hour %}
+                            {{ hour.temp_c }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    borderColor: 'rgba(75,192,192,1)',
+                    backgroundColor: 'rgba(75,192,192,0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 2
+                }]
+            },
+            options: {
+                scales: {
+                    x: {ticks: {autoSkip: true, maxTicksLimit: 12}},
+                    y: {beginAtZero: false}
+                }
+            }
+        });
+    </script>
+
+
+
+{% endblock %}

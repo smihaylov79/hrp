@@ -13,8 +13,8 @@ def register(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Auto-login after registration
-            return redirect('home')  # Redirect to homepage
+            login(request, user)
+            return redirect('home')
     else:
         form = RegistrationForm()
 
@@ -32,7 +32,7 @@ def custom_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')  # Redirect to home page after login
+            return redirect('home')
     else:
         form = AuthenticationForm()
 
@@ -46,18 +46,18 @@ def profile_view(request):
     password_form = PasswordChangeForm(user)
 
     if request.method == "POST":
-        if "update_profile" in request.POST:  # Profile update form submission
+        if "update_profile" in request.POST:
             profile_form = ProfileUpdateForm(request.POST, instance=user)
             if profile_form.is_valid():
                 profile_form.save()
-                return redirect("profile")  # Redirect after profile update
+                return redirect("profile")
 
-        elif "change_password" in request.POST:  # Password change form submission
+        elif "change_password" in request.POST:
             password_form = PasswordChangeForm(user, request.POST)
             if password_form.is_valid():
                 user = password_form.save()
-                update_session_auth_hash(request, user)  # Keep user logged in
-                return redirect("profile")  # Redirect after password change
+                update_session_auth_hash(request, user)
+                return redirect("profile")
 
     return render(request, "users/profile.html", {
         "profile_form": profile_form,
