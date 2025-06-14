@@ -12,7 +12,7 @@ from inventory.models import InventoryProduct, UserProductCategory
 def shopping_list(request):
     shoppings = Shopping.objects.filter(user=request.user).order_by("-date")
 
-    paginator = Paginator(shoppings, 10)  # Show 10 per page
+    paginator = Paginator(shoppings, 10)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -24,8 +24,6 @@ def shopping_list(request):
 def edit_shopping(request, shopping_id):
     shopping = get_object_or_404(Shopping, id=shopping_id, user=request.user)
     shops = Shop.objects.all()
-
-    print(shopping.shop.name)
 
     if request.method == "POST":
         if "delete_product" in request.POST:
@@ -171,49 +169,6 @@ def make_shopping(request):
 
     return render(request, "shopping/make_shopping.html", context)
 
-# @login_required
-# def save_shopping(request):
-#     if request.method == "POST":
-#         shop_id = request.POST["shop_id"]
-#         date = request.POST["date"]
-#         product_ids = request.POST.getlist("product_id[]")
-#         quantities = request.POST.getlist("quantity[]")
-#         prices = request.POST.getlist("price[]")
-#         discounts = request.POST.getlist("discount[]")
-#
-#         shop = Shop.objects.get(id=shop_id)
-#
-#         shopping = Shopping.objects.create(user=request.user, date=date, shop=shop)
-#
-#         for i in range(len(product_ids)):
-#             product = Product.objects.get(id=product_ids[i])
-#             quantity = Decimal(quantities[i])
-#             price = Decimal(prices[i])
-#             discount = Decimal(discounts[i] if discounts[i] else 0)
-#             amount = quantity * price - discount
-#
-#             ShoppingProduct.objects.create(
-#                 shopping=shopping, product=product, quantity=quantity, price=price,
-#                 discount=discount, amount=amount
-#             )
-#             user_category, created = UserProductCategory.objects.get_or_create(user=request.user, product_category=product.category,
-#                                                                                defaults={'direct_planning': False, 'daily_consumption': 0.000,
-#                                                                                'minimum_quantity':0.000}
-#             )
-#
-#             inventory_product, created = InventoryProduct.objects.get_or_create(
-#                 user=request.user, product=product, category=product.category,
-#                 defaults={"quantity": 0, "amount": 0}
-#             )
-#             inventory_product.quantity += quantity
-#             inventory_product.amount += amount
-#             inventory_product.calculate_average_price()
-#             inventory_product.save()
-#
-#         return redirect("shopping")
-#
-#     return redirect("create_shopping")
-
 
 @login_required
 def save_shopping(request):
@@ -221,8 +176,6 @@ def save_shopping(request):
         shop_id = request.POST["shop_id"]
         date = request.POST["date"]
         selected_products = json.loads(request.POST["selected_products"])
-
-        print("Updated shopping data:", selected_products)
 
         shop = Shop.objects.get(id=shop_id)
         shopping = Shopping.objects.create(user=request.user, date=date, shop=shop)

@@ -1021,3 +1021,75 @@ a.button-link:hover {
   flex: 1 1 auto;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
+
+.products-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0px; /* No extra spacing between cards */
+    justify-content: flex-start; /* Aligns everything tightly */
+}
+        .product-card {
+            margin: 0;
+            border: 1px solid #ccc;
+            padding: 2px;
+            width: 170px;
+            text-align: center;
+            box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+            align-items: flex-end;
+        }
+
+.category-filters {
+    border: 1px solid #ccc;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px; /* Reduces spacing between buttons */
+    justify-content: center; /* Keeps them aligned */
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+}
+
+.category-filters button {
+    padding: 5px 10px; /* Reduces button size */
+    font-size: 14px; /* Smaller text */
+    border: 1px solid #ccc; /* Light border */
+    background-color: #f8f8f8;
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+}
+
+.category-filters button:hover {
+    background-color: #ddd;
+}
+
+
+.modal {
+    display: none;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.modal-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.view-shopping-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.view-shopping-btn:hover {
+    background-color: #0056b3;
+}
