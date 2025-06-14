@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 
 from cooking.models import *
 from inventory.models import InventoryProduct
-from shopping.models import RecipeShoppingList
+from shopping.models import RecipeShoppingList, ProductCategory
 
 
 # Create your views here.
@@ -48,10 +48,12 @@ def recipe_list(request):
 def create_recipe(request):
     products = Product.objects.all()
     categories = RecipeCategory.objects.all()
+    product_categories = ProductCategory.objects.all()
 
     return render(request, "cooking/create_recipe.html", {
         "products": products,
-        "categories": categories
+        "categories": categories,
+        'product_categories': product_categories,
     })
 
 

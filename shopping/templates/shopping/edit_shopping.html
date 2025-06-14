@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Редактиране на покупка</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="date">Дата на покупка:</label>
+        <input type="date" name="date" value="{{ shopping.date|date:'Y-m-d' }}" required>
+
+        <label for="shop">Избери магазин:</label>
+        <select name="shop_id">
+            {% for shop in shops %}
+                <option value="{{ shop.id }}" {% if shop.id == shopping.shop.id %}selected{% endif %}>{{ shop.name }}</option>
+            {% endfor %}
+        </select>
+<h3>Продукти в покупката</h3>
+<table>
+    <tr>
+        <th>Продукт</th>
+        <th>Количество</th>
+        <th>Цена</th>
+        <th>Отстъпка</th>
+    </tr>
+    {% for item in shopping.shopping_products.all %}
+    <tr>
+        <td>{{ item.product.name }}</td>
+        <td><input type="number" step="0.001" name="quantity_{{ item.id }}" value="{{ item.quantity }}" required></td>
+        <td><input type="number" step="0.01" name="price_{{ item.id }}" value="{{ item.price }}" required></td>
+        <td><input type="number" step="0.01" name="discount_{{ item.id }}" value="{{ item.discount }}" required></td>
+    <td>
+            <button type="submit" name="delete_product" value="{{ item.id }}">❌ Премахни</button>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+        <button type="submit">Запази промените</button>
+        <a href="{% url 'shopping' %}" class="cancel-btn">Отказ</a>
+    </form>
+{% endblock %}

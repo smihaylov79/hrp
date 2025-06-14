@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <a href="{% url 'shopping' %}" class="view-shopping-btn">Виж всички покупки</a>
+
+    <h2>Създай нова покупка</h2>
+    
+<form id="shopping-form" action="{% url 'save_shopping' %}" method="POST">
+    {% csrf_token %}
+
+    <!-- Shop & Date Selection -->
+    <label for="shop">Избери магазин:</label>
+    <select name="shop_id">
+        {% for shop in shops %}
+            <option value="{{ shop.id }}">{{ shop.name }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="date">Дата на покупка:</label>
+    <input type="date" name="date" required>
+
+<h4>Категории</h4>
+    Не намираш твоя продукт: <button id="open-product-modal">Добави нов продукт</button>
+<div class="category-filters">
+
+
+    <button onclick="filterProducts('all')">Всички</button>
+    {% for category in categories %}
+        <button onclick="filterProducts('{{ category.id }}')">{{ category.name }}</button>
+    {% endfor %}
+
+</div>
+
+    <div class="products-container">
+        {% for product in products %}
+            <div class="product-card">
+                <h3>{{ product.name }}</h3>
+                <a>Количество:<input type="number" step="0.001" class="quantity" data-product-id="{{ product.id }}"></a>
+                <a>Цена:<input type="number" step="0.01" class="price" data-product-id="{{ product.id }}"></a>
+                <a>Отстъпка:<input type="number" step="0.01" class="discount" data-product-id="{{ product.id }}" value="0.00"></a>
+                <button type="button" class="add-to-shopping" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}">
+                    Добави
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+<div class="pagination">
+    {% if products.has_previous %}
+        <a href="?page={{ products.previous_page_number }}">⬅️ Предишна</a>
+    {% endif %}
+
+    <span>Страница {{ products.number }} от {{ products.paginator.num_pages }}</span>
+
+    {% if products.has_next %}
+        <a href="?page={{ products.next_page_number }}">Следваща ➡️</a>
+    {% endif %}
+</div>
+
+    <h3>Преглед на покупката</h3>
+    <div id="basket-container"></div>
+    <p id="total-amount">Общо: 0.00 лв</p>
+
+    <input type="hidden" id="selected-products" name="selected_products">
+    <button type="button" id="submit-shopping">Запази покупката</button>
+</form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let shoppingBasket = JSON.parse(localStorage.getItem("shoppingBasket")) || [];
+
+    function updateBasketOverview() {
+        let basketContainer = document.getElementById("basket-container");
+        basketContainer.innerHTML = "";
+        let totalAmount = 0;
+        let count = 0;
+
+        shoppingBasket.forEach((item, index) => {
+            let amount = item.quantity * item.price - item.discount;
+            totalAmount += parseFloat(amount);
+            count += 1;
+
+            let itemElement = document.createElement("div");
+            itemElement.classList.add("basket-item");
+            itemElement.innerHTML = `
+                <strong>${item.name}</strong>
+                Количество: <input type="number" step="0.001" value="${item.quantity}">
+                Цена: <input type="number" step="0.01" value="${item.price}">
+                Отстъпка: <input type="number" step="0.01" value="${item.discount}">
+                <span>Сума: ${amount.toFixed(2)} лв</span>
+                <button type="button">❌</button>
+            `;
+
+            let inputs = itemElement.querySelectorAll("input");
+            inputs.forEach((input, inputIndex) => {
+                input.addEventListener("change", function () {
+                    let fields = ["quantity", "price", "discount"];
+                    updateItem(index, this.value, fields[inputIndex]);
+                });
+            });
+
+            itemElement.querySelector("button").addEventListener("click", function () {
+                removeItem(index);
+            });
+
+            basketContainer.appendChild(itemElement);
+        });
+
+        document.getElementById("total-amount").textContent = `Общо: ${totalAmount.toFixed(2)} лв (Продукти: ${count})`;
+        localStorage.setItem("shoppingBasket", JSON.stringify(shoppingBasket)); // Save updated basket
+        console.log("Updated localStorage:", localStorage.getItem("shoppingBasket")); // Debugging step
+    }
+
+    function updateItem(index, value, field) {
+        shoppingBasket[index][field] = parseFloat(value); // Ensure numeric values
+        localStorage.setItem("shoppingBasket", JSON.stringify(shoppingBasket)); // Persist changes
+        updateBasketOverview();
+        console.log("Basket updated:", shoppingBasket); // Debugging step
+    }
+
+    function removeItem(index) {
+        shoppingBasket.splice(index, 1);
+        updateBasketOverview();
+    }
+
+    document.querySelectorAll(".add-to-shopping").forEach(button => {
+        button.addEventListener("click", function () {
+            let productId = this.getAttribute("data-product-id");
+            let productName = this.getAttribute("data-product-name");
+            let quantity = document.querySelector(`.quantity[data-product-id='${productId}']`).value;
+            let price = document.querySelector(`.price[data-product-id='${productId}']`).value;
+            let discount = document.querySelector(`.discount[data-product-id='${productId}']`).value;
+
+            if (quantity > 0 && price > 0) {
+                shoppingBasket.push({
+                    product_id: productId,
+                    name: productName,
+                    quantity: parseFloat(quantity),
+                    price: parseFloat(price),
+                    discount: parseFloat(discount)
+                });
+
+                updateBasketOverview();
+            } else {
+                alert("Моля, въведете валидни стойности за продукта.");
+            }
+        });
+    });
+
+    document.getElementById("submit-shopping").addEventListener("click", function () {
+        let selectedProductsField = document.getElementById("selected-products");
+
+        if (!selectedProductsField) {
+            console.error("Hidden input 'selected-products' not found!");
+            return;
+        }
+
+        if (shoppingBasket.length === 0) {
+            alert("Моля, добавете продукти преди да запазите покупката.");
+            return;
+        }
+
+        selectedProductsField.value = JSON.stringify(shoppingBasket);
+        console.log("Submitting updated shopping data:", selectedProductsField.value);  // Debugging step
+
+        document.getElementById("shopping-form").submit();
+        localStorage.removeItem("shoppingBasket");  // Clears basket after saving
+    });
+
+    updateBasketOverview(); // Load basket when page reloads
+});
+
+
+</script>
+
+    <script>
+    function filterProducts(categoryId) {
+    let url = new URL(window.location.href);
+
+    if (categoryId === 'all') {
+        url.searchParams.delete('category'); // Show all products
+    } else {
+        url.searchParams.set('category', categoryId);
+    }
+
+    window.location.href = url.toString();
+}
+    </script>
+
+
+
+<div id="product-modal" class="modal">
+    <div class="modal-content">
+        <h3>Добави нов продукт</h3>
+        <form id="new-product-form">
+            {% csrf_token %}
+            <label for="category">Категория:</label>
+            <select name="category_id">
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="new-product-name">Име на продукта:</label>
+            <input type="text" name="new_product_name" required>
+
+            <label for="new-calories">Калории:</label>
+            <input type="number" step="1" name="new_calories" required>
+
+            <button type="button" id="save-product-btn">Запази продукта</button>
+            <button type="button" id="close-modal-btn">Затвори</button>
+        </form>
+    </div>
+</div>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("product-modal");
+    const openModalBtn = document.getElementById("open-product-modal");
+    const closeModalBtn = document.getElementById("close-modal-btn");
+
+    openModalBtn.addEventListener("click", function () {
+        modal.style.display = "block";
+    });
+
+    closeModalBtn.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+
+    document.getElementById("save-product-btn").addEventListener("click", async function () {
+    let form = document.querySelector("#new-product-form"); // Correctly selects the form
+    let formData = new FormData(form);
+
+    if (!form) {
+        console.error("Form not found!");
+        return;
+    }
+
+    try {
+        let response = await fetch("{% url 'add_product' %}", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+                "Accept": "application/json"
+            }
+        });
+
+        let result = await response.json();
+        if (response.ok) {
+            alert("Продуктът е добавен успешно!");
+            document.getElementById("product-modal").style.display = "none";
+            location.reload();
+        } else {
+            alert("Грешка: " + (result.error || "Проблем със сървъра."));
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Проблем със сървъра.");
+    }
+});
+
+});
+
+</script>
+
+{% endblock %}

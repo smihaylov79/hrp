@@ -27,20 +27,22 @@
     <label for="url_link">URL Link (optional):</label>
     <input type="url" name="url_link" class="form-control" style="width: 80%;">
 
-    <h3>Ingredients</h3>
+    <h3>Съставки</h3>
     <table id="ingredientTable">
         <thead>
             <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Unit</th>
-                <th>Remove</th>
+                <th>Продукт</th>
+                <th>Количество</th>
+                <th>Мярка</th>
+                <th>Премахни</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>
-                    <select name="product_id[]" class="form-control">
+                    <select name="product_id[]" class="form-control" onchange="checkNewProduct(this)">
+                    <option value="" disabled selected>Избери продукт</option>
+                        <option value="new">➕ Добави нов продукт</option>
                         {% for product in products %}
                             <option value="{{ product.id }}">{{ product.name }}</option>
                         {% endfor %}
@@ -53,8 +55,8 @@
         </tbody>
     </table>
 
-    <button type="button" id="addRow" class="btn btn-primary">➕ Add Ingredient</button>
-    <button type="submit" class="btn btn-success">Save Recipe</button>
+    <button type="button" id="addRow" class="btn btn-primary">➕ Добави съставка</button>
+    <button type="submit" class="btn btn-success">Запази рецепта</button>
 </form>
 
 <script>
@@ -75,6 +77,67 @@ document.querySelectorAll(".removeRow").forEach(button => {
         this.closest("tr").remove();
     });
 });
+</script>
+    <div id="product-modal" class="modal">
+    <div class="modal-content">
+        <h3>Добави нов продукт</h3>
+        <form id="new-product-form">
+        {% csrf_token %}
+            <label for="category">Категория:</label>
+            <select name="category_id">
+                {% for category in product_categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="new-product-name">Име на продукта:</label>
+            <input type="text" name="new_product_name" required>
+
+            <label for="new-calories">Калории:</label>
+            <input type="number" step="1" name="new_calories" required>
+
+            <button type="button" onclick="saveNewProduct()">Запази продукта</button>
+            <button type="button" onclick="closeModal()">Затвори</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function checkNewProduct(selectElement) {
+    if (selectElement.value === "new") {
+        document.getElementById("product-modal").style.display = "block";
+    }
+}
+
+function closeModal() {
+    document.getElementById("product-modal").style.display = "none";
+}
+
+async function saveNewProduct() {
+    let formData = new FormData(document.getElementById("new-product-form"));
+
+    let response = await fetch("{% url 'add_product' %}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            "Accept": "application/json"
+        }
+    });
+
+    if (response.ok) {
+        let newProduct = await response.json();
+
+        // Add new product to all dropdowns
+        document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
+            dropdown.innerHTML += `<option value="${newProduct.id}" selected>${newProduct.name}</option>`;
+        });
+
+        closeModal();
+    } else {
+        alert("Грешка при добавянето на продукта.");
+    }
+}
 </script>
 
 

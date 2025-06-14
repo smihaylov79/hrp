@@ -49,7 +49,7 @@
 
         <div class="navbar-right">
     <a href="/">Начало</a>
-    <a href="/shopping/">Пазаруване</a>
+    <a href="/shopping/make_shopping/">Пазаруване</a>
 
     <a href="/inventory/">Наличности</a>
     <a href="/cooking/">Сготви</a>
@@ -77,6 +77,19 @@
 navigator.geolocation.getCurrentPosition(function(position) {
     fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
 });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let scrollPosition = localStorage.getItem("scrollPosition");
+        if (scrollPosition) {
+            window.scrollTo(0, scrollPosition);
+            localStorage.removeItem("scrollPosition"); // Clear after restoring
+        }
+
+        window.addEventListener("beforeunload", function () {
+            localStorage.setItem("scrollPosition", window.scrollY);
+        });
+    });
 </script>
 
 </body>
