@@ -79,13 +79,6 @@ button:hover {
   padding: 10px;
 }
 
-.navbar-left {
-  max-width: 50%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-}
 
 .navbar-right {
     flex: 1;

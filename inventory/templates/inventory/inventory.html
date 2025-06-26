@@ -2,10 +2,14 @@
 
 
 {% block content %}
+
+    <a href="{% url 'user_category_settings' %}" class="button-link">Управление на категории</a>
+
     <a href="{% url 'inventory_reports' %}" class="button-link">Справки</a>
     <a href="{% url 'generate_shopping_list' %}" class="button-link">Генерирай списък</a>
     <a href="{% url 'all_shopping_lists' %}" class="button-link">Преглед на списъци</a>
     <form method="GET" action="{% url 'inventory' %}">
+    <p></p>
     <label for="category">Филтрирай категория:</label>
     <select name="category">
         <option value="">Всички категории</option>
@@ -23,6 +27,7 @@
     <h2>Твоите продукти</h2>
 
     <form id="inventory-form" method="POST" action="{% url 'update_inventory' %}">
+    <button type="submit">Запази промени</button>
         {% csrf_token %}
         <table>
             <tr>
@@ -58,8 +63,6 @@
             </tr>
             {% endfor %}
         </table>
-        <button type="submit">Запази</button>
-        <a href="{% url 'user_category_settings' %}" class="button-link">Управление на категории</a>
 
     </form>
 {% endblock %}

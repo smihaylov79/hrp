@@ -201,6 +201,9 @@ def save_shopping(request):
             inventory_product.calculate_average_price()
             inventory_product.save()
 
+            user_product_category, created = UserProductCategory.objects.get_or_create(user=request.user, product_category=product.category)
+            user_product_category.save()
+
         return redirect("make_shopping")
 
     return redirect("make_shopping")
