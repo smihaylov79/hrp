@@ -86,34 +86,44 @@
     <!-- Total Spending -->
     <h3>Общо разходи: {{ total_spent|default:"0.00" }} лв.</h3>
 
-    <!-- Pie Chart for Spending by Category with plotly-->
-{#    <div id="categoryReport">#}
-{#        {{ plot_maincategory|safe }}#}
-{#        {{ plot_subcategory|safe }}#}
-{#    </div>#}
+
 
     <!-- Pie Chart for Spending by Category with highcharts-->
     <script src="https://code.highcharts.com/highcharts.js"></script>
 
+    {% if main_category_filter == "" %}
+
 <div id="main-category-chart"></div>
+
+    {% endif %}
+
 <div id="subcategory-chart"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        Highcharts.chart('main-category-chart', {
-            chart: { type: 'pie' },
-            title: { text: 'Spending by Main Categories' },
-            series: [{
-                name: 'Amount Spent',
-                data: {{ main_chart_data|safe }}
-            }]
-        });
+        const mainChartContainer = document.getElementById('main-category-chart');
+        if (mainChartContainer) {
+            Highcharts.chart('main-category-chart', {
+                chart: {type: 'pie'},
+                title: {text: 'Разход по категория'},
+                series: [{
+                    name: 'Разход',
+                    data: {{ main_chart_data|safe }}
+                }]
+            });
+        }
 
         Highcharts.chart('subcategory-chart', {
             chart: { type: 'pie' },
-            title: { text: 'Spending by Subcategories' },
+            title: {
+                text: {% if main_category_name == "" %}
+                                'Разход по подкатегория'
+                            {% else %}
+                                'Разход за {{ main_category_name }}'
+                            {% endif %}
+            },
             series: [{
-                name: 'Amount Spent',
+                name: 'Разход',
                 data: {{ sub_chart_data|safe }}
             }]
         });

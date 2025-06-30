@@ -78,9 +78,11 @@ def inventory_reports(request):
 
     main_categories = MainCategory.objects.all()
 
+    main_category_name = ""
+
     user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=request.user).values("shop")).distinct()
 
-    main_category_filter = request.GET.get("main_category")
+    main_category_filter = request.GET.get("main_category", "")
     category_filter = request.GET.get("category")
     date_filter = request.GET.get("date")
     shop_filter = request.GET.get("shop")
@@ -91,6 +93,8 @@ def inventory_reports(request):
 
     if main_category_filter and main_category_filter.strip():
         shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
+        main_category = main_categories.filter(id=main_category_filter).first()
+        main_category_name = main_category.name
 
     if category_filter and category_filter.strip():
         shopping_data = shopping_data.filter(product__category_id=category_filter)
@@ -145,7 +149,8 @@ def inventory_reports(request):
         "date_filter": date_filter,
         "shop_filter": shop_filter,
         "main_categories": main_categories,
-        "main_category_filter": main_category_filter
+        "main_category_filter": main_category_filter,
+        "main_category_name": main_category_name,
     }
 
     return render(request, "inventory/reports.html", context)
@@ -215,7 +220,7 @@ def generate_shopping_list(request):
         category_items = inventory_items.filter(category=category.product_category)
         for product in category_items:
             total_consumption = product.daily_consumption * days_since_last
-            if product.quantity - total_consumption < product.minimum_quantity:
+            if product.quantity - total_consumption < product.minimum_quantity and product.minimum_quantity > 0:
                 shopping_list.items.append(product.product.name)
 
             if product.quantity <= total_consumption:
