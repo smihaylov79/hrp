@@ -6,8 +6,7 @@ from .forms import *
 # Create your views here.
 
 
-
-@login_required
+@login_required(login_url='/users/please-login/')
 def forum_home(request):
     categories = Category.objects.all()
     return render(request, "forum/forum_home.html", {"categories": categories})

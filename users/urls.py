@@ -7,4 +7,5 @@ urlpatterns = [
     path('logout/', custom_logout, name='logout'),
     path('register/', register, name='register'),
     path('profile/', profile_view, name='profile'),
+    path('please-login/', PleaseLoginView.as_view(), name='please_login'),
 ]

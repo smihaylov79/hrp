@@ -130,8 +130,8 @@ button:hover {
     display: flex;
     justify-content: flex-start; /* Centers horizontally */
     align-items: center; /* Ensures proper vertical alignment */
-    width: 80%; /* Expands to the width of the navbar */
-    height: 8px;
+    width: 100%; /* Expands to the width of the navbar */
+    height: 12px;
     text-align: left;
             gap: 10px;
 }
@@ -1085,4 +1085,33 @@ a.button-link:hover {
 }
 .view-shopping-btn:hover {
     background-color: #0056b3;
+}
+
+.table-wrapper {
+    position: relative;
+    height: 600px; /* adjust height as needed */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    margin-top: 10px;
+}
+
+.table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.table-wrapper th,
+.table-wrapper td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.table-wrapper thead th {
+    position: sticky;
+    top: 0;
+    background-color: #237511;
+    color: white;
+    z-index: 10;
 }

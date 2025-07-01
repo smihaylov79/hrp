@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2>🛍️ Recipe Shopping List: {{ recipe_list.recipe_name }}</h2>
+    <h2>🛍️ Лист за пазаруване за рецепта: {{ recipe_list.recipe_name }}</h2>
     
     <ul>
         {% for item in recipe_list.items %}
@@ -8,5 +8,5 @@
         {% endfor %}
     </ul>
 
-    <a href="{% url 'all_shopping_lists' %}" class="back-button">🔙 Back to Shopping Lists</a>
+    <a href="{% url 'all_shopping_lists' %}" class="back-button">🔙 Обратно към всички списъци</a>
 {% endblock %}

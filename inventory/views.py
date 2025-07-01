@@ -18,7 +18,7 @@ from .models import *
 @login_required
 def inventory_list(request):
     user_categories = UserProductCategory.objects.filter(user=request.user)
-    inventory_items = InventoryProduct.objects.filter(user=request.user)
+    inventory_items = InventoryProduct.objects.filter(user=request.user).order_by('product__name')
 
     category_filter = request.GET.get("category")
     search_query = request.GET.get("search")

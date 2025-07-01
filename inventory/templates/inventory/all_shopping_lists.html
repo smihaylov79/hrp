@@ -2,10 +2,10 @@
 {% load static %}
 
 {% block content %}
-    <h2>🛍️ All Shopping Lists</h2>
+    <h2>🛍️ Списъци за пазаруване</h2>
 
     <!-- ✅ Filter Button -->
-    <button onclick="toggleFilter()" class="filter-button">🚫 Show Unsent Only</button>
+    <button onclick="toggleFilter()" class="filter-button">🚫 Покажи неизпратени</button>
 
     <table class="shopping-table">
         <thead>
@@ -21,15 +21,15 @@
                     <td>{{ shopping_list.date_generated }}</td>
                     <td>
                         {% if shopping_list.sent %}
-                            ✅ Sent
+                            ✅ Изпратен
                         {% else %}
-                            ❌ Not Sent
+                            ❌ Неизпратен
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="view-list-button">🔍 View</a>
+                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="view-list-button">🔍 Преглед</a>
                         {% if not shopping_list.sent %}
-                            <a href="{% url 'send_shopping_list' shopping_list.id %}" class="send-list-button">📧 Send</a>
+                            <a href="{% url 'send_shopping_list' shopping_list.id %}" class="send-list-button">📧 Изпрати</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -40,15 +40,15 @@
                     <td>{{ recipe_list.recipe_name }}</td>
                     <td>
                         {% if recipe_list.sent %}
-                            ✅ Sent
+                            ✅ Изпратен
                         {% else %}
-                            ❌ Not Sent
+                            ❌ Неизпратен
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="view-list-button">🔍 View</a>
+                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="view-list-button">🔍 Преглед</a>
                         {% if not recipe_list.sent %}
-                            <a href="{% url 'send_recipe_shopping_list' recipe_list.id %}" class="send-list-button">📧 Send</a>
+                            <a href="{% url 'send_recipe_shopping_list' recipe_list.id %}" class="send-list-button">📧 Изпрати</a>
                         {% endif %}
                     </td>
                 </tr>

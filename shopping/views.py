@@ -1,6 +1,7 @@
 from decimal import Decimal
 import json
 from django.core.paginator import Paginator
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Sum, Count, Case, When, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -48,80 +49,80 @@ def edit_shopping(request, shopping_id):
     return render(request, "shopping/edit_shopping.html", context)
 
 
-
-@login_required
-def add_to_basket(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    basket, created = Basket.objects.get_or_create(user=request.user)
-
-    if request.method == "POST":
-        quantity = Decimal(request.POST.get('quantity', '1.000'))
-
-        basket_item, created = BasketItem.objects.get_or_create(basket=basket, product=product)
-        basket_item.quantity += quantity if not created else quantity
-        basket_item.save()
-
-    return redirect('shopping')
-
-
-@login_required
-def basket_view(request):
-    basket, created = Basket.objects.get_or_create(user=request.user)
-    items = basket.basketitem_set.all()
-    return render(request, "shopping/basket.html", {"items": items})
-
-
-@login_required
-def update_basket(request, item_id):
-    item = BasketItem.objects.get(id=item_id)
-    if request.method == "POST":
-        item.quantity = request.POST.get('quantity')
-        item.save()
-    return redirect('basket')
-
-
-@login_required
-def remove_from_basket(request, item_id):
-    item = BasketItem.objects.get(id=item_id)
-    item.delete()
-    return redirect('basket')
-
-
-@login_required
-def checkout(request):
-    basket = Basket.objects.get(user=request.user)
-    items = basket.basketitem_set.all()
-
-    for item in items:
-        inventory_item, created = InventoryProduct.objects.get_or_create(
-            user=request.user,
-            product=item.product,
-            defaults={'quantity': Decimal('0.000'), 'amount': Decimal('0.00')}
-        )
-
-        inventory_item.quantity += item.quantity
-        inventory_item.amount += item.quantity * Decimal(str(item.product.price))
-
-        inventory_item.save()
-        inventory_item.calculate_average_price()
-
-    items.delete()
-
-    return redirect('inventory')
-
-
-@login_required
-def create_shopping(request):
-    shops = Shop.objects.all()
-    products = Product.objects.all()
-    categories = ProductCategory.objects.all()
-    main_categories = MainCategory.objects.all()
-    return render(request, "shopping/create_shopping.html", {
-        "shops": shops,
-        "products": products,
-        "categories": categories,
-        "main_categories": main_categories,
-    })
+#
+# @login_required
+# def add_to_basket(request, product_id):
+#     product = get_object_or_404(Product, id=product_id)
+#     basket, created = Basket.objects.get_or_create(user=request.user)
+#
+#     if request.method == "POST":
+#         quantity = Decimal(request.POST.get('quantity', '1.000'))
+#
+#         basket_item, created = BasketItem.objects.get_or_create(basket=basket, product=product)
+#         basket_item.quantity += quantity if not created else quantity
+#         basket_item.save()
+#
+#     return redirect('shopping')
+#
+#
+# @login_required
+# def basket_view(request):
+#     basket, created = Basket.objects.get_or_create(user=request.user)
+#     items = basket.basketitem_set.all()
+#     return render(request, "shopping/basket.html", {"items": items})
+#
+#
+# @login_required
+# def update_basket(request, item_id):
+#     item = BasketItem.objects.get(id=item_id)
+#     if request.method == "POST":
+#         item.quantity = request.POST.get('quantity')
+#         item.save()
+#     return redirect('basket')
+#
+#
+# @login_required
+# def remove_from_basket(request, item_id):
+#     item = BasketItem.objects.get(id=item_id)
+#     item.delete()
+#     return redirect('basket')
+#
+#
+# @login_required
+# def checkout(request):
+#     basket = Basket.objects.get(user=request.user)
+#     items = basket.basketitem_set.all()
+#
+#     for item in items:
+#         inventory_item, created = InventoryProduct.objects.get_or_create(
+#             user=request.user,
+#             product=item.product,
+#             defaults={'quantity': Decimal('0.000'), 'amount': Decimal('0.00')}
+#         )
+#
+#         inventory_item.quantity += item.quantity
+#         inventory_item.amount += item.quantity * Decimal(str(item.product.price))
+#
+#         inventory_item.save()
+#         inventory_item.calculate_average_price()
+#
+#     items.delete()
+#
+#     return redirect('inventory')
+#
+#
+# @login_required
+# def create_shopping(request):
+#     shops = Shop.objects.all()
+#     products = Product.objects.all()
+#     categories = ProductCategory.objects.all()
+#     main_categories = MainCategory.objects.all()
+#     return render(request, "shopping/create_shopping.html", {
+#         "shops": shops,
+#         "products": products,
+#         "categories": categories,
+#         "main_categories": main_categories,
+#     })
 
 
 @login_required
@@ -129,31 +130,40 @@ def make_shopping(request):
     shops = Shop.objects.all()
     categories = ProductCategory.objects.all().order_by('name')
     main_categories = MainCategory.objects.all()
+    all_products = Product.objects.all().order_by('name')
+
+    shopping_lists = ShoppingList.objects.filter(user=request.user).order_by('-date_generated')[:5]
 
     selected_category_id = request.GET.get("category")
 
-    user_orders = ShoppingProduct.objects.filter(shopping__user=request.user) \
-        .values("product_id") \
-        .annotate(purchase_count=Count("product_id")) \
-        .order_by("-purchase_count")
+    # load from shopping list
+    selected_list_id = request.GET.get("list")
+    prefill_data = []
 
-    ordered_product_ids = [entry["product_id"] for entry in user_orders]
-    purchased_products = Product.objects.filter(id__in=ordered_product_ids).order_by(
-        Case(
-            *[When(id=pid, then=pos) for pos, pid in enumerate(ordered_product_ids)],
-            output_field=IntegerField()
-        )
-    )
+    if selected_list_id:
+        try:
+            shopping_list = ShoppingList.objects.get(id=selected_list_id, user=request.user)
+            for item_name in shopping_list.items:
+                product = Product.objects.filter(name=item_name).first()
+                if product:
+                    last_price = 0.00
+                    shoppings = Shopping.objects.filter(user=request.user)
+                    shoppings_ids = [sh.id for sh in shoppings]
+                    shopping_product = ShoppingProduct.objects.filter(product=product.id, shopping__in=shoppings_ids).order_by('id').last()
+                    if shopping_product:
+                        last_price = shopping_product.price
+                    prefill_data.append({
+                    "product_id": product.id,
+                    "name": product.name,
+                    "quantity": 1,
+                    "price": last_price,
+                    "discount": 0,
+                })
+        except ShoppingList.DoesNotExist:
+            pass  # silently ignore invalid IDs
 
     if selected_category_id:
-        purchased_products = purchased_products.filter(category_id=selected_category_id)
-
-    other_products = Product.objects.exclude(id__in=ordered_product_ids)
-    if selected_category_id:
-        other_products = other_products.filter(category_id=selected_category_id)
-
-
-    all_products = list(purchased_products) + list(other_products)
+        all_products = all_products.filter(category_id=selected_category_id)
 
     paginator = Paginator(all_products, 15)
     page_number = request.GET.get("page")
@@ -164,7 +174,9 @@ def make_shopping(request):
         "products": page_obj,
         "categories": categories,
         "main_categories": main_categories,
-        "selected_category": selected_category_id
+        "selected_category": selected_category_id,
+        "shopping_lists": shopping_lists,
+        "prefill_json": json.dumps(prefill_data, cls=DjangoJSONEncoder),
     }
 
     return render(request, "shopping/make_shopping.html", context)
@@ -207,6 +219,7 @@ def save_shopping(request):
         return redirect("make_shopping")
 
     return redirect("make_shopping")
+
 
 def add_product(request):
     if request.method == "POST":

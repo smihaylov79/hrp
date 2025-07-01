@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Само за регистрирани потребители</h2>
+<p>Това съдържание е само за регистрирани потребители. Моля <a href="{% url 'login' %}?next={{ request.GET.next }}">влез</a>
+    или се
+    <a href="{% url 'register' %}?next={{ request.GET.next }}">регистрирай</a> за да продължиш.</p>
+
+
+{% endblock %}

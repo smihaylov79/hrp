@@ -29,7 +29,9 @@
     <form id="inventory-form" method="POST" action="{% url 'update_inventory' %}">
     <button type="submit">Запази промени</button>
         {% csrf_token %}
+       <div class="table-wrapper">
         <table>
+        <thead>
             <tr>
                 <th>Продукт</th>
                 <th>Средна цена</th>
@@ -39,6 +41,8 @@
                 <th>Дневна консумация</th>
                 <th>Минимална наличност</th>
             </tr>
+            </thead>
+        <tbody>
             {% for item in inventory_items %}
             <tr>
                 <td>{{ item.product.name }}</td>
@@ -62,7 +66,8 @@
                 <td colspan="6">Няма налични продукти</td>
             </tr>
             {% endfor %}
+        </tbody>
         </table>
-
+       </div>
     </form>
 {% endblock %}

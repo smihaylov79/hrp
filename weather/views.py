@@ -8,6 +8,7 @@ import os
 
 # Create your views here.
 
+
 def get_weather_data(request):
     api_key = os.environ.get('API_KEY_WEATHER')
     location = request.session.get("geo_location", "Sofia")
@@ -19,7 +20,7 @@ def get_weather_data(request):
 
 
 def weather_data_context_processor(request):
-    weather_data = get_weather_data(request) if request.user.is_authenticated else None
+    weather_data = get_weather_data(request)
 
     if weather_data:
         for forecast_day in weather_data['forecast']['forecastday']:

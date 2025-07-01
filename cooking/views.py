@@ -11,11 +11,13 @@ from shopping.models import RecipeShoppingList, ProductCategory
 
 
 # Create your views here.
-@login_required
+
 def recipe_list(request):
     category_name = request.GET.get('category', 'all')
     recipes = Recipe.objects.all()
-    user = request.user
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
 
     if category_name != 'all':
         recipes = recipes.filter(category__name=category_name)
@@ -45,6 +47,7 @@ def recipe_list(request):
     return render(request, 'cooking/recipe_list.html', context)
 
 
+@login_required
 def create_recipe(request):
     products = Product.objects.all()
     categories = RecipeCategory.objects.all()
@@ -96,6 +99,7 @@ def save_recipe(request):
 
     return redirect("create_recipe")
 
+
 @login_required
 def cook_recipe(request, recipe_id):
     recipe = Recipe.objects.get(id=recipe_id)
@@ -140,10 +144,13 @@ def generate_recipe_shopping_list(request, recipe_id):
 
     return redirect("recipe_list")
 
-@login_required
+
 def recipe_view(request, recipe_id):
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
     recipe = get_object_or_404(Recipe, id=recipe_id)
-    user_inventory = InventoryProduct.objects.filter(user=request.user)
+    user_inventory = InventoryProduct.objects.filter(user=user)
     product_price_map = {item.product.id: item.average_price for item in user_inventory}
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
@@ -153,7 +160,9 @@ def recipe_view(request, recipe_id):
                                        for ingredient in recipe.recipe_ingredients.all())
     recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
     context = {
-        "recipe": recipe, 'user_inventory': {item.product.id: item.quantity for item in user_inventory}
+        "recipe": recipe,
+        'user_inventory': {item.product.id: item.quantity for item in user_inventory},
+        'user': user
     }
     return render(request, "cooking/recipe_view.html", context)
 

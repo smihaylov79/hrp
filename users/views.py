@@ -6,6 +6,8 @@ from .forms import RegistrationForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from .forms import ProfileUpdateForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import TemplateView
 
 
 def register(request):
@@ -14,7 +16,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('home')
+            return redirect(request.GET.get('next') or 'home')
     else:
         form = RegistrationForm()
 
@@ -32,7 +34,7 @@ def custom_login(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')
+            return redirect(request.GET.get('next') or 'home')
     else:
         form = AuthenticationForm()
 
@@ -63,3 +65,7 @@ def profile_view(request):
         "profile_form": profile_form,
         "password_form": password_form
     })
+
+
+class PleaseLoginView(TemplateView):
+    template_name = "users/please_login.html"
