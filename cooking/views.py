@@ -106,19 +106,21 @@ def cook_recipe(request, recipe_id):
     user_inventory = InventoryProduct.objects.filter(user=request.user)
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
-    for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
-        if product_quantity_map.get(ingredient.product.id, 0) < ingredient.quantity:
-            messages.error(request, "Не разполагате с достатъчни продукти за тази рецепта.")
-            return redirect("recipe_list")
 
     for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
         inventory_product = user_inventory.get(product=ingredient.product)
-        inventory_product.quantity -= ingredient.quantity
-        inventory_product.amount -= ingredient.quantity * inventory_product.average_price
-        inventory_product.calculate_average_price()
-        inventory_product.save()
+        if inventory_product:
+            if inventory_product.quantity > ingredient.quantity:
+                inventory_product.quantity -= ingredient.quantity
+                inventory_product.amount -= ingredient.quantity * inventory_product.average_price
+                inventory_product.calculate_average_price()
+                inventory_product.save()
+            else:
+                inventory_product.quantity = 0
+                inventory_product.amount = 0
+                inventory_product.calculate_average_price()
+                inventory_product.save()
 
-    messages.success(request, f"Успешно приготвихте {recipe.name}!")
     return redirect("recipe_list")
 
 
@@ -132,7 +134,7 @@ def generate_recipe_shopping_list(request, recipe_id):
 
     missing_products = [
         ingredient.product.name
-        for ingredient in ingredients  # ✅ Using explicit query
+        for ingredient in ingredients
         if product_quantity_map.get(ingredient.product.id, 0) < ingredient.quantity
     ]
 
