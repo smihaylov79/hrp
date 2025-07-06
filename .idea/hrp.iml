@@ -7,6 +7,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="highcharts" level="application" />
+    <orderEntry type="library" name="bootstrap" level="application" />
   </component>
   <component name="TemplatesService">
     <option name="TEMPLATE_CONFIGURATION" value="Django" />
@@ -21,6 +23,7 @@
         <option value="$MODULE_DIR$/finance/templates" />
         <option value="$MODULE_DIR$/forum/templates" />
         <option value="$MODULE_DIR$/weather/templates" />
+        <option value="$MODULE_DIR$/reports/templates" />
       </list>
     </option>
   </component>

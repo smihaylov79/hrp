@@ -1,5 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
+    {% if weather_data %}
+<div class="container mt-3">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+          <h6 class="card-title mb-1">
+            {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }}
+          </h6>
+          <p class="mb-0">
+            🌡️ {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
+            <img src="{{ weather_data.current.condition.icon }}" alt="Weather icon">
+          </p>
+        </div>
+        <div class="d-flex gap-3 flex-wrap">
+          {% for day in weather_data.forecast.forecastday|slice:":3" %}
+          <div class="text-center">
+            <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}" class="text-decoration-none text-dark">
+              <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
+              <small>min {{ day.day.mintemp_c }}°C<br>
+              max {{ day.day.maxtemp_c }}°C</small><br>
+              {{ day.day.condition.text }}<br>
+              <img src="{{ day.day.condition.icon }}" alt="Icon"><br>
+              🌧️{{ day.day.daily_chance_of_rain }}%
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
     <h2>Welcome to Home Resource Planner</h2>
 
     <div class="section-container">

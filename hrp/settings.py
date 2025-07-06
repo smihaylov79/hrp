@@ -47,6 +47,7 @@ PROJECT_APPS = [
     'shopping',
     'forum',
     'weather',
+    'reports',
 ]
 
 INSTALLED_APPS = [

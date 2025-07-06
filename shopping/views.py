@@ -160,7 +160,7 @@ def make_shopping(request):
                     "discount": 0,
                 })
         except ShoppingList.DoesNotExist:
-            pass  # silently ignore invalid IDs
+            pass
 
     if selected_category_id:
         all_products = all_products.filter(category_id=selected_category_id)

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+   <form method="get" class="border rounded p-4 mb-4 bg-light">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="id_main_category" class="form-label">Категория</label>
+            <select name="main_category" id="id_main_category" class="form-select">
+                <option value="">-- Всички --</option>
+                {% for category in form.fields.main_category.queryset %}
+                    <option value="{{ category.id }}" {% if request.GET.main_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="id_date_from" class="form-label">От</label>
+            <input type="date" name="date_from" id="id_date_from" class="form-control" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-md-3">
+            <label for="id_date_to" class="form-label">До</label>
+            <input type="date" name="date_to" id="id_date_to" class="form-control" value="{{ request.GET.date_to }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Филтрирай</button>
+        </div>
+    </div>
+</form>
+
+
+     <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <div class="d-flex flex-wrap gap-4 mb-4">
+    <!-- Monthly Line Chart -->
+{#    <div id="monthly_spent" style="width:60%; height: 400px;"></div>#}
+    <div class="card p-3 shadow-sm" style="width:45%; height:300px">
+        <h5 class="mb-3">📊 Статистика за избрания период</h5>
+        <ul class="list-unstyled">
+            <li><strong>Общо разходи:</strong> {{ total_spent }} лв.</li>
+            <li><strong>Брой покупки:</strong> {{ shoppings_count }}</li>
+            <li><strong>5 най-купувани продукта:</strong> {{ most_purchased_names }}</li>
+            <li><strong>Най-голям разход за:</strong> {{ biggest_spent.product__name }} – {{ biggest_spent.spent }} лв.</li>
+            <li><strong>Най-скъп продукт:</strong> {{ highest_price.product__name }} – {{ highest_price.price }} лв.</li>
+            <li><strong>Най-евтин продукт:</strong> {{ lowest_price.product__name }} – {{ lowest_price.price }} лв.</li>
+            <li><strong>Най-голямо увеличение:</strong> {{ top_increase.product }} – {{ top_increase.change }} лв.</li>
+            <li><strong>Най-голямо намаление:</strong> {{ top_decrease.product }} – {{ top_decrease.change }} лв.</li>
+        </ul>
+    </div>
+
+    <!-- Pie Chart -->
+    <div style="width:45%;">
+        {% if main_category_name == "" %}
+            <div id="main-category-chart" style="height: 300px;"></div>
+        {% else %}
+            <div id="subcategory-chart" style="height: 300px;"></div>
+        {% endif %}
+    </div>
+</div>
+
+    <div id="monthly_spent" style="width:100%; height: 400px;"></div>
+
+    <div id="weekly_spent" style="width:100%; height:400px;"></div>
+
+    {% if main_category_name == "" %}
+
+        <div id="main-category-chart"></div>
+        {% else %}
+        <div id="subcategory-chart"></div>
+
+    {% endif %}
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const mainChartContainer = document.getElementById('main-category-chart');
+        if (mainChartContainer) {
+            Highcharts.chart('main-category-chart', {
+                chart: {type: 'pie'},
+                title: {text: 'Разход по категория'},
+                series: [{
+                    name: 'Разход',
+                    data: {{ main_chart_data|safe }}
+                }]
+            });
+        }
+        Highcharts.chart('subcategory-chart', {
+            chart: { type: 'pie' },
+            title: {
+                text: {% if main_category_name == "" %}
+                                'Разход по подкатегория'
+                            {% else %}
+                                'Разход за {{ main_category_name }} (подкатегории)'
+                            {% endif %}
+            },
+            series: [{
+                name: 'Разход',
+                data: {{ sub_chart_data|safe }}
+            }]
+        })
+    }
+
+    )
+        </script>
+
+    <script>
+        const data = JSON.parse('{{ monthly_data|escapejs }}');
+
+        Highcharts.chart('monthly_spent', {
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text:
+                    {% if main_category_name == "" %}
+                    'Разходи по месец'
+                {% else %}
+                                'Разход за {{ main_category_name }} по месец'
+                            {% endif %}
+            },
+            xAxis: {
+                categories: data.map(item => item.month),
+                title: { text: 'Месец' }
+            },
+            yAxis: {
+                min: 0,
+                title: { text: 'лв.' }
+            },
+            series: [{
+                name: 'Общо',
+                data: data.map(item => item.total)
+            }]
+        });
+    </script>
+    <script>
+        const weeklyData = JSON.parse('{{ weekly_data|escapejs }}');
+
+        Highcharts.chart('weekly_spent', {
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text:
+                    {% if main_category_name == "" %}
+                    'Разходи по седмица'
+                {% else %}
+                                'Разход за {{ main_category_name }} по седмица'
+                            {% endif %}
+
+            },
+            xAxis: {
+                categories: weeklyData.map(item => item.week),
+                title: { text: 'седмица' }
+            },
+            yAxis: {
+                min: 0,
+                title: { text: 'лв.' }
+            },
+            series: [{
+                name: 'Общо',
+                data: weeklyData.map(item => item.total)
+            }]
+        });
+    </script>
+
+{% endblock %}

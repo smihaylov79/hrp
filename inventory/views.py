@@ -352,3 +352,6 @@ def recipe_shopping_list_view(request, list_id):
     recipe_list = get_object_or_404(RecipeShoppingList, id=list_id, user=request.user)
 
     return render(request, "inventory/recipe_shopping_list.html", {"recipe_list": recipe_list})
+
+
+

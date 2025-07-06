@@ -2,86 +2,69 @@
 <html lang="en">
 <head>
     {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Resource Planner</title>
 
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+
 </head>
 <body>
 
-    <div class="navbar">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary px-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/">🏠 Начало</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+      aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-       <div class="navbar-left">
+    <div class="collapse navbar-collapse" id="navbarMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link" href="/reports/">Справки</a></li>
+        <li class="nav-item"><a class="nav-link" href="/shopping/make_shopping/">Пазаруване</a></li>
+        <li class="nav-item"><a class="nav-link" href="/inventory/">Наличности</a></li>
+        <li class="nav-item"><a class="nav-link" href="/cooking/">Сготви</a></li>
+        <li class="nav-item"><a class="nav-link" href="/finance/">Пари</a></li>
+        <li class="nav-item"><a class="nav-link" href="/entertainment/">Забавление</a></li>
+        <li class="nav-item"><a class="nav-link" href="/forum/">Форум</a></li>
+      </ul>
 
-    <div class="greeting-box">
-    {% if user.is_authenticated %}
-        <a href="{% url 'logout' %}" style="color: black; align-content: start">
-        Изход
-      </a>
-      <a href="{% url 'profile' %}" style="text-decoration: none; color: inherit;">
-        Здравей, {{ user.first_name }}!
-      </a>
-
+      <ul class="navbar-nav mb-2 mb-lg-0">
+        {% if user.is_authenticated %}
+          <li class="nav-item">
+            <strong><a class="nav-link" href="{% url 'profile' %}">👤 {{ user.first_name }}</a></strong>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">Изход</a>
+          </li>
         {% else %}
-        <a href="{% url 'login' %}" style="text-decoration: none; color: inherit;">
-        Влез
-      </a>
-        |
-        <a href="{% url 'register' %}" style="text-decoration: none; color: inherit; font-size: small">
-        Регистрирай се
-      </a>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Влез</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'register' %}">Регистрирай се</a>
+          </li>
         {% endif %}
+      </ul>
     </div>
-
-
-            {% if weather_data %}
-<div class="weather-widget">
-    <div class="current-weather">
-        <small style="font-size: 0.65rem;">{{ now|date:"d M, H:i" }}</small>
-        {{ weather_data.location.name }}: {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
-        <img src="{{ weather_data.current.condition.icon }}" alt="Weather icon">
-    </div>
-    <div class="forecast-cards">
-        {% for day in weather_data.forecast.forecastday|slice:":3" %}
-            <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}" style="text-decoration: none; color: inherit;">
-            <div class="forecast-card">
-                <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
-                min {{ day.day.mintemp_c }}°C <br>
-                max {{ day.day.maxtemp_c }}°C<br>
-                {{ day.day.condition.text }}
-                <img src="{{ day.day.condition.icon }}" alt="Icon">
-            🌧️{{ day.day.daily_chance_of_rain }}
-            </div>
-            </a>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-
-
-        </div>
-        <div class="navbar-right">
-    <a href="/">Начало</a>
-    <a href="/shopping/make_shopping/">Пазаруване</a>
-
-    <a href="/inventory/">Наличности</a>
-    <a href="/cooking/">Сготви</a>
-    <a href="/finance/">Пари</a>
-    <a href="/entertainment/">Забавление</a>
-    <a href="/forum/">Форум</a>
   </div>
+</nav>
+
+
+
+<div class="container">
+    {% block content %}
+
+    {% endblock %}
 </div>
-
-    <div class="container">
-        {% block content %}
-
-        {% endblock %}
-    </div>
 <script>
-navigator.geolocation.getCurrentPosition(function(position) {
-    fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
-});
+    navigator.geolocation.getCurrentPosition(function (position) {
+        fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
+    });
 </script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -97,6 +80,6 @@ navigator.geolocation.getCurrentPosition(function(position) {
     });
 </script>
 
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

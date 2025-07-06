@@ -85,9 +85,11 @@
     </form>
 
     {% if prefill_json %}
-    <script>
+   <script>
+    if (!localStorage.getItem("shoppingBasket") || localStorage.getItem("shoppingBasket") === "[]") {
         localStorage.setItem("shoppingBasket", JSON.stringify({{ prefill_json|safe }}));
-    </script>
+    }
+</script>
 {% endif %}
 
     <script>

@@ -1,3 +1,4 @@
+@import "navbar.css";
 /* Table Design */
 table {
     width: 100%;
@@ -67,74 +68,6 @@ button:hover {
             background: linear-gradient(to bottom, #f4f4f4, #dcdcdc); /* Soft gradient */
             text-align: center;
         }
-
-        /* Navbar Styling */
-        .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 10px;
-  background-color: #f0f0f0; /* optional styling */
-  padding: 10px;
-}
-
-
-.navbar-right {
-    flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-    justify-content: flex-end;
-  gap: 10px;
-  align-items: center;
-}
-
-
-        .navbar a {
-            color: #000000;
-            text-decoration: none;
-            margin: 10px 15px;
-            font-size: 14px;
-            padding: 6px 10px;
-            border-radius: 6px;
-            transition: 0.3s;
-            flex: 1; /* Allows shrinking dynamically */
-            min-width: 80px; /* Prevents excessive shrinking */
-            text-align: center;
-        }
-
-        .navbar a:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            text-decoration: none;
-        }
-
-        /* Main container */
-        .container {
-            padding: 30px;
-            background: white;
-            margin: 40px auto;
-            width: 80%;
-            border-radius: 12px;
-            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .greeting-box {
-    color: #ffd700; /* Gold color */
-    font-size: 18px;
-    font-weight: bold;
-    background: linear-gradient(to right, #5f6cff, #feb47b); /* Warm gradient */
-    padding: 8px 12px;
-    border-radius: 6px;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.2);
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-    display: flex;
-    justify-content: flex-start; /* Centers horizontally */
-    align-items: center; /* Ensures proper vertical alignment */
-    width: 100%; /* Expands to the width of the navbar */
-    height: 12px;
-    text-align: left;
-            gap: 10px;
-}
 
 .product-list {
     display: grid;
@@ -932,88 +865,88 @@ a.button-link:hover {
 }
 
 
-.weather-widget {
-    margin-top: 8px;
-    padding: 8px;
-    background: #eef;
-    border-radius: 6px;
-}
+/*.weather-widget {*/
+/*    margin-top: 8px;*/
+/*    padding: 8px;*/
+/*    background: #eef;*/
+/*    border-radius: 6px;*/
+/*}*/
 
-.forecast-cards {
-    display: flex;
-    gap: 2px;              /* reduced from 8px */
-    justify-content: flex-start;
-    align-items: flex-start;
-}
-
-
-.forecast-cards a {
-    display: block;
-    flex: 0 0 auto;        /* don't grow or shrink */
-    width: 50px;           /* slightly narrower */
-    padding: 0;
-    margin: 0;
-    text-decoration: none;
-    color: inherit;
-}
-
-.forecast-card {
-    background: #fff;
-    padding: 2px;
-    font-size: 0.55rem;
-    width: 80%;           /* fill anchor exactly */
-    border: 1px solid #ccc;
-    border-radius: 3px;
-    text-align: center;
-}
+/*.forecast-cards {*/
+/*    display: flex;*/
+/*    gap: 2px;              !* reduced from 8px *!*/
+/*    justify-content: flex-start;*/
+/*    align-items: flex-start;*/
+/*}*/
 
 
-.forecast-card img {
-    width: 24px;
-    height: auto;
-}
+/*.forecast-cards a {*/
+/*    display: block;*/
+/*    flex: 0 0 auto;        !* don't grow or shrink *!*/
+/*    width: 50px;           !* slightly narrower *!*/
+/*    padding: 0;*/
+/*    margin: 0;*/
+/*    text-decoration: none;*/
+/*    color: inherit;*/
+/*}*/
+
+/*.forecast-card {*/
+/*    background: #fff;*/
+/*    padding: 2px;*/
+/*    font-size: 0.55rem;*/
+/*    width: 80%;           !* fill anchor exactly *!*/
+/*    border: 1px solid #ccc;*/
+/*    border-radius: 3px;*/
+/*    text-align: center;*/
+/*}*/
 
 
-.weather-widget,
-.forecast-card {
-    color: #222;
-}
+/*.forecast-card img {*/
+/*    width: 24px;*/
+/*    height: auto;*/
+/*}*/
 
-.current-weather {
-    font-size: 0.75rem;
-    padding: 5px 8px;
-    background: #eef;
-    border-radius: 5px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
 
-.current-weather img {
-    width: 30px;
-    height: auto;
-}
+/*.weather-widget,*/
+/*.forecast-card {*/
+/*    color: #222;*/
+/*}*/
 
-.forecast-summary-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
+/*.current-weather {*/
+/*    font-size: 0.75rem;*/
+/*    padding: 5px 8px;*/
+/*    background: #eef;*/
+/*    border-radius: 5px;*/
+/*    display: inline-flex;*/
+/*    align-items: center;*/
+/*    gap: 5px;*/
+/*}*/
 
-.summary-card {
-  background: #fff;
-  color: #333;
-  font-size: 0.8rem;
-  padding: 6px 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  text-align: center;
-  min-width: 80px;
-  flex: 1 1 auto;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
+/*.current-weather img {*/
+/*    width: 30px;*/
+/*    height: auto;*/
+/*}*/
+
+/*.forecast-summary-cards {*/
+/*  display: grid;*/
+/*  grid-template-columns: repeat(3, 1fr);*/
+/*  gap: 6px;*/
+/*  flex-wrap: wrap;*/
+/*  margin-bottom: 12px;*/
+/*}*/
+
+/*.summary-card {*/
+/*  background: #fff;*/
+/*  color: #333;*/
+/*  font-size: 0.8rem;*/
+/*  padding: 6px 8px;*/
+/*  border: 1px solid #ccc;*/
+/*  border-radius: 4px;*/
+/*  text-align: center;*/
+/*  min-width: 80px;*/
+/*  flex: 1 1 auto;*/
+/*  box-shadow: 0 1px 3px rgba(0,0,0,0.1);*/
+/*}*/
 
 
 .products-container {
