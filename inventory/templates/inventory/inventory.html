@@ -1,73 +1,69 @@
 {% extends "base.html" %}
 
-
 {% block content %}
+<div class="container mt-4">
+<div class="btn-group mb-4" role="group" aria-label="Inventory Actions">
+    <a href="{% url 'user_category_settings' %}" class="btn btn-outline-primary">Управление на категории</a>
+    <a href="{% url 'generate_shopping_list' %}" class="btn btn-outline-success">Генерирай списък</a>
+    <a href="{% url 'all_shopping_lists' %}" class="btn btn-outline-info">Преглед на списъци</a>
+</div>
 
-    <a href="{% url 'user_category_settings' %}" class="button-link">Управление на категории</a>
-
-    <a href="{% url 'inventory_reports' %}" class="button-link">Справки</a>
-    <a href="{% url 'generate_shopping_list' %}" class="button-link">Генерирай списък</a>
-    <a href="{% url 'all_shopping_lists' %}" class="button-link">Преглед на списъци</a>
-    <form method="GET" action="{% url 'inventory' %}">
-    <p></p>
-    <label for="category">Филтрирай категория:</label>
-    <select name="category">
-        <option value="">Всички категории</option>
-        {% for category in user_categories %}
-        <option value="{{ category.product_category.id }}">{{ category.product_category.name }}</option>
-        {% endfor %}
-    </select>
-
-    <label for="search">Търси продукт:</label>
-    <input type="text" name="search" placeholder="Продукт">
-
-    <button type="submit">Покажи</button>
+    <form method="GET" action="{% url 'inventory' %}" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-4">
+        <label for="category" class="form-label">Филтрирай категория:</label>
+        <select name="category" id="category" class="form-select">
+            <option value="">Всички категории</option>
+            {% for category in user_categories %}
+            <option value="{{ category.product_category.id }}">{{ category.product_category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="search" class="form-label">Търси продукт:</label>
+        <input type="text" name="search" id="search" class="form-control" placeholder="Продукт">
+    </div>
+    <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100">Покажи</button>
+    </div>
 </form>
 
-    <h2>Твоите продукти</h2>
+    <h2 class="mb-4">Твоите продукти</h2>
+<form id="inventory-form" method="POST" action="{% url 'update_inventory' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success mb-3">💾 Запази промени</button>
 
-    <form id="inventory-form" method="POST" action="{% url 'update_inventory' %}">
-    <button type="submit">Запази промени</button>
-        {% csrf_token %}
-       <div class="table-wrapper">
-        <table>
-        <thead>
-            <tr>
-                <th>Продукт</th>
-                <th>Средна цена</th>
-                <th>Наличност</th>
-                <th>Стойност</th>
-
-                <th>Дневна консумация</th>
-                <th>Минимална наличност</th>
-            </tr>
+    <div class="table-scroll-wrapper" style="max-height: 800px; overflow-y: auto;">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Продукт</th>
+                    <th>Средна цена</th>
+                    <th>Наличност</th>
+                    <th>Стойност</th>
+                    <th>Дневна консумация</th>
+                    <th>Минимална наличност</th>
+                </tr>
             </thead>
-        <tbody>
-            {% for item in inventory_items %}
-            <tr>
-                <td>{{ item.product.name }}</td>
-                <td>{{ item.average_price }} лв.</td>
-                <td>
-                    <input type="number" name="quantity_{{ item.id }}" value="{{ item.quantity }}" step="0.001">
-                </td>
-                <td>
-                    <input type="number" name="amount_{{ item.id }}" value="{{ item.amount }}" step="0.01">
-                </td>
-
-                <td>
-                    <input type="number" name="daily_consumption_{{ item.id }}" value="{{ item.daily_consumption }}" step="0.001">
-                </td>
-                <td>
-                    <input type="number" name="minimum_quantity_{{ item.id }}" value="{{ item.minimum_quantity }}" step="0.001">
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6">Няма налични продукти</td>
-            </tr>
-            {% endfor %}
-        </tbody>
+            <tbody>
+                {% for item in inventory_items %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.average_price }} лв.</td>
+                    <td><input type="number" name="quantity_{{ item.id }}" value="{{ item.quantity }}" class="form-control form-control-sm" step="0.001"></td>
+                    <td><input type="number" name="amount_{{ item.id }}" value="{{ item.amount }}" class="form-control form-control-sm" step="0.01"></td>
+                    <td><input type="number" name="daily_consumption_{{ item.id }}" value="{{ item.daily_consumption }}" class="form-control form-control-sm" step="0.001"></td>
+                    <td><input type="number" name="minimum_quantity_{{ item.id }}" value="{{ item.minimum_quantity }}" class="form-control form-control-sm" step="0.001"></td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">Няма налични продукти</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
-       </div>
-    </form>
+    </div>
+</form>
+</div>
+
+
 {% endblock %}

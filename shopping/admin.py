@@ -32,7 +32,7 @@ class ShoppingProductAdmin(admin.ModelAdmin):
 
 @admin.register(ShoppingList)
 class ShoppingListAdmin(admin.ModelAdmin):
-    list_display = ('user__first_name', 'date_generated', 'sent', 'items')
+    list_display = ('user__first_name', 'date_generated', 'executed', 'items')
 
 @admin.register(RecipeShoppingList)
 class RecipeShoppingListAdmin(admin.ModelAdmin):

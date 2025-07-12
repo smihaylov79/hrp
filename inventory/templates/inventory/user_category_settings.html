@@ -1,25 +1,54 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Настройка на категории</h2>
-<form method="POST">
-    {% csrf_token %}
-    <table>
-        <tr>
-            <th>Category</th>
-            <th>Direct Planning</th>
-            <th>Daily Consumption</th>
-            <th>Minimum Quantity</th>
-        </tr>
-        {% for category in user_categories %}
-        <tr>
-            <td>{{ category.product_category.name }}</td>
-            <td><input type="checkbox" name="direct_planning_{{ category.id }}" {% if category.direct_planning %}checked{% endif %}></td>
-            <td><input type="number" step="0.001" name="daily_consumption_{{ category.id }}" value="{{ category.daily_consumption }}"></td>
-            <td><input type="number" step="0.001" name="minimum_quantity_{{ category.id }}" value="{{ category.minimum_quantity }}"></td>
-        </tr>
-        {% endfor %}
-    </table>
-    <button type="submit">Запази</button>
-</form>
+<div class="container mt-4">
+    <h2 class="mb-4">Настройка на категории</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+    <button type="submit" class="btn btn-success mb-3">💾 Запази промени</button>
+        <div class="table-scroll-wrapper" style="max-height: 800px; overflow-y: auto;">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Категория</th>
+                        <th>Общо планиране</th>
+                        <th>Дневна консумация</th>
+                        <th>Минимално количество</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in user_categories %}
+                    <tr>
+                        <td>{{ category.product_category.name }}</td>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                    name="direct_planning_{{ category.id }}"
+                                    id="direct_planning_{{ category.id }}"
+                                    {% if category.direct_planning %}checked{% endif %}>
+                                <label class="form-check-label" for="direct_planning_{{ category.id }}"></label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" step="0.001" name="daily_consumption_{{ category.id }}"
+                                value="{{ category.daily_consumption }}" class="form-control form-control-sm">
+                        </td>
+                        <td>
+                            <input type="number" step="0.001" name="minimum_quantity_{{ category.id }}"
+                                value="{{ category.minimum_quantity }}" class="form-control form-control-sm">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+    </form>
+<div class="text-center">
+<a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към наличности</a>
+</div>
+</div>
 {% endblock %}
+

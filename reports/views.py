@@ -1,10 +1,10 @@
-from django.db.models import Sum, Count, Max, Min
+from django.db.models import Sum, Count, Max, Min, Avg
 from django.db.models.functions import TruncMonth, TruncWeek, ExtractWeek
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from inventory.models import *
 from shopping.models import *
 import json
-from django.views.generic import FormView
+from django.views.generic import FormView, TemplateView
 from .forms import *
 from datetime import date
 from .utils import calculate_price_changes
@@ -13,9 +13,13 @@ from .utils import calculate_price_changes
 # Create your views here.
 
 
-class ReportsHomeView(FormView):
-    template_name = 'reports/reports_home_main.html'
-    form_class = ReportFilterForm
+class ReportsHomeView(TemplateView):
+    template_name = 'reports/reports_home.html'
+
+
+class SpendingsView(FormView):
+    template_name = 'reports/spendings_history.html'
+    form_class = SpendingsReportFilterForm
 
     def get(self, request, *args, **kwargs):
         form = self.form_class(self.request.GET or None)
@@ -95,61 +99,107 @@ class ReportsHomeView(FormView):
         return self.render_to_response(context)
 
 
-#
-#
-#
-# def reports_home(request):
-#     user=request.user
-#     main_categories = MainCategory.objects.all()
-#
-#     main_category_filter = request.GET.get("main_category", "")
-#     main_category_name = ""
-#
-#     date_from_filter = request.GET.get("date_from", "")
-#     date_to_filter = request.GET.get("date_to", '')
-#
-#     shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
-#
-#     if main_category_filter and main_category_filter.strip():
-#         shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
-#         main_category = main_categories.filter(id=main_category_filter).first()
-#         main_category_name = main_category.name
-#
-#     if date_from_filter and date_to_filter:
-#         shopping_data = shopping_data.filter(shopping__date__range=(date_from_filter, date_to_filter))
-#
-#     elif date_from_filter:
-#         shopping_data = shopping_data.filter(shopping__date__gte=date_from_filter)
-#
-#     elif date_to_filter:
-#         shopping_data = shopping_data.filter(shopping__date__lte=date_to_filter)
-#
-#     # if date_to_filter:
-#     #     shopping_data = shopping_data.filter(shopping__date=date_to_filter)
-#
-#     total_spent = shopping_data.aggregate(total=Sum('amount'))['total']
-#     monthly_spent = shopping_data.annotate(month=TruncMonth('shopping__date')).values('month').annotate(
-#         total_amount=Sum('amount')).order_by('month')
-#     weekly_spent = shopping_data.annotate(week=ExtractWeek('shopping__date')).values('week').annotate(
-#         total_amount=Sum('amount')).order_by('week')
-#
-#     monthly_data = [
-#         {'month': entry['month'].strftime('%m.%Y'), 'total': float(entry['total_amount'])} for entry in monthly_spent
-#     ]
-#     weekly_data = [{'week': entry['week'], 'total': float(entry['total_amount'])} for entry in weekly_spent]
-#
-#
-#     context = {
-#         'total_spent': total_spent,
-#         'monthly_data': json.dumps(monthly_data),
-#         'weekly_data': json.dumps(weekly_data),
-#         'main_categories': main_categories,
-#         "main_category_name": main_category_name,
-#         'date_from_filter': date_from_filter,
-#         'date_to_filter': date_to_filter,
-#     }
-#
-#     return render(request, 'reports/reports_home.html', context)
-
-def spending_history(request, period):
+def product_price_history(request):
     user = request.user
+    products = Product.objects.filter(
+        shoppingproduct__shopping__user=user).distinct()
+    selected_product_id = request.GET.get("product")
+    price_data = []
+
+    if selected_product_id:
+        product = get_object_or_404(Product, id=selected_product_id)
+
+        price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
+            .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
+
+        price_data = [{"date": entry["shopping__date"].strftime("%Y-%m-%d"), "price": float(entry["avg_price"])} for entry in price_changes]
+
+    context = {
+        "products": products,
+        "selected_product_id": selected_product_id,
+        "price_data": json.dumps(price_data) if price_data else "[]"
+    }
+
+    return render(request, "reports/price_history.html", context)
+
+
+def spendings_by_shop(request):
+    user = request.user
+    selected_shop_ids = request.GET.getlist("shops")
+    main_categories = MainCategory.objects.all()
+
+
+    main_category_name = ""
+
+    main_category_filter = request.GET.get("main_category", "")
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    # Fetch all shops the user has shopped at
+    user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
+
+    # Base query: user's shopping products
+    shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+    if main_category_filter and main_category_filter.strip():
+        shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
+        main_category = main_categories.filter(id=main_category_filter).first()
+        main_category_name = main_category.name
+
+    if start_date and end_date:
+        shopping_data = shopping_data.filter(shopping__date__range=[start_date, end_date])
+
+    # Global average price per product
+    avg_price_changes = shopping_data.values("product__name").annotate(
+        avg_price=Avg("price")
+    )
+    for item in avg_price_changes:
+        item["avg_price"] = round(item["avg_price"], 2)
+
+    shop_spending_totals = shopping_data.values("shopping__shop__name").annotate(
+        total_spent=Sum("amount")
+    )
+    spending_chart_data = [
+        {
+            "name": entry["shopping__shop__name"],
+            "y": float(entry["total_spent"])
+        }
+        for entry in shop_spending_totals
+    ]
+
+    # If shops are selected, build comparison data
+    shop_price_changes = []
+    if selected_shop_ids:
+        selected_shops = user_shops.filter(id__in=selected_shop_ids)
+
+        for shop in selected_shops:
+            shop_avg_prices = shopping_data.filter(shopping__shop=shop).values("product__name").annotate(
+                shop_avg_price=Avg("price")
+            )
+
+            shop_data = {
+                "shop_name": shop.name,
+                "shop_id": shop.id,
+                "prices": {
+                    item["product__name"]: round(item["shop_avg_price"], 2)
+                    for item in shop_avg_prices
+                }
+            }
+
+            shop_price_changes.append(shop_data)
+
+    context = {
+        "user_shops": user_shops,
+        "selected_shops": selected_shop_ids,
+        "avg_price_changes": avg_price_changes,
+        "shop_price_changes": shop_price_changes,
+        "main_categories": main_categories,
+        "main_category_filter": main_category_filter,
+        "main_category_name": main_category_name,
+        "spending_chart_data": json.dumps(spending_chart_data),
+    }
+
+    # TODO refine the filters to work together
+
+    return render(request, "reports/spendings_by_shop.html", context)
+

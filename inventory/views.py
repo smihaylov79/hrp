@@ -1,17 +1,6 @@
 from datetime import date
-from decimal import Decimal
-from email.mime.text import MIMEText
-import os
-import json
-
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
-from django.db.models import Sum, Avg
-from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-import smtplib
-
-
 from shopping.models import ShoppingProduct, Shop, Shopping, ShoppingList, RecipeShoppingList, MainCategory
 from .models import *
 
@@ -70,114 +59,6 @@ def user_category_settings(request):
         return redirect("user_category_settings")
 
     return render(request, "inventory/user_category_settings.html", {"user_categories": user_categories})
-
-
-
-def inventory_reports(request):
-    user_categories = UserProductCategory.objects.filter(user=request.user)
-
-    main_categories = MainCategory.objects.all()
-
-    main_category_name = ""
-
-    user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=request.user).values("shop")).distinct()
-
-    main_category_filter = request.GET.get("main_category", "")
-    category_filter = request.GET.get("category")
-    date_filter = request.GET.get("date")
-    shop_filter = request.GET.get("shop")
-
-    selected_shops = request.GET.getlist("shops")
-
-    shopping_data = ShoppingProduct.objects.filter(shopping__user=request.user)
-
-    if main_category_filter and main_category_filter.strip():
-        shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
-        main_category = main_categories.filter(id=main_category_filter).first()
-        main_category_name = main_category.name
-
-    if category_filter and category_filter.strip():
-        shopping_data = shopping_data.filter(product__category_id=category_filter)
-
-    if date_filter and date_filter.strip():
-        shopping_data = shopping_data.filter(shopping__date=date_filter)
-
-    if shop_filter and shop_filter.strip():
-        shopping_data = shopping_data.filter(shopping__shop_id=shop_filter)
-
-    total_spent = round(shopping_data.aggregate(total=Sum("amount"))["total"] or 0, 2)
-
-    avg_price_changes = shopping_data.values("product__name").annotate(avg_price=Avg("price"))
-    for item in avg_price_changes:
-        item["avg_price"] = round(item["avg_price"], 2)
-
-    shop_price_changes = []
-    for shop in user_shops:
-        shop_avg_prices = shopping_data.filter(shopping__shop=shop).values("product__name").annotate(
-            shop_avg_price=Avg("price"))
-
-        shop_data = {
-            "shop_name": shop.name,
-            "shop_id": shop.id,
-            "prices": {item["product__name"]: round(item["shop_avg_price"], 2) for item in shop_avg_prices}
-        }
-
-        shop_price_changes.append(shop_data)
-
-
-    ## for the chart with highcharts
-    main_category_spending = shopping_data.values("product__category__main_category__name").annotate(
-        total_spent=Sum("amount"))
-    subcategory_spending = shopping_data.values("product__category__name").annotate(total_spent=Sum("amount"))
-
-    main_chart_data = [{"name": entry["product__category__main_category__name"], "y": float(entry["total_spent"])}
-                       for entry in main_category_spending]
-    sub_chart_data = [{"name": entry["product__category__name"], "y": float(entry["total_spent"])}
-                      for entry in subcategory_spending]
-
-    context = {
-        "shopping_data": shopping_data,
-        "total_spent": float(total_spent),
-        "avg_price_changes": avg_price_changes,
-        "shop_price_changes": shop_price_changes,
-        "user_categories": user_categories,
-        "user_shops": user_shops,
-        "selected_shops": selected_shops,
-        "main_chart_data": json.dumps(main_chart_data),
-        "sub_chart_data": json.dumps(sub_chart_data),
-        "category_filter": category_filter,
-        "date_filter": date_filter,
-        "shop_filter": shop_filter,
-        "main_categories": main_categories,
-        "main_category_filter": main_category_filter,
-        "main_category_name": main_category_name,
-    }
-
-    return render(request, "inventory/reports.html", context)
-
-
-def product_price_history(request):
-    user = request.user
-    products = Product.objects.filter(
-        shoppingproduct__shopping__user=user).distinct()
-    selected_product_id = request.GET.get("product")
-    price_data = []
-
-    if selected_product_id:
-        product = get_object_or_404(Product, id=selected_product_id)
-
-        price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
-            .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
-
-        price_data = [{"date": entry["shopping__date"].strftime("%Y-%m-%d"), "price": float(entry["avg_price"])} for entry in price_changes]
-
-    context = {
-        "products": products,
-        "selected_product_id": selected_product_id,
-        "price_data": json.dumps(price_data) if price_data else "[]"
-    }
-
-    return render(request, "inventory/price_history.html", context)
 
 
 @login_required
@@ -259,35 +140,19 @@ def update_shopping_list(request, list_id):
 
 
 @login_required
-def send_shopping_list(request, list_id):
+def execute_shopping_list(request, list_id):
     shopping_list = ShoppingList.objects.get(id=list_id, user=request.user)
-    new_date = shopping_list.date_generated
-    items = shopping_list.items
-    email = request.user.email
-    password = os.getenv('EMAIL_PASSWORD')
-    smtp_server = os.getenv('SMTP_SERVER')
-    login = os.getenv('LOGIN_USER')
-
-
-    server = smtplib.SMTP_SSL(smtp_server, 465)
-    server.login(login, password)
-    msg = MIMEText('\n'.join(items))
-
-    msg['Subject'] = f'Списък за пазаруване: {new_date}'
-    msg['From'] = login
-    msg['To'] = email
-
-    server.sendmail(
-        login,
-        [email],
-        msg.as_string()
-    )
-
-    shopping_list.sent = True
+    shopping_list.executed = True
     shopping_list.save()
+    return redirect("all_shopping_lists")
 
-    return redirect("shopping_list_view", list_id=list_id)
 
+@login_required
+def execute_recipe_shopping_list(request, list_id):
+    shopping_list = RecipeShoppingList.objects.get(id=list_id, user=request.user)
+    shopping_list.executed = True
+    shopping_list.save()
+    return redirect("all_shopping_lists")
 
 
 
@@ -315,36 +180,6 @@ def all_shopping_lists(request):
         "inventory/all_shopping_lists.html",
         {"shopping_lists": standard_shopping_lists, "recipe_shopping_lists": recipe_shopping_lists}
     )
-
-@login_required
-def send_recipe_shopping_list(request, list_id):
-    recipe_list = RecipeShoppingList.objects.get(id=list_id, user=request.user)
-    recipe_name = recipe_list.recipe_name
-    items = recipe_list.items
-    email = request.user.email
-
-    password = os.getenv('EMAIL_PASSWORD')
-    smtp_server = os.getenv('SMTP_SERVER')
-    login = os.getenv('LOGIN_USER')
-
-    server = smtplib.SMTP_SSL(smtp_server, 465)
-    server.login(login, password)
-    msg = MIMEText('\n'.join(items))
-
-    msg['Subject'] = f'Списък за пазаруване за рецепта: {recipe_name}'
-    msg['From'] = login
-    msg['To'] = email
-
-    server.sendmail(
-        login,
-        [email],
-        msg.as_string()
-    )
-
-    recipe_list.sent = True
-    recipe_list.save()
-
-    return redirect("recipe_shopping_list_view", list_id=list_id)
 
 
 @login_required

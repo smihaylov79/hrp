@@ -1,0 +1,181 @@
+{% extends 'reports/reports_home.html' %}
+
+{% load filters_for_shop_comparison %}
+
+{% block report_body %}
+
+    <form method="GET" class="mb-4">
+  <div class="card p-3 shadow-sm">
+    <h5 class="mb-2">📅 Филтър по период:</h5>
+    <div class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label for="start_date" class="form-label">Начална дата:</label>
+        <input type="date" id="start_date" name="start_date" class="form-control"
+               value="{{ request.GET.start_date }}">
+      </div>
+      <div class="col-md-6">
+        <label for="end_date" class="form-label">Крайна дата:</label>
+        <input type="date" id="end_date" name="end_date" class="form-control"
+               value="{{ request.GET.end_date }}">
+      </div>
+    </div>
+
+    <!-- Optional: Preserve other filters -->
+    {% for shop_id in selected_shops %}
+      <input type="hidden" name="shops" value="{{ shop_id }}">
+    {% endfor %}
+    {% if main_category_filter %}
+      <input type="hidden" name="main_category" value="{{ main_category_filter }}">
+    {% endif %}
+
+    <div class="text-end mt-3">
+      <button type="submit" class="btn btn-outline-primary">📊 Приложи периода</button>
+    </div>
+  </div>
+</form>
+    <div class="row g-3 mb-4">
+  <div class="col-lg-6">
+<div class="container mt-4">
+  <h4 class="mb-4 text-center">💰 Сравнение на цени по магазин</h4>
+
+  <!-- 🏬 Shop Filter -->
+  <form method="GET" class="mb-4">
+    <div class="card p-3 shadow-sm">
+      <h5 class="mb-2">📍 Избери магазини за сравнение:</h5>
+      <div class="row g-2">
+        {% for shop in user_shops %}
+        <div class="col-md-4">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="shops" value="{{ shop.id }}"
+              id="shop_{{ shop.id }}" {% if shop.id|stringformat:"s" in selected_shops %}checked{% endif %}>
+            <label class="form-check-label" for="shop_{{ shop.id }}">{{ shop.name }}</label>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="text-end mt-3">
+        <button type="submit" class="btn btn-outline-primary">✅ Приложи филтъра</button>
+      </div>
+    </div>
+  </form>
+</div>
+  </div>
+    <div class="col-lg-6">
+    <div id="spendingPieChart" class="shadow-sm p-3 bg-white rounded"></div>
+  </div>
+
+
+
+
+</div>
+
+<form method="GET" class="mb-4">
+  <div class="card p-3 shadow-sm">
+    <h5 class="mb-2">🍽️ Филтър по основна категория:</h5>
+    <div class="btn-group flex-wrap" role="group">
+      <a href="?{% for shop_id in selected_shops %}shops={{ shop_id }}&{% endfor %}" class="btn {% if not main_category_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        Всички
+      </a>
+      {% for category in main_categories %}
+        <a href="?main_category={{ category.id }}&{% for shop_id in selected_shops %}shops={{ shop_id }}&{% endfor %}"
+           class="btn {% if category.id|stringformat:"s" == main_category_filter %}btn-primary{% else %}btn-outline-primary{% endif %}">
+          {{ category.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</form>
+
+  <!-- 📋 Price Comparison Table -->
+  <div class="table-responsive mt-4 {% if not selected_shops %}d-none{% endif %}">
+    <table class="table table-bordered table-striped align-middle" id="price-comparison-table">
+      <thead class="table-light">
+        <tr>
+          <th>🛒 Продукт</th>
+          <th>📊 Средна цена</th>
+          {% for shop in user_shops %}
+            {% if shop.id|stringformat:"s" in selected_shops %}
+            <th>{{ shop.name }}</th>
+            {% endif %}
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in avg_price_changes %}
+        <tr>
+          <td>{{ product.product__name }}</td>
+          <td>{{ product.avg_price }} лв</td>
+          {% for shop in shop_price_changes %}
+            {% if shop.shop_id|stringformat:"s" in selected_shops %}
+            <td>
+              {% if shop.prices|get_key:product.product__name %}
+                {{ shop.prices|get_key:product.product__name }} лв
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="100%" class="text-center text-muted">Няма данни за избраните магазини.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    Highcharts.chart('spendingPieChart', {
+        chart: { type: 'pie' },
+        title: { text: '🛍️ Разходи по магазини' },
+        tooltip: { pointFormat: '{series.name}: <b>{point.y:.2f} лв</b>' },
+        accessibility: { point: { valueSuffix: 'лв' } },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: { enabled: true, format: '{point.name}: {point.y:.2f} лв' }
+            }
+        },
+        series: [{
+            name: 'Общо',
+            colorByPoint: true,
+            data: {{ spending_chart_data|safe }}
+        }]
+    });
+});
+</script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Highlight lowest prices
+    const table = document.getElementById("price-comparison-table");
+    if (!table) return;
+
+    const rows = table.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+        const priceCells = Array.from(row.querySelectorAll("td:not(:first-child):not(:nth-child(2))")); // skip product name and avg price
+        let prices = priceCells.map(cell => {
+            const text = cell.textContent.trim();
+            const match = text.match(/[\d.]+/);
+            return match ? parseFloat(match[0]) : Infinity;
+        });
+
+        const minPrice = Math.min(...prices);
+        priceCells.forEach(cell => {
+            const cellText = cell.textContent.trim();
+            if (cellText.includes(minPrice.toFixed(2))) {
+                cell.classList.add("bg-success", "text-white", "fw-bold");
+            }
+        });
+    });
+});
+</script>
+
+
+
+{% endblock %}

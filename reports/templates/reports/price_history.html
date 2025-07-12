@@ -1,6 +1,7 @@
-{% extends "base.html" %}
+{% extends 'reports/reports_home.html' %}
 
-{% block content %}
+{% block report_body %}
+
     <h2>Движение на цени</h2>
 
     <form method="GET" action="{% url 'product_price_history' %}">

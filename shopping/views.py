@@ -6,6 +6,8 @@ from django.db.models import Sum, Count, Case, When, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+
 from .models import *
 from inventory.models import InventoryProduct, UserProductCategory
 
@@ -49,82 +51,6 @@ def edit_shopping(request, shopping_id):
     return render(request, "shopping/edit_shopping.html", context)
 
 
-#
-# @login_required
-# def add_to_basket(request, product_id):
-#     product = get_object_or_404(Product, id=product_id)
-#     basket, created = Basket.objects.get_or_create(user=request.user)
-#
-#     if request.method == "POST":
-#         quantity = Decimal(request.POST.get('quantity', '1.000'))
-#
-#         basket_item, created = BasketItem.objects.get_or_create(basket=basket, product=product)
-#         basket_item.quantity += quantity if not created else quantity
-#         basket_item.save()
-#
-#     return redirect('shopping')
-#
-#
-# @login_required
-# def basket_view(request):
-#     basket, created = Basket.objects.get_or_create(user=request.user)
-#     items = basket.basketitem_set.all()
-#     return render(request, "shopping/basket.html", {"items": items})
-#
-#
-# @login_required
-# def update_basket(request, item_id):
-#     item = BasketItem.objects.get(id=item_id)
-#     if request.method == "POST":
-#         item.quantity = request.POST.get('quantity')
-#         item.save()
-#     return redirect('basket')
-#
-#
-# @login_required
-# def remove_from_basket(request, item_id):
-#     item = BasketItem.objects.get(id=item_id)
-#     item.delete()
-#     return redirect('basket')
-#
-#
-# @login_required
-# def checkout(request):
-#     basket = Basket.objects.get(user=request.user)
-#     items = basket.basketitem_set.all()
-#
-#     for item in items:
-#         inventory_item, created = InventoryProduct.objects.get_or_create(
-#             user=request.user,
-#             product=item.product,
-#             defaults={'quantity': Decimal('0.000'), 'amount': Decimal('0.00')}
-#         )
-#
-#         inventory_item.quantity += item.quantity
-#         inventory_item.amount += item.quantity * Decimal(str(item.product.price))
-#
-#         inventory_item.save()
-#         inventory_item.calculate_average_price()
-#
-#     items.delete()
-#
-#     return redirect('inventory')
-#
-#
-# @login_required
-# def create_shopping(request):
-#     shops = Shop.objects.all()
-#     products = Product.objects.all()
-#     categories = ProductCategory.objects.all()
-#     main_categories = MainCategory.objects.all()
-#     return render(request, "shopping/create_shopping.html", {
-#         "shops": shops,
-#         "products": products,
-#         "categories": categories,
-#         "main_categories": main_categories,
-#     })
-
-
 @login_required
 def make_shopping(request):
     shops = Shop.objects.all()
@@ -132,7 +58,7 @@ def make_shopping(request):
     main_categories = MainCategory.objects.all()
     all_products = Product.objects.all().order_by('name')
 
-    shopping_lists = ShoppingList.objects.filter(user=request.user).order_by('-date_generated')[:5]
+    shopping_lists = ShoppingList.objects.filter(user=request.user, executed=True).order_by('-date_generated')[:5]
 
     selected_category_id = request.GET.get("category")
 
@@ -165,18 +91,17 @@ def make_shopping(request):
     if selected_category_id:
         all_products = all_products.filter(category_id=selected_category_id)
 
-    paginator = Paginator(all_products, 15)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+
 
     context = {
         "shops": shops,
-        "products": page_obj,
         "categories": categories,
+        "products": all_products,
         "main_categories": main_categories,
         "selected_category": selected_category_id,
         "shopping_lists": shopping_lists,
         "prefill_json": json.dumps(prefill_data, cls=DjangoJSONEncoder),
+
     }
 
     return render(request, "shopping/make_shopping.html", context)
@@ -234,3 +159,4 @@ def add_product(request):
         new_product = Product.objects.create(name=product_name, calories=calories, category=category)
 
         return JsonResponse({"id": new_product.id, "name": new_product.name})
+

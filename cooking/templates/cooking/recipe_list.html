@@ -3,77 +3,157 @@
 {% load custom_filters_cooking %}
 
 {% block content %}
-    <h2>Рецепти</h2>
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Рецепти</h2>
+
     {% if user.is_authenticated %}
-    <a href="{% url 'create_recipe' %}" class="shopping-button">Добави рецепта</a>
-    {% else %}
-    <a href="{% url 'login' %}" class="shopping-button">Влез в профила си за повече възможности</a>
-    {% endif %}
-    <p></p>
-
-    <div class="category-buttons">
-        <button data-category="all">Всички</button>
-        {% for category in categories %}
-            <button data-category="{{ category.name }}">{{ category.name }}</button>
-        {% endfor %}
-    </div>
-
-    <p></p>
-
-    <div class="recipe-list">
-        {% for recipe in page_obj %}
-            <div class="recipe-card">
-                {% if recipe.image %}
-                    <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">
+<a href="{% url 'create_recipe' %}" class="btn btn-success mb-3">Добави рецепта</a>
+{% else %}
+<a href="{% url 'login' %}" class="btn btn-primary mb-3">Влез в профила си за повече възможности</a>
+{% endif %}
+<div class="btn-group mb-4" role="group" aria-label="Категории">
+    <button type="button" class="btn btn-outline-secondary" data-category="all">Всички</button>
+    {% for category in categories %}
+        <button type="button" class="btn btn-outline-secondary" data-category="{{ category.name }}">{{ category.name }}</button>
+    {% endfor %}
+</div>
+<div class="row">
+    {% for recipe in page_obj %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            {% if recipe.image %}
+                <img src="{{ recipe.image.url }}" class="card-img-top" alt="{{ recipe.name }}">
+            {% else %}
+                <img src="/media/recipe_images/no_image.png" class="card-img-top" alt="Default Image">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
+                <p class="card-text"><strong>Категория:</strong> {{ recipe.category.name }}</p>
+                <p class="card-text"><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
+                <p class="card-text"><strong>Цена:</strong> {% if user.is_authenticated %}{{ recipe.user_cost }} лв.{% else %}N/A{% endif %}</p>
+                <p class="card-text"><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
+                {% if recipe.user_availability_status == "OK" %}
+                    <p class="text-success">✅ Всички продукти налични</p>
                 {% else %}
-                    <img src="/media/recipe_images/no_image.png" alt="Default Image">
+                    <p class="text-danger">❌ Липсващи продукти</p>
                 {% endif %}
 
-                <div class="recipe-info">
-                    <h3><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h3>
-                    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>
-                    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
-                    <p><strong>Цена:</strong>
-                        {% if user.is_authenticated %}
-                        {{ recipe.user_cost }} лв.
-                    {% else %}
-                        N/A
-                        {% endif %}
-                    </p>
-                    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
-
-                    {% if recipe.user_availability_status == "OK" %}
-                        <p style="color: green;">✅ Всички продукти налични</p>
-                    {% else %}
-                        <p style="color: red;">❌ Липсващи продукти</p>
-                    {% endif %}
-
-
-                    {% if not recipe.user_availability %}
-                        <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
-                            {% csrf_token %}
-                            <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>
-                        </form>
-                    {% endif %}
-
-                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit">Приготви</button>
-                    </form>
-                </div>
+                {% if not recipe.user_availability %}
+                <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-sm mt-2">🛒 Генерирай списък</button>
+                </form>
+                {% endif %}
+                <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm mt-2">👨‍🍳 Приготви</button>
+                </form>
             </div>
-        {% endfor %}
+        </div>
     </div>
-
-    <div class="pagination">
+    {% endfor %}
+</div>
+<nav aria-label="Recipe pagination">
+    <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}&category={{ selected_category }}">❮ Предишна</a>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category }}">❮ Предишна</a>
+        </li>
         {% endif %}
-        <span>Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>
+        <li class="page-item disabled"><span class="page-link">Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span></li>
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&category={{ selected_category }}">Следваща ❯</a>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ selected_category }}">Следваща ❯</a>
+        </li>
         {% endif %}
-    </div>
+    </ul>
+</nav>
+</div>
+
+    <script>
+        document.querySelectorAll(".btn-group button").forEach(button => {
+    button.addEventListener("click", function () {
+        const category = this.dataset.category;
+        window.location.href = `?category=${category}&page=1`;
+    });
+});
+    </script>
+
+
+{% endblock %}
+
+{#{% block content %}#}
+{#    <h2>Рецепти</h2>#}
+{#    {% if user.is_authenticated %}#}
+{#    <a href="{% url 'create_recipe' %}" class="shopping-button">Добави рецепта</a>#}
+{#    {% else %}#}
+{#    <a href="{% url 'login' %}" class="shopping-button">Влез в профила си за повече възможности</a>#}
+{#    {% endif %}#}
+{#    <p></p>#}
+{##}
+{#    <div class="category-buttons">#}
+{#        <button data-category="all">Всички</button>#}
+{#        {% for category in categories %}#}
+{#            <button data-category="{{ category.name }}">{{ category.name }}</button>#}
+{#        {% endfor %}#}
+{#    </div>#}
+{##}
+{#    <p></p>#}
+{##}
+{#    <div class="recipe-list">#}
+{#        {% for recipe in page_obj %}#}
+{#            <div class="recipe-card">#}
+{#                {% if recipe.image %}#}
+{#                    <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">#}
+{#                {% else %}#}
+{#                    <img src="/media/recipe_images/no_image.png" alt="Default Image">#}
+{#                {% endif %}#}
+{##}
+{#                <div class="recipe-info">#}
+{#                    <h3><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h3>#}
+{#                    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>#}
+{#                    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>#}
+{#                    <p><strong>Цена:</strong>#}
+{#                        {% if user.is_authenticated %}#}
+{#                        {{ recipe.user_cost }} лв.#}
+{#                    {% else %}#}
+{#                        N/A#}
+{#                        {% endif %}#}
+{#                    </p>#}
+{#                    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>#}
+{##}
+{#                    {% if recipe.user_availability_status == "OK" %}#}
+{#                        <p style="color: green;">✅ Всички продукти налични</p>#}
+{#                    {% else %}#}
+{#                        <p style="color: red;">❌ Липсващи продукти</p>#}
+{#                    {% endif %}#}
+{##}
+{##}
+{#                    {% if not recipe.user_availability %}#}
+{#                        <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">#}
+{#                            {% csrf_token %}#}
+{#                            <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>#}
+{#                        </form>#}
+{#                    {% endif %}#}
+{##}
+{#                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">#}
+{#                        {% csrf_token %}#}
+{#                        <button type="submit">Приготви</button>#}
+{#                    </form>#}
+{#                </div>#}
+{#            </div>#}
+{#        {% endfor %}#}
+{#    </div>#}
+{##}
+{#    <div class="pagination">#}
+{#        {% if page_obj.has_previous %}#}
+{#            <a href="?page={{ page_obj.previous_page_number }}&category={{ selected_category }}">❮ Предишна</a>#}
+{#        {% endif %}#}
+{#        <span>Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>#}
+{#        {% if page_obj.has_next %}#}
+{#            <a href="?page={{ page_obj.next_page_number }}&category={{ selected_category }}">Следваща ❯</a>#}
+{#        {% endif %}#}
+{#    </div>#}
     <script>
         document.querySelectorAll(".category-buttons button").forEach(button => {
             button.addEventListener("click", function () {
@@ -82,4 +162,4 @@
             });
         });
     </script>
-{% endblock %}
+{#{% endblock %}#}

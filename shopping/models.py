@@ -91,18 +91,18 @@ class ShoppingProduct(models.Model):
 class ShoppingList(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     date_generated = models.DateField(auto_now_add=True)
-    sent = models.BooleanField(default=False)
+    executed = models.BooleanField(default=False)
     items = models.JSONField(default=list)
 
     def __str__(self):
-        return f"Shopping List for {self.user.first_name} - {self.date_generated}"
+        return f"Лист за пазаруване на {self.user.first_name} - {self.date_generated}"
 
 
 class RecipeShoppingList(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     recipe_name = models.CharField(max_length=150)
-    sent = models.BooleanField(default=False)
+    executed = models.BooleanField(default=False)
     items = models.JSONField(default=list)
 
     def __str__(self):
-        return f"Shopping List for {self.user.first_name} - {self.recipe_name}"
+        return f"Лист за пазаруване на {self.user.first_name} - {self.recipe_name}"

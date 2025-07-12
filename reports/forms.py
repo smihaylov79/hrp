@@ -3,7 +3,7 @@ from shopping.models import *
 from django.utils.timezone import localdate
 
 
-class ReportFilterForm(forms.Form):
+class SpendingsReportFilterForm(forms.Form):
     main_category = forms.ModelChoiceField(
         queryset=MainCategory.objects.all(),
         required=False,

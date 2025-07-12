@@ -1,85 +1,48 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">📊 Отчети и анализи</h2>
 
-<a>Общо разходи: {{ total_spent }}</a>
-
-    <form method="GET" action="{% url 'reports_home' %}">
-        <div class="filter-container">
-            <div class="filter-item">
-                <label for="main_category">Категория:</label>
-                <select name="main_category">
-                    <option value="">Всички категории</option>
-                    {% for category in main_categories %}
-                        <option value="{{ category.id }}"
-                                {% if request.GET.main_category == category.id|stringformat:"s" %}selected{% endif %}>
-                            {{ category.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-
-                <label for="date_from">От:
-                    <input type="date" name="date_from" value="{{ date_from_filter }}"></label>
-                    <label for="date_to">До:
-                    <input type="date" name="date_to" value="{{ date_to_filter }}"></label>
-            </div>
-        <button type="submit">Приложи филтри</button>
-
+  <div class="row g-4 justify-content-center">
+    <!-- 💸 Spendings History -->
+    <div class="col-md-4">
+      <a href="{% url 'spendings_history' %}" class="text-decoration-none">
+        <div class="card h-100 shadow-sm border-primary">
+          <div class="card-body text-center">
+            <h5 class="card-title text-primary">📆 История на разходите</h5>
+            <p class="card-text text-muted">Преглед на всички покупки и общи разходи по дати.</p>
+          </div>
         </div>
+      </a>
+    </div>
 
-    </form>
+    <!-- 📈 Price Changes -->
+    <div class="col-md-4">
+      <a href="{% url 'product_price_history' %}" class="text-decoration-none">
+        <div class="card h-100 shadow-sm border-warning">
+          <div class="card-body text-center">
+            <h5 class="card-title text-warning">📈 Промени в цените</h5>
+            <p class="card-text text-muted">Анализ на тенденциите при цени на продукти.</p>
+          </div>
+        </div>
+      </a>
+    </div>
 
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <div id="monthly_spent" style="width:100%; height:400px;"></div>
-    <div id="weekly_spent" style="width:100%; height:400px;"></div>
+    <!-- 🛍️ Spendings by Shop -->
+    <div class="col-md-4">
+      <a href="{% url 'spendings_by_shop' %}" class="text-decoration-none">
+        <div class="card h-100 shadow-sm border-success">
+          <div class="card-body text-center">
+            <h5 class="card-title text-success">🏬 Разходи по магазини</h5>
+            <p class="card-text text-muted">Сравни сумите, похарчени в различни магазини.</p>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+    {% block report_body %}
 
-    <script>
-        const data = JSON.parse('{{ monthly_data|escapejs }}');
-
-        Highcharts.chart('monthly_spent', {
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: 'Разходи по месец'
-            },
-            xAxis: {
-                categories: data.map(item => item.month),
-                title: { text: 'Месец' }
-            },
-            yAxis: {
-                min: 0,
-                title: { text: 'лв.' }
-            },
-            series: [{
-                name: 'Общо',
-                data: data.map(item => item.total)
-            }]
-        });
-    </script>
-    <script>
-        const weeklyData = JSON.parse('{{ weekly_data|escapejs }}');
-
-        Highcharts.chart('weekly_spent', {
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: 'Разходи по седмица'
-            },
-            xAxis: {
-                categories: weeklyData.map(item => item.week),
-                title: { text: 'седмица' }
-            },
-            yAxis: {
-                min: 0,
-                title: { text: 'лв.' }
-            },
-            series: [{
-                name: 'Общо',
-                data: weeklyData.map(item => item.total)
-            }]
-        });
-    </script>
-
+    {% endblock %}
 {% endblock %}

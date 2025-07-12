@@ -1,4 +1,4 @@
-@import "navbar.css";
+/*@import "navbar.css";*/
 /* Table Design */
 table {
     width: 100%;
@@ -43,21 +43,21 @@ input[type="number"] {
 }
 
 /* Save Button */
-button {
-    background: linear-gradient(to right, #ff7e5f, #feb47b); /* Warm gradient */
-    color: white;
-    font-size: 18px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: 0.3s;
-}
+/*button {*/
+/*    background: linear-gradient(to right, #ff7e5f, #feb47b); !* Warm gradient *!*/
+/*    color: white;*/
+/*    font-size: 18px;*/
+/*    padding: 10px 20px;*/
+/*    border: none;*/
+/*    border-radius: 8px;*/
+/*    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);*/
+/*    cursor: pointer;*/
+/*    transition: 0.3s;*/
+/*}*/
 
-button:hover {
-    background: linear-gradient(to right, #feb47b, #ff7e5f);
-}
+/*button:hover {*/
+/*    background: linear-gradient(to right, #feb47b, #ff7e5f);*/
+/*}*/
 
 
  /* Beautiful background */
@@ -118,14 +118,15 @@ input[type="number"] {
     font-size: 14px;
 }
 
-button {
-    font-size: 14px;
-    padding: 8px;
-}
+/*button {*/
+/*    font-size: 14px;*/
+/*    padding: 8px;*/
+/*}*/
 
+/*
 .shopping-button {
     display: inline-block;
-    background: linear-gradient(to right, #5f6cff, #feb47b); /* Soft gradient */
+    background: linear-gradient(to right, #5f6cff, #feb47b); !* Soft gradient *!
     color: white;
     font-size: 18px;
     font-weight: bold;
@@ -143,23 +144,24 @@ button {
     box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.3);
     transform: scale(1.05);
 }
+*/
 
-.modal {
-    display: none; /* Hide modal until triggered */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-    z-index: 1000;
-}
+/*.modal {*/
+/*    display: none; !* Hide modal until triggered *!*/
+/*    position: fixed;*/
+/*    top: 50%;*/
+/*    left: 50%;*/
+/*    transform: translate(-50%, -50%);*/
+/*    background: white;*/
+/*    padding: 20px;*/
+/*    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);*/
+/*    border-radius: 10px;*/
+/*    z-index: 1000;*/
+/*}*/
 
-a.button-link {
+/*a.button-link {
     display: inline-block;
-    background: linear-gradient(to right, #ff7e5f, #feb47b); /* Same warm gradient */
+    background: linear-gradient(to right, #ff7e5f, #feb47b); !* Same warm gradient *!
     color: white;
     font-size: 18px;
     padding: 10px 20px;
@@ -171,7 +173,36 @@ a.button-link {
 
 a.button-link:hover {
     background: linear-gradient(to right, #feb47b, #ff7e5f);
-}
+}*/
+
+/*.table-scroll-wrapper {*/
+/*    max-height: 500px;*/
+/*    overflow-y: auto;*/
+/*}*/
+
+/*.table-scroll-wrapper table {*/
+/*    border-collapse: separate; !* Required for sticky headers *!*/
+/*    border-spacing: 0;*/
+/*}*/
+
+/*.table-scroll-wrapper thead th {*/
+/*    position: sticky;*/
+/*    top: 0;*/
+/*    background-color: #f8f9fa; !* Bootstrap light background *!*/
+/*    z-index: 10;*/
+/*    box-shadow: inset 0 -1px 0 #dee2e6; !* subtle border *!*/
+/*}*/
+
+/*.table-scroll-wrapper table {*/
+/*    table-layout: fixed;*/
+/*    border-collapse: separate;*/
+/*    border-spacing: 0;*/
+/*}*/
+/*.table-scroll-wrapper th,*/
+/*.table-scroll-wrapper td {*/
+/*    width: 16.6%; !* Divide 100% by 6 columns *!*/
+/*}*/
+
 
 /* Shopping List Table */
 .shopping-table {
@@ -988,21 +1019,21 @@ a.button-link:hover {
 }
 
 
-.modal {
-    display: none;
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-.modal-content {
-    display: flex;
-    flex-direction: column;
-}
+/*.modal {*/
+/*    display: none;*/
+/*    position: fixed;*/
+/*    left: 50%;*/
+/*    top: 50%;*/
+/*    transform: translate(-50%, -50%);*/
+/*    background: white;*/
+/*    padding: 20px;*/
+/*    border-radius: 5px;*/
+/*    box-shadow: 0 4px 8px rgba(0,0,0,0.2);*/
+/*}*/
+/*.modal-content {*/
+/*    display: flex;*/
+/*    flex-direction: column;*/
+/*}*/
 
 .view-shopping-btn {
     display: inline-block;
@@ -1020,31 +1051,31 @@ a.button-link:hover {
     background-color: #0056b3;
 }
 
-.table-wrapper {
-    position: relative;
-    height: 600px; /* adjust height as needed */
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    margin-top: 10px;
-}
+/*.table-wrapper {*/
+/*    position: relative;*/
+/*    height: 600px; !* adjust height as needed *!*/
+/*    overflow-y: auto;*/
+/*    border: 1px solid #ccc;*/
+/*    margin-top: 10px;*/
+/*}*/
 
-.table-wrapper table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
+/*.table-wrapper table {*/
+/*    width: 100%;*/
+/*    border-collapse: collapse;*/
+/*    table-layout: fixed;*/
+/*}*/
 
-.table-wrapper th,
-.table-wrapper td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-}
+/*.table-wrapper th,*/
+/*.table-wrapper td {*/
+/*    padding: 8px;*/
+/*    text-align: left;*/
+/*    border-bottom: 1px solid #ddd;*/
+/*}*/
 
-.table-wrapper thead th {
-    position: sticky;
-    top: 0;
-    background-color: #237511;
-    color: white;
-    z-index: 10;
-}
+/*.table-wrapper thead th {*/
+/*    position: sticky;*/
+/*    top: 0;*/
+/*    background-color: #237511;*/
+/*    color: white;*/
+/*    z-index: 10;*/
+/*}*/

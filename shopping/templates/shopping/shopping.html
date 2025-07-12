@@ -1,39 +1,63 @@
 {% extends "base.html" %}
 
 {% block content %}
-   <h2>Всички покупки</h2>
-<table>
-    <tr>
-        <th>Дата</th>
-        <th>Магазин</th>
-        <th>Общо</th>
-        <th>Действия</th>
-    </tr>
-    {% for shopping in page_obj.object_list %}
-    <tr>
-        <td>{{ shopping.date }}</td>
-        <td>{{ shopping.shop.name }}</td>
-        <td>{{ shopping.total_amount }} лв</td>
-        <td>
-            <a href="{% url 'edit_shopping' shopping.id %}">✏️ Редактирай</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-<div class="pagination">
-    {% if page_obj.has_previous %}
-        <a href="?page=1">⏪ Първа</a>
-        <a href="?page={{ page_obj.previous_page_number }}">⬅️ Предишна</a>
-    {% endif %}
+<div class="container mt-4">
+  <h2 class="mb-4 text-center">🛒 Всички покупки</h2>
 
-    <span>Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>
+  <!-- ➕ Create New Shopping Button -->
+  <div class="text-end mb-3">
+    <a href="{% url 'make_shopping' %}" class="btn btn-outline-success">
+      ➕ Регистрирай нова покупка
+    </a>
+  </div>
 
-    {% if page_obj.has_next %}
-        <a href="?page={{ page_obj.next_page_number }}">Следваща ➡️</a>
-        <a href="?page={{ page_obj.paginator.num_pages }}">⏩ Последна</a>
-    {% endif %}
+  <!-- 📋 Shopping Table -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Дата</th>
+          <th>Магазин</th>
+          <th>Общо</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shopping in page_obj.object_list %}
+        <tr>
+          <td>{{ shopping.date }}</td>
+          <td>{{ shopping.shop.name }}</td>
+          <td>{{ shopping.total_amount }} лв</td>
+          <td>
+            <a href="{% url 'edit_shopping' shopping.id %}" class="btn btn-sm btn-outline-primary">✏️ Редактирай</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted">Няма покупки към момента.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 🔁 Pagination Controls -->
+  <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+    <div>
+      {% if page_obj.has_previous %}
+      <a class="btn btn-outline-secondary btn-sm" href="?page=1">⏪ Първа</a>
+      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.previous_page_number }}">⬅️ Предишна</a>
+      {% endif %}
+    </div>
+
+    <span class="text-muted">Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>
+
+    <div>
+      {% if page_obj.has_next %}
+      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.next_page_number }}">Следваща ➡️</a>
+      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.paginator.num_pages }}">⏩ Последна</a>
+      {% endif %}
+    </div>
+  </div>
 </div>
-
-
-
 {% endblock %}

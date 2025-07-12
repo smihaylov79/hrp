@@ -1,52 +1,74 @@
 {% extends "base.html" %}
 
+
 {% block content %}
-    <h2 style="text-align: center; font-size: 24px; color: #2a2a2a;">
-        🛒 Лист за пазаруване (Създаден на {{ shopping_list.date_generated }})
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">
+        🛒 Лист за пазаруване <small class="text-muted">(Създаден на {{ shopping_list.date_generated }})</small>
     </h2>
 
-    <div style="max-width: 600px; margin: auto; background: #f9f9f9; padding: 20px; border-radius: 10px;">
-        <form method="POST" action="{% url 'update_shopping_list' shopping_list.id %}">
-            {% csrf_token %}
+    <form method="POST" action="{% url 'update_shopping_list' shopping_list.id %}">
+        {% csrf_token %}
 
-            <ul style="list-style-type: none; padding: 0;">
-                {% for item in shopping_list.items %}
-                    <li style="display: flex; justify-content: space-between; align-items: center;
-                               background: white; padding: 10px; margin: 5px 0;
-                               border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <span style="font-size: 18px; color: #333;">{{ item }}</span>
-                        <button type="submit" name="remove_item" value="{{ item }}"
-                                style="background: none; border: none; font-size: 16px; cursor: pointer; color: red;">
-                            ❌
-                        </button>
-                    </li>
-                {% endfor %}
-            </ul>
+        <ul class="list-group mb-4">
+            {% for item in shopping_list.items %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input me-2 shopping-check" id="check-{{ forloop.counter }}">
+                    <label class="form-check-label" for="check-{{ forloop.counter }}">{{ item }}</label>
+                </div>
+                <button type="submit" name="remove_item" value="{{ item }}" class="btn btn-sm btn-outline-danger">❌</button>
+            </li>
+            {% endfor %}
+        </ul>
 
-            <div style="margin-top: 15px;">
-                <label for="new_item" style="font-size: 16px; font-weight: bold;">➕ Add Item:</label>
-                <input type="text" name="new_item" placeholder="Enter product or category"
-                       style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;">
-                <button type="submit" name="add_item"
-                        style="width: 100%; padding: 10px; margin-top: 10px;
-                               background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Add to List
-                </button>
-            </div>
-        </form>
+        <div class="mb-3">
+            <label for="new_item" class="form-label">➕ Добави продукт:</label>
+            <input type="text" name="new_item" id="new_item" class="form-control" placeholder="Въведи продукт или категория">
+        </div>
+        <button type="submit" name="add_item" class="btn btn-success w-100">Добави към листа за пазаруване</button>
+    </form>
 
-        {% if not shopping_list.sent %}
-            <a href="{% url 'send_shopping_list' shopping_list.id %}"
-               style="display: block; text-align: center; margin-top: 15px;
-                      background: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">
-                📧 Send via Email
-            </a>
-        {% endif %}
+    {% if not shopping_list.executed %}
+    <a href="{% url 'execute_shopping_list' shopping_list.id %}" class="btn btn-primary w-100 mt-3" onclick="localStorage.removeItem(`shoppingList_{{ shopping_list.id }}_checked`)">
+        ✅ Изпълни</a>
+    {% endif %}
 
-        <a href="{% url 'inventory' %}"
-           style="display: block; text-align: center; margin-top: 10px;
-                  background: #FFA500; color: white; padding: 10px; border-radius: 5px; text-decoration: none;">
-            🔙 Back to Inventory
-        </a>
+    <div class="text-center">
+        <a href="{% url 'all_shopping_lists' %}" class="btn btn-outline-secondary mt-4 me-2">🔙 Обратно към списъци</a>
+        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към наличности</a>
     </div>
+</div>
+
+    <script>
+    const listId = "{{ shopping_list.id }}";
+    const storageKey = `shoppingList_${listId}_checked`;
+
+    function saveCheckboxState() {
+        const states = {};
+        document.querySelectorAll('.shopping-check').forEach((checkbox, idx) => {
+            states[idx] = checkbox.checked;
+        });
+        localStorage.setItem(storageKey, JSON.stringify(states));
+    }
+
+    function restoreCheckboxState() {
+        const stored = localStorage.getItem(storageKey);
+        if (!stored) return;
+        const states = JSON.parse(stored);
+        document.querySelectorAll('.shopping-check').forEach((checkbox, idx) => {
+            if (states[idx]) checkbox.checked = true;
+        });
+    }
+
+    // Restore on page load
+    restoreCheckboxState();
+
+    // Save whenever a box is clicked
+    document.querySelectorAll('.shopping-check').forEach(checkbox => {
+        checkbox.addEventListener('change', saveCheckboxState);
+    });
+</script>
+
+
 {% endblock %}

@@ -2,76 +2,70 @@
 {% load static %}
 
 {% block content %}
-    <h2>🛍️ Списъци за пазаруване</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">🛍️ Списъци за пазаруване</h2>
 
-    <!-- ✅ Filter Button -->
-    <button onclick="toggleFilter()" class="filter-button">🚫 Покажи неизпратени</button>
+    <button onclick="toggleFilter()" class="btn btn-outline-warning mb-3" id="filter-toggle-btn">
+        🚫 Покажи неизпълнени
+    </button>
 
-    <table class="shopping-table">
-        <thead>
-            <tr>
-                <th>Date / Recipe</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="shopping-list-table">
-            {% for shopping_list in shopping_lists %}
-                <tr class="list-row {% if shopping_list.sent %}sent{% else %}unsent{% endif %}">
+    <div class="table-scroll-wrapper table-responsive" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-bordered table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Дата / Рецепта</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody id="shopping-list-table">
+                {% for shopping_list in shopping_lists %}
+                <tr class="list-row {% if shopping_list.executed %}executed{% else %}unexecuted{% endif %}">
                     <td>{{ shopping_list.date_generated }}</td>
+                    <td>{% if shopping_list.executed %}✅ Изпълнен{% else %}❌ Неизпълнен{% endif %}</td>
                     <td>
-                        {% if shopping_list.sent %}
-                            ✅ Изпратен
-                        {% else %}
-                            ❌ Неизпратен
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="view-list-button">🔍 Преглед</a>
-                        {% if not shopping_list.sent %}
-                            <a href="{% url 'send_shopping_list' shopping_list.id %}" class="send-list-button">📧 Изпрати</a>
+                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="btn btn-sm btn-outline-info">🔍 Преглед</a>
+                        {% if not shopping_list.executed %}
+                        <a href="{% url 'execute_shopping_list' shopping_list.id %}" class="btn btn-sm btn-outline-success">✅ Изпълни</a>
                         {% endif %}
                     </td>
                 </tr>
-            {% endfor %}
-
-            {% for recipe_list in recipe_shopping_lists %}
-                <tr class="list-row {% if recipe_list.sent %}sent{% else %}unsent{% endif %}">
+                {% endfor %}
+                {% for recipe_list in recipe_shopping_lists %}
+                <tr class="list-row {% if recipe_list.executed %}executed{% else %}unexecuted{% endif %}">
                     <td>{{ recipe_list.recipe_name }}</td>
+                    <td>{% if recipe_list.executed %}✅ Изпълнен{% else %}❌ Неизпълнен{% endif %}</td>
                     <td>
-                        {% if recipe_list.sent %}
-                            ✅ Изпратен
-                        {% else %}
-                            ❌ Неизпратен
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="view-list-button">🔍 Преглед</a>
-                        {% if not recipe_list.sent %}
-                            <a href="{% url 'send_recipe_shopping_list' recipe_list.id %}" class="send-list-button">📧 Изпрати</a>
+                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="btn btn-sm btn-outline-info">🔍 Преглед</a>
+                        {% if not recipe_list.executed %}
+                        <a href="{% url 'execute_recipe_shopping_list' recipe_list.id %}" class="btn btn-sm btn-outline-success">✅ Изпълни</a>
                         {% endif %}
                     </td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <a href="{% url 'inventory' %}" class="back-button">🔙 Back to Inventory</a>
+    <div class="text-center">
+        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към наличности</a>
+    </div>
 
-    <!-- ✅ JavaScript for Filtering -->
+
     <script>
         function toggleFilter() {
-            let rows = document.querySelectorAll(".list-row");
-            let button = document.querySelector(".filter-button");
-            let showingUnsentOnly = button.textContent.includes("Show All");
+            const rows = document.querySelectorAll(".list-row");
+            const button = document.getElementById("filter-toggle-btn");
+            const showAll = button.textContent.includes("🔁");
 
             rows.forEach(row => {
-                if (row.classList.contains("sent")) {
-                    row.style.display = showingUnsentOnly ? "table-row" : "none";
+                if (row.classList.contains("executed")) {
+                    row.style.display = showAll ? "table-row" : "none";
                 }
             });
 
-            button.textContent = showingUnsentOnly ? "🚫 Show Unsent Only" : "🔁 Show All Lists";
+            button.textContent = showAll ? "🚫 Покажи неизпълнени" : "🔁 Покажи всички списъци";
         }
     </script>
+</div>
 {% endblock %}
