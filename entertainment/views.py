@@ -38,6 +38,7 @@ def calculate_optimal_upgrades(current_levels, current_loyalty, target_loyalty, 
                 4700000, 5600000, 6800000, 8100000, 9700000, 11700000, 14000000]
     }
 
+
     cob_df = pd.DataFrame(resources)
 
     for cob, current_level in current_levels.items():
@@ -116,8 +117,13 @@ def game_calculator(request):
         needed_processing_time = round(resources_to_process / total_processing_capacity,
                                        2) if resources_to_process > 0 and total_processing_capacity > 0 else 0
 
+        ac_levels = ["AC1", "AC2", "AC3", "AC4"]
+        resources_list = ["Empty","Food","Marble","Ale"]
+
         context = {"upgrade_result": upgrade_result, "needed_gathering_time": needed_gathering_time,
-                   "needed_processing_time": needed_processing_time}
+                   "needed_processing_time": needed_processing_time, 'ac_levels': ac_levels, 'resources_list': resources_list}
+
+
 
         return render(request, "entertainment/calculator.html", context)
 

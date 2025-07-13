@@ -1,105 +1,100 @@
-{% extends "base.html" %}
-{% load static %}
-{% block content %}
-    <div class="finance-nav">
-        <a href="{% url 'finance_home' %}">Начало</a>
-        <a href="{% url 'news' %}">Новини</a>
-        <a href="{% url 'markets' %}">Пазари</a>
-        <a href="{% url 'portfolio' %}">Портфейл</a>
-        <a href="{% url 'screener' %}">Радар</a>
+{% extends "finance/navigation.html" %}
+
+{% block finance_navigation %}
+<div class="container my-4">
+
+  <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+    {% for market in market_data %}
+    <div class="col">
+      <div class="card border {% if market.current_status == 'open' %}border-success{% elif market.current_status == 'closed' %}border-danger{% else %}border-secondary{% endif %}">
+        <div class="card-body">
+          <h5 class="card-title">{{ market.exchange }}</h5>
+          <p class="mb-1">
+            🕒 <span class="time-local" data-utc="{{ market.utc_open }}"></span> – <span class="time-local" data-utc="{{ market.utc_close }}"></span>
+          </p>
+          <p class="text-muted countdown" data-open="{{ market.utc_open }}" data-close="{{ market.utc_close }}"></p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Gainers and Losers -->
+  <div class="row g-4">
+    <!-- Gainers -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4 class="card-title text-success">📈 Top Gainers</h4>
+          {% for stock in top_gainers %}
+          <div class="d-flex justify-content-between border-bottom py-2">
+            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}</a>
+            <span class="text-success fw-semibold">+{{ stock.change_percentage }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
     </div>
 
-<div class="market-mini-grid">
-    {% for market in market_data %}
-        <div class="market-mini {{ market.current_status }}">
-            <div class="mini-header">{{ market.exchange }}</div>
-            <div class="mini-times">
-                <span class="time-local" data-utc="{{ market.utc_open }}"></span>–<span class="time-local" data-utc="{{ market.utc_close }}"></span>
-            </div>
-            <div class="mini-countdown">
-                <span class="countdown" data-open="{{ market.utc_open }}" data-close="{{ market.utc_close }}"></span>
-            </div>
+    <!-- Losers -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4 class="card-title text-danger">📉 Top Losers</h4>
+          {% for stock in top_losers %}
+          <div class="d-flex justify-content-between border-bottom py-2">
+            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}</a>
+            <span class="text-danger fw-semibold">{{ stock.change_percentage }}%</span>
+          </div>
+          {% endfor %}
         </div>
-    {% endfor %}
+      </div>
+    </div>
+  </div>
 </div>
 
-
-
-   <div class="finance-cards">
-        <!-- Gainers Section -->
-        <div class="gainers">
-            <h3>📈 Top Gainers</h3>
-            <div class="card-container">
-                {% for stock in top_gainers %}
-                    <div class="finance-card">
-                        <a href="{% url 'ticker-details' ticker=stock.ticker %}">
-                            <span>{{ stock.ticker }}</span>
-                        </a>
-                        <span class="change-positive">+{{ stock.change_percentage }}%</span>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Losers Section -->
-        <div class="losers">
-            <h3>📉 Top Losers</h3>
-            <div class="card-container">
-                {% for stock in top_losers %}
-                    <div class="finance-card">
-                        <a href="{% url 'ticker-details' ticker=stock.ticker %}">
-                            <span>{{ stock.ticker }}</span>
-                        </a>
-                        <span class="change-negative">{{ stock.change_percentage }}%</span>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-
-    <script>
+<!-- Countdown Script -->
+<script>
 function convertToLocal(utcString) {
-    const dt = new Date(utcString);
-    return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dt = new Date(utcString);
+  return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function updateCountdowns() {
-    const now = new Date();
-    document.querySelectorAll(".countdown").forEach(el => {
-        const open = new Date(el.dataset.open);
-        const close = new Date(el.dataset.close);
-        let diff, label;
+  const now = new Date();
+  document.querySelectorAll(".countdown").forEach(el => {
+    const open = new Date(el.dataset.open);
+    const close = new Date(el.dataset.close);
+    let diff, label;
 
-        if (now < open) {
-            diff = open - now;
-            label = "Opens in";
-        } else if (now >= open && now < close) {
-            diff = close - now;
-            label = "Closes in";
-        } else {
-            el.textContent = "Market is closed";
-            return;
-        }
+    if (now < open) {
+      diff = open - now;
+      label = "Opens in";
+    } else if (now >= open && now < close) {
+      diff = close - now;
+      label = "Closes in";
+    } else {
+      el.textContent = "Market is closed";
+      return;
+    }
 
-        const h = Math.floor(diff / (1000 * 60 * 60));
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        el.textContent = `${label} ${h}h ${m}m`;
-    });
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff / (1000 * 60)) % 60);
+    el.textContent = `${label} ${h}h ${m}m`;
+  });
 }
 
 function displayLocalTimes() {
-    document.querySelectorAll(".time-local").forEach(el => {
-        const utc = el.dataset.utc;
-        el.textContent = convertToLocal(utc);
-    });
+  document.querySelectorAll(".time-local").forEach(el => {
+    const utc = el.dataset.utc;
+    el.textContent = convertToLocal(utc);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    displayLocalTimes();
-    updateCountdowns();
-    setInterval(updateCountdowns, 60000); // update every minute
+  displayLocalTimes();
+  updateCountdowns();
+  setInterval(updateCountdowns, 60000);
 });
 </script>
-
-
 {% endblock %}

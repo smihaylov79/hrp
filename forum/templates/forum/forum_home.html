@@ -1,23 +1,57 @@
-{% extends "base.html" %}
+{% extends "forum/forum_nav.html" %}
 
-{% block content %}
-    <div class="forum-header">
-        <h1>Форум</h1>
-        <p>Свържи се, споделяй идеи и търси съвети от други потребители.</p>
-    </div>
+{% block forum_content %}
 
+<div class="container my-4">
+  <div class="text-center mb-4">
+    <h1 class="fw-bold">📢 Форум</h1>
+    <p class="lead">Свържи се, споделяй идеи и търси съвети от други потребители.</p>
     {% if user.is_superuser %}
-        <a href="{% url 'create_category' %}" class="button">➕ Създай нова категория</a>
+      <a href="{% url 'create_category' %}" class="btn btn-outline-primary mt-2">
+        ➕ Създай нова категория
+      </a>
     {% endif %}
+  </div>
 
-    <div class="forum-container">
-        {% for category in categories %}
-            <div class="forum-card">
-                <h2>{{ category.name }}</h2>
-                <p>{{ category.description }}</p>
-                <a href="{% url 'category_threads' category.id %}">Виж теми →</a>
-            </div>
-        {% endfor %}
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for category in categories %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ category.name }}</h5>
+          <p class="card-text">{{ category.description }}</p>
+          <a href="{% url 'category_threads' category.id %}" class="btn btn-sm btn-success">
+            💬 Виж теми →
+          </a>
+        </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
+
+
+{#{% extends "base.html" %}#}
+{##}
+{#{% block content %}#}
+{#    <div class="forum-header">#}
+{#        <h1>Форум</h1>#}
+{#        <p>Свържи се, споделяй идеи и търси съвети от други потребители.</p>#}
+{#    </div>#}
+{##}
+{#    {% if user.is_superuser %}#}
+{#        <a href="{% url 'create_category' %}" class="button">➕ Създай нова категория</a>#}
+{#    {% endif %}#}
+{##}
+{#    <div class="forum-container">#}
+{#        {% for category in categories %}#}
+{#            <div class="forum-card">#}
+{#                <h2>{{ category.name }}</h2>#}
+{#                <p>{{ category.description }}</p>#}
+{#                <a href="{% url 'category_threads' category.id %}">Виж теми →</a>#}
+{#            </div>#}
+{#        {% endfor %}#}
+{#    </div>#}
+{#{% endblock %}#}
 

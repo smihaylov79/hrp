@@ -9,8 +9,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 
+from forum.models import Category
 from .models import *
 from inventory.models import InventoryProduct, UserProductCategory
+from .forms import *
 
 
 def shopping_list(request):
@@ -164,3 +166,38 @@ def add_product(request):
 
         return JsonResponse({"id": new_product.id, "name": new_product.name})
 
+
+@login_required
+def utility_bills(request):
+    selected_categories = ['Битови сметки', 'Наем']
+    category = ProductCategory.objects.filter(name__in=selected_categories)
+    bills = Product.objects.filter(category__in=category)
+
+    if request.method == "POST":
+        form = UtilityBillForm(request.POST)
+        if form.is_valid():
+            shopping = form.save(commit=False)
+            shopping.user = request.user
+            shopping.save()
+
+            selected_products = json.loads(request.POST.get("selected_products"))
+            for product_data in selected_products:
+                product = Product.objects.get(id=product_data["product_id"])
+                quantity = Decimal(product_data["quantity"])
+                price = Decimal(product_data["price"])
+                amount = quantity * price
+
+                ShoppingProduct.objects.create(
+                    shopping=shopping, product=product, quantity=quantity, price=price,
+                    discount=0, amount=amount
+                )
+            return redirect("shopping")
+    else:
+        form = UtilityBillForm()
+
+    context = {
+        # "suppliers": suppliers,
+        "bills": bills,
+        'form': form,
+    }
+    return render(request, "shopping/utility_bills.html", context)

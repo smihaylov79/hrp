@@ -1,144 +1,177 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Създай нова рецепта</h2>
+<div class="container my-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title mb-4">👨‍🍳 Създай нова рецепта</h2>
 
-<form method="post" action="{% url 'save_recipe' %}">
-    {% csrf_token %}
+      <form method="post" action="{% url 'save_recipe' %}">
+        {% csrf_token %}
 
-    <h3>Детайли</h3>
-    <label for="name">Име:</label>
-    <input type="text" name="name" class="form-control" required>
+        <h4 class="mb-3">📋 Детайли</h4>
 
-    <label for="category_id">Категория:</label>
-    <select name="category_id" class="form-control" required>
-        {% for category in categories %}
-            <option value="{{ category.id }}">{{ category.name }}</option>
-        {% endfor %}
-    </select>
+        <div class="mb-3">
+          <label for="name" class="form-label">Име:</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
 
-    <label for="time_to_prepare">Време (mins):</label>
-    <input type="number" name="time_to_prepare" class="form-control" required>
+        <div class="mb-3">
+          <label for="category_id" class="form-label">Категория:</label>
+          <select name="category_id" class="form-select" required>
+            {% for category in categories %}
+              <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
-    <label for="instructions">Инструкции:</label>
-<textarea name="instructions" class="form-control" rows="10" style="width: 100%;"></textarea>
+        <div class="mb-3">
+          <label for="time_to_prepare" class="form-label">⏱️ Време (мин):</label>
+          <input type="number" name="time_to_prepare" class="form-control" required>
+        </div>
 
+        <div class="mb-3">
+          <label for="instructions" class="form-label">📖 Инструкции:</label>
+          <textarea name="instructions" class="form-control" rows="5"></textarea>
+        </div>
 
-    <label for="url_link">URL Link (optional):</label>
-    <input type="url" name="url_link" class="form-control" style="width: 80%;">
+        <div class="mb-3">
+          <label for="url_link" class="form-label">🔗 URL (по желание):</label>
+          <input type="url" name="url_link" class="form-control">
+        </div>
 
-    <h3>Съставки</h3>
-    <table id="ingredientTable">
-        <thead>
-            <tr>
+        <h4 class="mt-4 mb-3">🧪 Съставки</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle" id="ingredientTable">
+            <thead class="table-light">
+              <tr>
                 <th>Продукт</th>
                 <th>Количество</th>
                 <th>Мярка</th>
                 <th>Премахни</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
                 <td>
-                    <select name="product_id[]" class="form-control" onchange="checkNewProduct(this)">
+                  <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
                     <option value="" disabled selected>Избери продукт</option>
-                        <option value="new">➕ Добави нов продукт</option>
-                        {% for product in products %}
-                            <option value="{{ product.id }}">{{ product.name }}</option>
-                        {% endfor %}
-                    </select>
+                    <option value="new">➕ Добави нов продукт</option>
+                    {% for product in products %}
+                      <option value="{{ product.id }}">{{ product.name }}</option>
+                    {% endfor %}
+                  </select>
                 </td>
                 <td><input type="number" name="quantity[]" class="form-control" step="0.001" required></td>
-                <td><input type="text" name="unit[]" class="form-control" placeholder="optional"></td>
-                <td><button type="button" class="removeRow btn btn-danger">✖</button></td>
-            </tr>
-        </tbody>
-    </table>
+                <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
+                <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-    <button type="button" id="addRow" class="btn btn-primary">➕ Добави съставка</button>
-    <button type="submit" class="btn btn-success">Запази рецепта</button>
-</form>
-
-<script>
-document.getElementById("addRow").addEventListener("click", function() {
-    let table = document.getElementById("ingredientTable").getElementsByTagName("tbody")[0];
-    let newRow = table.rows[0].cloneNode(true);
-
-    // Reset values in the cloned row
-    newRow.querySelectorAll("input, select").forEach(input => {
-        input.value = "";
-    });
-
-    table.appendChild(newRow);
-});
-
-document.querySelectorAll(".removeRow").forEach(button => {
-    button.addEventListener("click", function() {
-        this.closest("tr").remove();
-    });
-});
-</script>
-    <div id="product-modal" class="modal">
-    <div class="modal-content">
-        <h3>Добави нов продукт</h3>
-        <form id="new-product-form">
-        {% csrf_token %}
-            <label for="category">Категория:</label>
-            <select name="category_id">
-                {% for category in product_categories %}
-                    <option value="{{ category.id }}">{{ category.name }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="new-product-name">Име на продукта:</label>
-            <input type="text" name="new_product_name" required>
-
-            <label for="new-calories">Калории:</label>
-            <input type="number" step="1" name="new_calories" required>
-
-            <button type="button" onclick="saveNewProduct()">Запази продукта</button>
-            <button type="button" onclick="closeModal()">Затвори</button>
-        </form>
+        <div class="d-flex gap-2 mt-3">
+          <button type="button" id="addRow" class="btn btn-outline-primary">➕ Добави съставка</button>
+          <button type="submit" class="btn btn-success">💾 Запази рецепта</button>
+        </div>
+      </form>
     </div>
+  </div>
+</div>
+
+<!-- Modal for new product -->
+<div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="new-product-form">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">➕ Добави нов продукт</h5>
+          <button type="button" class="btn-close" onclick="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="category" class="form-label">Категория:</label>
+            <select name="category_id" class="form-select">
+              {% for category in product_categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="new-product-name" class="form-label">Име:</label>
+            <input type="text" name="new_product_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="new-calories" class="form-label">Калории:</label>
+            <input type="number" step="1" name="new_calories" class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Затвори</button>
+          <button type="button" class="btn btn-primary" onclick="saveNewProduct()">Запази продукта</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <script>
+// Add new ingredient row
+document.getElementById("addRow").addEventListener("click", function () {
+  const tableBody = document.querySelector("#ingredientTable tbody");
+  const newRow = tableBody.rows[0].cloneNode(true);
+  newRow.querySelectorAll("input, select").forEach(el => el.value = "");
+  newRow.querySelector(".removeRow").addEventListener("click", function () {
+    this.closest("tr").remove();
+  });
+  tableBody.appendChild(newRow);
+});
+
+// Remove row handler
+document.querySelectorAll(".removeRow").forEach(button => {
+  button.addEventListener("click", function () {
+    this.closest("tr").remove();
+  });
+});
+
+// Modal logic
 function checkNewProduct(selectElement) {
-    if (selectElement.value === "new") {
-        document.getElementById("product-modal").style.display = "block";
-    }
+  if (selectElement.value === "new") {
+    new bootstrap.Modal(document.getElementById("product-modal")).show();
+  }
 }
 
 function closeModal() {
-    document.getElementById("product-modal").style.display = "none";
+  const modalEl = document.getElementById("product-modal");
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  modal.hide();
 }
 
 async function saveNewProduct() {
-    let formData = new FormData(document.getElementById("new-product-form"));
-
-    let response = await fetch("{% url 'add_product' %}", {
-        method: "POST",
-        body: formData,
-        headers: {
-            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-            "Accept": "application/json"
-        }
-    });
-
-    if (response.ok) {
-        let newProduct = await response.json();
-
-        // Add new product to all dropdowns
-        document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
-            dropdown.innerHTML += `<option value="${newProduct.id}" selected>${newProduct.name}</option>`;
-        });
-
-        closeModal();
-    } else {
-        alert("Грешка при добавянето на продукта.");
+  const formData = new FormData(document.getElementById("new-product-form"));
+  const response = await fetch("{% url 'add_product' %}", {
+    method: "POST",
+    body: formData,
+    headers: {
+      "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+      "Accept": "application/json"
     }
+  });
+
+  if (response.ok) {
+    const newProduct = await response.json();
+    document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
+      const option = document.createElement("option");
+      option.value = newProduct.id;
+      option.textContent = newProduct.name;
+      option.selected = true;
+      dropdown.appendChild(option);
+    });
+    closeModal();
+  } else {
+    alert("Грешка при добавянето на продукта.");
+  }
 }
 </script>
-
-
 {% endblock %}

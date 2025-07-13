@@ -1,3 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
 <nav class="forum-nav">
     <ul>
         <li><a href="{% url 'forum_home' %}">🏠 Forum Home</a></li>
@@ -6,3 +10,9 @@
         {% endfor %}
     </ul>
 </nav>
+
+{% block forum_content %}
+
+    {% endblock %}
+
+{% endblock %}

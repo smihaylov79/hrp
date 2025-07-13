@@ -3,13 +3,20 @@
 {% block content %}
 <div class="container mt-4">
   <h2 class="mb-4 text-center">🛒 Всички покупки</h2>
-
+<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="text-end mb-3">
+    <a href="{% url 'utility_bills' %}" class="btn btn-outline-success">
+      ➕ Плати битови сметки
+    </a>
+</div>
   <!-- ➕ Create New Shopping Button -->
+
   <div class="text-end mb-3">
     <a href="{% url 'make_shopping' %}" class="btn btn-outline-success">
       ➕ Регистрирай нова покупка
     </a>
   </div>
+</div>
 
   <!-- 📋 Shopping Table -->
   <div class="table-responsive">

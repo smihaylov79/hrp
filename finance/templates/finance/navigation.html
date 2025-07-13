@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <nav class="nav nav-pills mb-4 justify-content-center">
+    <a class="nav-link" href="{% url 'finance_home' %}">📊 Начало</a>
+    <a class="nav-link" href="{% url 'news' %}">📰 Новини</a>
+    <a class="nav-link" href="{% url 'markets' %}">💹 Пазари</a>
+    <a class="nav-link" href="{% url 'portfolio' %}">💼 Портфейл</a>
+    <a class="nav-link" href="{% url 'screener' %}">🔍 Радар</a>
+  </nav>
+
+    {% block finance_navigation %}
+
+        {% endblock %}
+
+
+{% endblock %}

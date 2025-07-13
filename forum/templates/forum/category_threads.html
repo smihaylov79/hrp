@@ -1,7 +1,7 @@
-{% extends "forum/base_forum.html" %}
+{% extends "forum/forum_nav.html" %}
 
+{% block forum_content %}
 
-{% block content %}
     <h2>{{ category.name }}</h2>
 
     {% if user.is_authenticated %}

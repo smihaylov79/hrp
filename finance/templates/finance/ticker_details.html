@@ -1,14 +1,7 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends "finance/navigation.html" %}
 
-{% block content %}
-    <div class="finance-nav">
-        <a href="{% url 'finance_home' %}">Начало</a>
-        <a href="{% url 'news' %}">Новини</a>
-        <a href="{% url 'markets' %}">Пазари</a>
-        <a href="{% url 'portfolio' %}">Портфейл</a>
-        <a href="{% url 'screener' %}">Радар</a>
-    </div>
+{% block finance_navigation %}
+
 
     <h2>{{ stock_info.name }} ({{ stock_info.symbol }}) - Детайли</h2>
 

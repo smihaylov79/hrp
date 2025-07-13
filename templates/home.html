@@ -49,29 +49,73 @@
 </div>
 {% endif %}
 
-    <div class="section-container">
-    <a href="{% url 'shopping' %}" class="section-card">
-        🛍️ Пазаруване
-    </a>
-
-    <a href="{% url 'inventory' %}" class="section-card">
-        🏬 Наличности
-    </a>
-
-    <a href="{% url 'recipe_list' %}" class="section-card">
-        🥣 Сготви
-    </a>
-
-    <a href="{% url 'finance_home' %}" class="section-card">
-        💰 Пари
-    </a>
-
-    <a href="{% url 'entertainment_home' %}" class="section-card">
-        🏝️🍹⛱️🌞 🌊 Забавление
-    </a>
-    <a href="{% url 'forum_home' %}" class="section-card">
-        🗪 Форум
-    </a>
+    <div class="container my-4">
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+      <div class="col">
+      <a href="{% url 'reports_home' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">📊 Отчети и анализи</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'shopping' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">🛍️ Пазаруване/Разходи</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'inventory' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">🏬 Наличности</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'recipe_list' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">🥣 Сготви</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'finance_home' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">💰 Пари</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'entertainment_home' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">🏝️🍹⛱️🌞 🌊 Забавление</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+    <div class="col">
+      <a href="{% url 'forum_home' %}" class="text-decoration-none">
+        <div class="card text-center shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">🗪 Форум</h5>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
 </div>
+
 
 {% endblock %}

@@ -1,32 +1,59 @@
-{% extends "forum/base_forum.html" %}
+{% extends "forum/forum_nav.html" %}
 
-
-{% block content %}
-    <h2>{{ thread.title }}</h2>
-    <p>Created by {{ thread.created_by.first_name }} {{ thread.created_by.last_name }}</p>
-    <small>Last activity: {{ thread.last_activity }}</small>
-    <span class="views">👁️ {{ thread.views }} views</span>
-
-    <hr>
-
-    <h3>Discussion</h3>
-    <div class="post-list">
-        {% for post in posts %}
-            <div class="post-card">
-                <strong>{{ post.author.first_name }} {{ post.author.last_name }}</strong>: {{ post.content }}
-                <small>{{ post.created_at }}</small>
-            </div>
-        {% endfor %}
+{% block forum_content %}
+<div class="container my-4">
+  <!-- Thread Header -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title">{{ thread.title }}</h2>
+      <p class="mb-1">👤 Създадено от <strong>{{ thread.created_by.first_name }} {{ thread.created_by.last_name }}</strong></p>
+      <p class="text-muted mb-0">🕒 Последна активност: {{ thread.last_activity }}</p>
+      <span class="badge bg-secondary mt-1">👁️ {{ thread.views }} гледания</span>
     </div>
+  </div>
 
-    {% if user.is_authenticated %}
-        <h3>Reply</h3>
+  <!-- Discussion Posts -->
+  <h3 class="mb-3">💬 Дискусия</h3>
+  <div class="d-flex flex-column gap-3">
+    {% for post in posts %}
+      <div class="card border-start border-primary">
+        <div class="card-body">
+          <p class="mb-1">
+            <strong>{{ post.author.first_name }} {{ post.author.last_name }}</strong>:
+            {{ post.content }}
+          </p>
+          <small class="text-muted">{{ post.created_at }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <div class="alert alert-info">Няма коментари все още. Бъди първият!</div>
+    {% endfor %}
+  </div>
+
+  <!-- Reply Form -->
+  {% if user.is_authenticated %}
+    <div class="card mt-4">
+      <div class="card-body">
+        <h4 class="card-title">📝 Отговори на темата</h4>
         <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="button">Post Comment</button>
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              {{ field.label_tag }}
+              {{ field }}
+              {% for error in field.errors %}
+                <div class="text-danger">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-success">💬 Публикувай коментар</button>
         </form>
-    {% else %}
-        <p><a href="{% url 'login' %}">Log in</a> to reply.</p>
-    {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-warning mt-4">
+      <a href="{% url 'login' %}" class="text-decoration-none">🔐 Влез в профила си</a>, за да отговориш на темата.
+    </div>
+  {% endif %}
+</div>
 {% endblock %}
