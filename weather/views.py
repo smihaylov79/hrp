@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.utils.timezone import now
 import requests
 from django.utils.timezone import now
@@ -12,31 +12,44 @@ import os
 def get_weather_data(request):
     api_key = os.environ.get('API_KEY_WEATHER')
     location = request.session.get("geo_location", "Sofia")
+    if not location:
+        location = "Sofia"
     url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={location}&days=4"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
-    return None
+    else:
+        request.session["geo_location"] = "Sofia"  # Fallback silently
+        return {"error": "Градът не беше намерен. Показвам прогнозата за София."}
 
 
 def weather_data_context_processor(request):
     weather_data = get_weather_data(request)
+    error_message = None
 
-    if weather_data:
-        for forecast_day in weather_data['forecast']['forecastday']:
-            forecast_day['parsed_date'] = datetime.strptime(forecast_day['date'], "%Y-%m-%d")
+    if weather_data and 'forecast' in weather_data:
+
+        forecast = weather_data.get('forecast', {})
+        for day in forecast.get('forecastday', []):
+            date_str = day.get('date')
+            if date_str:
+                day['parsed_date'] = datetime.strptime(date_str, "%Y-%m-%d")
+
+    elif weather_data and 'error' in weather_data:
+        error_message = weather_data['error']
+        weather_data = None
 
     return {
         'weather_data': weather_data,
-        'now': now()
+        'weather_error': error_message,
+        'now': now(),
     }
 
 
 def set_location(request):
-    lat = request.GET.get("lat")
-    lon = request.GET.get("lon")
-    request.session["geo_location"] = f"{lat},{lon}"
-    return JsonResponse({"status": "ok"})
+    city = request.GET.get("location", "Sofia")
+    request.session["geo_location"] = city
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 def detailed_forecast(request, date):

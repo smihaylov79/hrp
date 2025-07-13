@@ -2,6 +2,7 @@ from decimal import Decimal
 import json
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import IntegrityError
 from django.db.models import Sum, Count, Case, When, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -156,7 +157,10 @@ def add_product(request):
             return JsonResponse({"error": "Всички полета са задължителни!"}, status=400)
 
         category = ProductCategory.objects.get(id=category_id)
-        new_product = Product.objects.create(name=product_name, calories=calories, category=category)
+        try:
+            new_product = Product.objects.create(name=product_name, calories=calories, category=category)
+        except IntegrityError:
+            return JsonResponse({'error': "Продукт с това име вече е наличен! Въведи името в търсачката!"}, status=400)
 
         return JsonResponse({"id": new_product.id, "name": new_product.name})
 

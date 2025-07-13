@@ -61,11 +61,11 @@
 
     {% endblock %}
 </div>
-<script>
-    navigator.geolocation.getCurrentPosition(function (position) {
-        fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);
-    });
-</script>
+{#<script>#}
+{#    navigator.geolocation.getCurrentPosition(function (position) {#}
+{#        fetch(`/set_location/?lat=${position.coords.latitude}&lon=${position.coords.longitude}`);#}
+{#    });#}
+{#</script>#}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let scrollPosition = localStorage.getItem("scrollPosition");

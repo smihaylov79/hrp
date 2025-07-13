@@ -24,19 +24,6 @@
   <form id="shopping-form" action="{% url 'save_shopping' %}" method="POST">
     {% csrf_token %}
 
-    <div class="mb-3 d-flex align-items-end gap-2">
-  <div class="flex-grow-1">
-    <label for="product-search" class="form-label">🔍 Търсене на продукт:</label>
-    <input type="text" id="product-search" class="form-control" placeholder="Въведи име на продукта..." onkeyup="filterProductsByName()">
-  </div>
-  <div class="mb-1">
-    <label class="form-label invisible">Добави</label>
-    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#productModal">
-      Добави нов продукт
-    </button>
-  </div>
-</div>
-
   <div class="row g-3 mb-3">
   <!-- 🔹 Main Category Filter -->
   <div class="col-md-4">
@@ -66,6 +53,19 @@
   </div>
 </div>
 
+  <div class="mb-3 d-flex align-items-end gap-2">
+  <div class="flex-grow-1">
+    <label for="product-search" class="form-label">🔍 Търсене на продукт:</label>
+    <input type="text" id="product-search" class="form-control" placeholder="Въведи име на продукта..." onkeyup="filterProductsByName()">
+  </div>
+  <div class="mb-1">
+    <label class="form-label invisible">Добави</label>
+    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#productModal">
+      Добави нов продукт
+    </button>
+  </div>
+</div>
+
 
   <div class="products-scroll-wrapper" style="max-height: 40vh; overflow-y: auto;">
   <div class="row g-2 products-container">
@@ -74,7 +74,7 @@
          data-main-category="{{ product.category.main_category.id }}">
     <div class="card h-100 shadow-sm">
       <div class="card-body py-3 px-3">
-        <h5 class="card-title text-truncate mb-2">{{ product.name }}</h5>
+        <h5 class="card-title text-truncate mb-2">{{ product.name }} / {{ product.category.name }}</h5>
 
         <!-- Inline Inputs Row -->
         <div class="row g-1 align-items-end mb-2">

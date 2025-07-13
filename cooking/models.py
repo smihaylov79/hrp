@@ -1,6 +1,9 @@
 from django.db import models
 from shopping.models import Product
 from inventory.models import InventoryProduct
+from users.models import CustomUser
+
+
 # Create your models here.
 
 
@@ -56,3 +59,8 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return f"{self.quantity} of {self.product.name} in {self.recipe.name}"
 
+
+class RecipeTimesCooked(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_times_cooked')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='recipe_times_cooked')
+    date = models.DateTimeField(auto_now_add=True)

@@ -1,48 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="finance-nav">
-        <a href="{% url 'finance_home' %}">Начало</a>
-        <a href="{% url 'news' %}">Новини</a>
-        <a href="{% url 'markets' %}">Пазари</a>
-        <a href="{% url 'portfolio' %}">Портфейл</a>
-        <a href="{% url 'screener' %}">Радар</a>
-    </div>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">🗞️ Финансови новини</h2>
+  <a href="{% url 'finance_home' %}" class="btn btn-outline-dark btn-sm">🏠 Пари</a>
+</div>
 
-    <form method="GET">
-        <label for="ticker">Новини за символ:</label>
-        <input type="text" name="ticker" id="ticker" placeholder="Напр. AAPL, MSFT">
-        <button type="submit">Търсене</button>
-    </form>
-    {% if news %}
-        {% if ticker %}
-            <h3>Новини за: {{ ticker }}</h3>
-            {% else %}
-            <h2>Новини</h2>
-        {% endif %}
+  <form method="GET" class="d-flex flex-wrap gap-2 mb-4">
+    <label for="ticker" class="form-label me-2">🔍 Търси новини за символ:</label>
+    <input type="text" name="ticker" id="ticker" class="form-control form-control-sm" placeholder="AAPL, MSFT">
+    <button type="submit" class="btn btn-primary btn-sm">Търсене</button>
+  </form>
 
-    <div class="news-container">
-
-    <div class="news-list">
-        {% for article in news %}
-            <div class="news-card">
-                <img src="{{ article.image_url }}" alt="News Image">
-                <h3><a href="{{ article.url }}" target="_blank">{{ article.title }}</a></h3>
-                <p>{{ article.description }}</p>
-                <p><small>Published: {{ article.published_at }}</small></p>
-                <p><small>Source: {{ article.source }}</small></p>
-            <span class="sentiment">
-        {% if article.sentiment_score %}
-            Sentiment: {{ article.sentiment_score }}
-        {% else %}
-            Sentiment: N/A
-        {% endif %}
-    </span>
+  {% if news %}
+    <div class="row row-cols-1 g-3">
+      {% for article in news %}
+        <div class="col">
+          <div class="card h-100 border-light shadow-sm">
+            <div class="row g-0">
+              <div class="col-md-4">
+                {% if article.image_url %}
+                  <img src="{{ article.image_url }}" class="img-fluid rounded-start" alt="Новина">
+                {% endif %}
+              </div>
+              <div class="col-md-8">
+                <div class="card-body">
+                  <h5 class="card-title">{{ article.title }}</h5>
+                  <p class="card-text">{{ article.description }}</p>
+                  <p class="card-text">
+                    <small class="text-muted">🕒 {{ article.published_at }} | 📺 {{ article.source }}</small>
+                  </p>
+                  <p class="card-text">
+                    <small>💬 Sentiment:
+                      {% if article.sentiment_score %}
+                        {{ article.sentiment_score }}
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </small>
+                  </p>
+                  <a href="{{ article.url }}" target="_blank" class="btn btn-outline-primary btn-sm">Прочети</a>
+                </div>
+              </div>
             </div>
-        {% endfor %}
-    {% else %}
-    <p>Няма намерени новини.</p>
-{% endif %}
+          </div>
+        </div>
+      {% endfor %}
     </div>
-    </div>
+  {% else %}
+    <div class="alert alert-info">Няма намерени новини.</div>
+  {% endif %}
+</div>
+
+
 {% endblock %}

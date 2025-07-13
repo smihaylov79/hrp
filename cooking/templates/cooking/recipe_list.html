@@ -12,154 +12,219 @@
 <a href="{% url 'login' %}" class="btn btn-primary mb-3">Влез в профила си за повече възможности</a>
 {% endif %}
 <div class="btn-group mb-4" role="group" aria-label="Категории">
-    <button type="button" class="btn btn-outline-secondary" data-category="all">Всички</button>
+    <button type="button" class="btn btn-outline-secondary category-btn" data-category="all">Всички</button>
     {% for category in categories %}
-        <button type="button" class="btn btn-outline-secondary" data-category="{{ category.name }}">{{ category.name }}</button>
+        <button type="button" class="btn btn-outline-secondary category-btn" data-category="{{ category.name }}">{{ category.name }}</button>
     {% endfor %}
 </div>
+
+<div class="flex-grow-1">
+    <label for="recipe-search" class="form-label">🔍 Търси рецепта:</label>
+    <input type="text" id="recipe-search" class="form-control" placeholder="Име..." onkeyup="filterRecipeByName()">
+  </div>
+
+<form method="get" action="{% url 'recipe_list' %}" class="mb-4">
+  <label for="ingredient-select" class="form-label">🧂 Рецепта с продукт:</label>
+  <select id="ingredient-select" name="ingredient" class="form-select" onchange="this.form.submit()">
+    <option value="all" {% if request.GET.ingredient == "all" %}selected{% endif %}>-- Всички --</option>
+    {% for product in user_inventory %}
+      <option value="{{ product }}"
+          {% if request.GET.ingredient == product|stringformat:"s" %}selected{% endif %}>
+    {{ product|get_product_name }}
+    {% endfor %}
+  </select>
+  <input type="hidden" name="category" value="{{ selected_category }}">
+</form>
+
 <div class="row">
-    {% for recipe in page_obj %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
-            {% if recipe.image %}
-                <img src="{{ recipe.image.url }}" class="card-img-top" alt="{{ recipe.name }}">
-            {% else %}
-                <img src="/media/recipe_images/no_image.png" class="card-img-top" alt="Default Image">
-            {% endif %}
-            <div class="card-body">
-                <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
-                <p class="card-text"><strong>Категория:</strong> {{ recipe.category.name }}</p>
-                <p class="card-text"><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
-                <p class="card-text"><strong>Цена:</strong> {% if user.is_authenticated %}{{ recipe.user_cost }} лв.{% else %}N/A{% endif %}</p>
-                <p class="card-text"><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
-                {% if recipe.user_availability_status == "OK" %}
-                    <p class="text-success">✅ Всички продукти налични</p>
-                {% else %}
-                    <p class="text-danger">❌ Липсващи продукти</p>
-                {% endif %}
+    {% for recipe in recipes %}
+        <div class="card h-100 border-light shadow-sm recipe-card"
+                data-category="{{ recipe.category.name|lower }}"
+                data-name="{{ recipe.name|lower }}"
+                {% if recipe.is_top %}class="top-recipe"{% endif %}>
+  <div class="row g-0 align-items-center">
+    <div class="col-md-4 d-flex align-items-center" style="height: 180px;">
+  {% if recipe.image %}
+    <img src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
+  {% else %}
+    <img src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+  {% endif %}
+</div>
 
-                {% if not recipe.user_availability %}
-                <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-warning btn-sm mt-2">🛒 Генерирай списък</button>
-                </form>
-                {% endif %}
-                <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success btn-sm mt-2">👨‍🍳 Приготви</button>
-                </form>
-            </div>
-        </div>
+    <div class="col-md-5">
+      <div class="card-body">
+        <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
+        <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
+        <p class="card-text mb-1"><strong>💰:</strong> {% if user.is_authenticated %}{{ recipe.user_cost }} лв.{% else %}N/A{% endif %}</p>
+        <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.calculate_calories }} kcal</p>
+        <p class="card-text mb-1"><strong>📂:</strong> {{ recipe.category.name }}</p>
+
+        {% if recipe.user_availability_status == "OK" %}
+          <p class="text-success small">✅ Всички продукти налични</p>
+        {% else %}
+          <p class="text-danger small">❌ Липсващи продукти</p>
+        {% endif %}
+
+        {% if recipe.times_cooked %}
+          <p class="text-muted small mt-2">👨‍🍳 Приготвяна <strong>{{ recipe.times_cooked }}</strong> пъти</p>
+        {% endif %}
+      </div>
     </div>
+
+    <div class="col-md-3 text-center px-3">
+      {% if not recipe.user_availability %}
+        <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST" class="mb-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-warning btn-sm w-100">🛒 Списък</button>
+        </form>
+      {% endif %}
+
+      {% if user.is_authenticated %}
+        <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm w-100">🍳 Приготви</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+        <script>
+  let selectedCategory = "all";
+
+  function filterRecipes() {
+    const searchInput = document.getElementById("recipe-search").value.toLowerCase();
+    const cards = document.querySelectorAll(".recipe-card");
+
+    cards.forEach(card => {
+      const cardCategory = card.dataset.category || "";
+      const cardName = card.dataset.name || "";
+      const isTop = card.classList.contains("top-recipe");
+
+      const categoryMatch = selectedCategory === "all" || cardCategory === selectedCategory;
+      const nameMatch = cardName.includes(searchInput);
+
+      const showCard = searchInput ? nameMatch : categoryMatch;
+      card.style.display = showCard ? "block" : "none";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("recipe-search").addEventListener("input", filterRecipes);
+
+    document.querySelectorAll(".category-btn").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".category-btn").forEach(btn => btn.classList.remove("active"));
+        button.classList.add("active");
+        selectedCategory = button.dataset.category.toLowerCase();
+        filterRecipes();
+      });
+    });
+
+    filterRecipes(); // initial call
+  });
+</script>
+
+{#    <div class="col-md-6 col-lg-4 mb-4 recipe-card {% if recipe.is_top %}top-recipe{% endif %}"#}
+{#                    data-category="{{ recipe.category.name|lower }}"#}
+{#                    data-name="{{ recipe.name|lower }}">#}
+{#        <div class="card h-100">#}
+{#            {% if recipe.image %}#}
+{#                <img src="{{ recipe.image.url }}" class="card-img-top" alt="{{ recipe.name }}">#}
+{#            {% else %}#}
+{#                <img src="/media/recipe_images/no_image.png" class="card-img-top" alt="Default Image">#}
+{#            {% endif %}#}
+{#            <div class="card-body">#}
+{#                <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>#}
+{#                <p class="card-text"><strong>Категория:</strong> {{ recipe.category.name }}</p>#}
+{#                <p class="card-text"><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>#}
+{#                <p class="card-text"><strong>Цена:</strong> {% if user.is_authenticated %}{{ recipe.user_cost }} лв.{% else %}N/A{% endif %}</p>#}
+{#                <p class="card-text"><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>#}
+{#                {% if recipe.user_availability_status == "OK" %}#}
+{#                    <p class="text-success">✅ Всички продукти налични</p>#}
+{#                {% else %}#}
+{#                    <p class="text-danger">❌ Липсващи продукти</p>#}
+{#                {% endif %}#}
+{##}
+{#                {% if not recipe.user_availability %}#}
+{#                <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">#}
+{#                    {% csrf_token %}#}
+{#                    <button type="submit" class="btn btn-warning btn-sm mt-2">🛒 Генерирай списък</button>#}
+{#                </form>#}
+{#                {% endif %}#}
+{#                {% if user.is_authenticated %}#}
+{#<div class="d-flex justify-content-between align-items-center px-3 pb-3">#}
+{#    <form action="{% url 'cook_recipe' recipe.id %}" method="POST" class="mb-0">#}
+{#        {% csrf_token %}#}
+{#        <button type="submit" class="btn btn-success btn-sm">👨‍🍳 Приготви</button>#}
+{#    </form>#}
+{#    <span class="text-muted small">Приготвяна <strong>{{ recipe.times_cooked }}</strong> пъти</span>#}
+{#</div>#}
+{#{% endif %}#}
+{##}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
     {% endfor %}
 </div>
-<nav aria-label="Recipe pagination">
-    <ul class="pagination justify-content-center">
-        {% if page_obj.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&category={{ selected_category }}">❮ Предишна</a>
-        </li>
-        {% endif %}
-        <li class="page-item disabled"><span class="page-link">Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span></li>
-        {% if page_obj.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}&category={{ selected_category }}">Следваща ❯</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
+
 </div>
 
-    <script>
-        document.querySelectorAll(".btn-group button").forEach(button => {
-    button.addEventListener("click", function () {
-        const category = this.dataset.category;
-        window.location.href = `?category=${category}&page=1`;
-    });
-});
-    </script>
+{#    <script>#}
+{#    let selectedCategory = "all";#}
+{##}
+{#    function filterRecipes() {#}
+{#        const searchInput = document.getElementById("recipe-search").value.toLowerCase();#}
+{#        const cards = document.querySelectorAll(".recipe-card");#}
+{##}
+{#        cards.forEach(card => {#}
+{#            const cardCategory = card.dataset.category;#}
+{#            const cardName = card.dataset.name;#}
+{#            const isTop = card.classList.contains("top-recipe");#}
+{##}
+{#            const categoryMatch = (selectedCategory === "all" && isTop) || cardCategory === selectedCategory;#}
+{#            const nameMatch = cardName.includes(searchInput);#}
+{##}
+{#            const showCard = searchInput ? nameMatch : categoryMatch;#}
+{#            card.style.display = showCard ? "block" : "none";#}
+{#        });#}
+{#    }#}
+{##}
+{#    // Search filter#}
+{#    document.getElementById("recipe-search").addEventListener("input", filterRecipes);#}
+{##}
+{#    // Category filter#}
+{#    document.querySelectorAll("[data-category]").forEach(btn => {#}
+{#        btn.addEventListener("click", () => {#}
+{#            selectedCategory = btn.getAttribute("data-category").toLowerCase();#}
+{#            filterRecipes();#}
+{#        });#}
+{#    });#}
+{##}
+{#    document.addEventListener("DOMContentLoaded", () => {#}
+{#        filterRecipes();#}
+{#    });#}
+{#</script>#}
+{##}
+{#    <script>#}
+{#    document.querySelectorAll(".category-btn").forEach(button => {#}
+{#        button.addEventListener("click", () => {#}
+{#            // Remove "active" from all buttons#}
+{#            document.querySelectorAll(".category-btn").forEach(btn => {#}
+{#                btn.classList.remove("active");#}
+{#            });#}
+{##}
+{#            // Add "active" to the clicked one#}
+{#            button.classList.add("active");#}
+{##}
+{#            // Trigger your category filtering logic#}
+{#            selectedCategory = button.getAttribute("data-category").toLowerCase();#}
+{#            filterRecipes();#}
+{#        });#}
+{#    });#}
+{#</script>#}
+
 
 
 {% endblock %}
 
-{#{% block content %}#}
-{#    <h2>Рецепти</h2>#}
-{#    {% if user.is_authenticated %}#}
-{#    <a href="{% url 'create_recipe' %}" class="shopping-button">Добави рецепта</a>#}
-{#    {% else %}#}
-{#    <a href="{% url 'login' %}" class="shopping-button">Влез в профила си за повече възможности</a>#}
-{#    {% endif %}#}
-{#    <p></p>#}
-{##}
-{#    <div class="category-buttons">#}
-{#        <button data-category="all">Всички</button>#}
-{#        {% for category in categories %}#}
-{#            <button data-category="{{ category.name }}">{{ category.name }}</button>#}
-{#        {% endfor %}#}
-{#    </div>#}
-{##}
-{#    <p></p>#}
-{##}
-{#    <div class="recipe-list">#}
-{#        {% for recipe in page_obj %}#}
-{#            <div class="recipe-card">#}
-{#                {% if recipe.image %}#}
-{#                    <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">#}
-{#                {% else %}#}
-{#                    <img src="/media/recipe_images/no_image.png" alt="Default Image">#}
-{#                {% endif %}#}
-{##}
-{#                <div class="recipe-info">#}
-{#                    <h3><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h3>#}
-{#                    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>#}
-{#                    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>#}
-{#                    <p><strong>Цена:</strong>#}
-{#                        {% if user.is_authenticated %}#}
-{#                        {{ recipe.user_cost }} лв.#}
-{#                    {% else %}#}
-{#                        N/A#}
-{#                        {% endif %}#}
-{#                    </p>#}
-{#                    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>#}
-{##}
-{#                    {% if recipe.user_availability_status == "OK" %}#}
-{#                        <p style="color: green;">✅ Всички продукти налични</p>#}
-{#                    {% else %}#}
-{#                        <p style="color: red;">❌ Липсващи продукти</p>#}
-{#                    {% endif %}#}
-{##}
-{##}
-{#                    {% if not recipe.user_availability %}#}
-{#                        <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">#}
-{#                            {% csrf_token %}#}
-{#                            <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>#}
-{#                        </form>#}
-{#                    {% endif %}#}
-{##}
-{#                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">#}
-{#                        {% csrf_token %}#}
-{#                        <button type="submit">Приготви</button>#}
-{#                    </form>#}
-{#                </div>#}
-{#            </div>#}
-{#        {% endfor %}#}
-{#    </div>#}
-{##}
-{#    <div class="pagination">#}
-{#        {% if page_obj.has_previous %}#}
-{#            <a href="?page={{ page_obj.previous_page_number }}&category={{ selected_category }}">❮ Предишна</a>#}
-{#        {% endif %}#}
-{#        <span>Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>#}
-{#        {% if page_obj.has_next %}#}
-{#            <a href="?page={{ page_obj.next_page_number }}&category={{ selected_category }}">Следваща ❯</a>#}
-{#        {% endif %}#}
-{#    </div>#}
-    <script>
-        document.querySelectorAll(".category-buttons button").forEach(button => {
-            button.addEventListener("click", function () {
-                const category = this.dataset.category;
-                window.location.href = `?category=${category}&page=1`;
-            });
-        });
-    </script>
-{#{% endblock %}#}

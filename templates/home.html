@@ -1,11 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
+
+    {% if weather_error %}
+  <div class="alert alert-warning mt-3">
+    ⚠️ {{ weather_error }}
+  </div>
+{% endif %}
+
     {% if weather_data %}
 <div class="container mt-3">
+
+
+
+
   <div class="card shadow-sm">
     <div class="card-body">
       <div class="d-flex justify-content-between align-items-center flex-wrap">
         <div>
+            <form method="get" action="{% url 'set_location' %}" class="d-flex align-items-center mb-2" style="max-width: 300px;">
+    <input type="text" name="location" class="form-control form-control-sm me-2" placeholder="Въведи град..." required>
+  <button type="submit" class="btn btn-outline-primary btn-sm">Промени</button>
+</form>
           <h6 class="card-title mb-1">
             {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }}
           </h6>
@@ -33,8 +48,6 @@
   </div>
 </div>
 {% endif %}
-
-    <h2>Welcome to Home Resource Planner</h2>
 
     <div class="section-container">
     <a href="{% url 'shopping' %}" class="section-card">

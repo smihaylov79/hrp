@@ -1,51 +1,65 @@
 {% extends "base.html" %}
-
 {% load custom_filters_cooking %}
 
 {% block content %}
-    <h2>{{ recipe.name }}</h2>
+<div class="container py-4">
+    <h2 class="mb-4">{{ recipe.name }}</h2>
 
     {% if recipe.image %}
-        <img src="{{ recipe.image.url }}" alt="{{ recipe.name }}">
+    <div class="mb-3">
+        <img src="{{ recipe.image.url }}" class="img-fluid rounded" alt="{{ recipe.name }}">
+    </div>
     {% endif %}
 
-    <p><strong>Категория:</strong> {{ recipe.category.name }}</p>
-    <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
-    <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
+    <div class="mb-3">
+        <p><strong>Категория:</strong> {{ recipe.category.name }}</p>
+        <p><strong>Време за приготвяне:</strong> {{ recipe.time_to_prepare }} мин</p>
+        <p><strong>Калории:</strong> {{ recipe.calculate_calories }} kcal</p>
+    </div>
 
+    <h4 class="mt-4">🥣 Съставки:</h4>
+    <ul class="list-group mb-4">
+        {% for ingredient in recipe.ingredients_list %}
+            {% with available_quantity=user_inventory|dict_lookup:ingredient.product.id %}
+            <li class="list-group-item d-flex justify-content-between
+                {% if available_quantity is not None and available_quantity < ingredient.quantity %}
+                    text-danger
+                {% else %}
+                    text-success
+                {% endif %}">
+                <span>{{ ingredient.product.name }} - {{ ingredient.quantity }}</span>
+                <span>(наличност: {{ available_quantity|default_if_none:0 }})</span>
+            </li>
+            {% endwith %}
+        {% endfor %}
+    </ul>
 
-    <h3>Съставки:</h3>
-
-    <ul class="ingredient-list">
-    {% for ingredient in recipe.ingredients_list %}
-        {% with available_quantity=user_inventory|dict_lookup:ingredient.product.id %}
-        <li class="{% if available_quantity is not None and available_quantity < ingredient.quantity %}low-stock{% else %}available{% endif %}">
-            {{ ingredient.product.name }} - {{ ingredient.quantity }}
-            (наличност: {{ available_quantity|default_if_none:0 }})
-        </li>
-        {% endwith %}
-    {% endfor %}
-</ul>
-<p><strong>Инструкции:</strong> </p>
-    <div>
-    {{ recipe.instructions }}
+    <h4 class="mt-4">📜 Инструкции:</h4>
+    <div class="border rounded p-3 bg-light mb-4">
+        {{ recipe.instructions }}
     </div>
 
     {% if recipe.url_link %}
-        <p><a href="{{ recipe.url_link }}" target="_blank">Виж оригиналната рецепта</a></p>
+    <p><a href="{{ recipe.url_link }}" class="btn btn-link" target="_blank">Виж оригиналната рецепта</a></p>
     {% endif %}
 
     {% if not recipe.user_availability %}
-    <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
+    <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST" class="mb-3">
         {% csrf_token %}
-        <button type="submit" class="generate-list-btn">Генерирай списък за пазаруване</button>
+        <button type="submit" class="btn btn-warning">🛒 Генерирай списък за пазаруване</button>
     </form>
-{% endif %}
+    {% endif %}
 
-                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
-                        {% csrf_token %}
-                        <button type="submit">Приготви</button>
-                    </form>
-
-
+    <form action="{% url 'cook_recipe' recipe.id %}" method="POST" class="d-flex justify-content-between align-items-center">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">👨‍🍳 Приготви</button>
+        <div>
+            <span class="text-muted me-3">Приготвяна <strong>{{ times_cooked }}</strong> пъти</span>
+            <span class="text-muted">Последно на: <strong>{{ last_cooked }}</strong></span>
+        </div>
+    </form>
+<div class="text-center">
+<a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към рецепти</a>
+</div>
+</div>
 {% endblock %}

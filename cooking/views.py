@@ -15,9 +15,19 @@ from shopping.models import RecipeShoppingList, ProductCategory
 def recipe_list(request):
     category_name = request.GET.get('category', 'all')
     recipes = Recipe.objects.all()
+    categories = RecipeCategory.objects.all()
+    all_products = Product.objects.all()
+
+    ingredient = request.GET.get('ingredient', 'all')
+
+    if ingredient != 'all':
+        recipes = recipes.filter(ingredients__id=ingredient)
+
     user = None
+    times_cooked = 0
     if request.user.is_authenticated:
         user = request.user
+
 
     if category_name != 'all':
         recipes = recipes.filter(category__name=category_name)
@@ -34,15 +44,22 @@ def recipe_list(request):
         recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
         recipe.user_availability_status = recipe.check_availability(user)
 
-    paginator = Paginator(recipes, 6)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+        recipe.times_cooked = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).count()
+
+    top_ids = sorted(recipes, key=lambda x: x.times_cooked, reverse=True)[:6]
+    top_ids_set = set(r.id for r in top_ids)
+
+    for recipe in recipes:
+        recipe.is_top = recipe.id in top_ids_set
+        recipe.category_name = recipe.category.name.lower()
 
     context = {'recipes': recipes,
                'user_inventory': {item.product.id: item.quantity for item in user_inventory},
-               'page_obj': page_obj,
-               'categories': RecipeCategory.objects.all(),
+               'categories': categories,
                'selected_category': category_name,
+               'times_cooked': times_cooked,
+               'prducts': all_products,
+               'ingredient': ingredient,
                }
     return render(request, 'cooking/recipe_list.html', context)
 
@@ -108,7 +125,7 @@ def cook_recipe(request, recipe_id):
 
 
     for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
-        inventory_product = user_inventory.get(product=ingredient.product)
+        inventory_product = user_inventory.filter(product=ingredient.product).first()
         if inventory_product:
             if inventory_product.quantity > ingredient.quantity:
                 inventory_product.quantity -= ingredient.quantity
@@ -120,6 +137,8 @@ def cook_recipe(request, recipe_id):
                 inventory_product.amount = 0
                 inventory_product.calculate_average_price()
                 inventory_product.save()
+
+    RecipeTimesCooked.objects.create(user=request.user, recipe=recipe)
 
     return redirect("recipe_list")
 
@@ -149,8 +168,16 @@ def generate_recipe_shopping_list(request, recipe_id):
 
 def recipe_view(request, recipe_id):
     user = None
+    times_cooked = 0
+    last_cooked = ''
     if request.user.is_authenticated:
         user = request.user
+        recipe = Recipe.objects.get(id=recipe_id)
+        cooking_history = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).order_by('date')
+        if cooking_history:
+            times_cooked = cooking_history.count()
+            last_cooked = cooking_history.last().date
+
     recipe = get_object_or_404(Recipe, id=recipe_id)
     user_inventory = InventoryProduct.objects.filter(user=user)
     product_price_map = {item.product.id: item.average_price for item in user_inventory}
@@ -164,7 +191,10 @@ def recipe_view(request, recipe_id):
     context = {
         "recipe": recipe,
         'user_inventory': {item.product.id: item.quantity for item in user_inventory},
-        'user': user
+        'user': user,
+        'times_cooked': times_cooked,
+        'last_cooked' :last_cooked
+
     }
     return render(request, "cooking/recipe_view.html", context)
 
