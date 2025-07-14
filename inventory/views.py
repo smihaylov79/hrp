@@ -23,6 +23,7 @@ def inventory_list(request):
         "user_categories": user_categories,
     })
 
+
 def update_inventory(request):
     if request.method == "POST":
         data = {}

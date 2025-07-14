@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+
+
+<div class="container py-5">
+  <h2 class="mb-4 text-center">📅 Календар със събития</h2>
+
+  <div id="calendar"></div>
+</div>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var calendarEl = document.getElementById('calendar');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      locale: 'bg',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: '/tasks/events/json/',
+      eventColor: '#0d6efd',
+      editable: false,
+      navLinks: true,
+      dayMaxEvents: true,
+
+        dateClick: function(info) {
+        const dateStr = info.dateStr;
+        window.location.href = "/tasks/events/create/?date=" + info.dateStr;
+      }
+    });
+
+    calendar.render();
+  });
+
+
+</script>
+
+{% endblock %}

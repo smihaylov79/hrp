@@ -28,7 +28,10 @@
           <h4 class="card-title text-success">📈 Top Gainers</h4>
           {% for stock in top_gainers %}
           <div class="d-flex justify-content-between border-bottom py-2">
-            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}</a>
+            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}
+                <span class="text-black ms-1">{{ stock.price }}</span>
+                <span class="text-success ms-1">(+{{ stock.change_amount }})</span>
+            </a>
             <span class="text-success fw-semibold">+{{ stock.change_percentage }}%</span>
           </div>
           {% endfor %}
@@ -43,7 +46,10 @@
           <h4 class="card-title text-danger">📉 Top Losers</h4>
           {% for stock in top_losers %}
           <div class="d-flex justify-content-between border-bottom py-2">
-            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}</a>
+            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}
+            <span class="text-black ms-1">{{ stock.price }}</span>
+                <span class="text-danger ms-1">({{ stock.change_amount }})</span>
+            </a>
             <span class="text-danger fw-semibold">{{ stock.change_percentage }}%</span>
           </div>
           {% endfor %}

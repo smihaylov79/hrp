@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <a href={% url 'game_calculator' %}>COB Calculator </a>
+<div class="container text-center my-5">
+    <a href="{% url 'game_calculator' %}" class="btn btn-outline-primary btn-lg">
+        🎮 COB Calculator (ROC)
+    </a>
+</div>
 {% endblock %}

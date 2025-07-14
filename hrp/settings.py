@@ -48,6 +48,7 @@ PROJECT_APPS = [
     'forum',
     'weather',
     'reports',
+    'taskmanager',
 ]
 
 INSTALLED_APPS = [
@@ -82,10 +83,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'shopping.context_processors.basket_item_count',
                 'shopping.context_processors.current_datetime',
                 'forum.views.get_categories',
-                'weather.views.weather_data_context_processor'
+                'weather.views.weather_data_context_processor',
+                'taskmanager.context_processor.incomplete_tasks'
             ],
         },
     },

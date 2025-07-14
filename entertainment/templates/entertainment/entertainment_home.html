@@ -1,23 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>🎭 Welcome to Entertainment Hub</h2>
+<div class="container my-5">
+    <h2 class="text-center mb-4">🎭 Welcome to Entertainment Hub</h2>
 
-    <div class="category-container">
-        <a href="{% url 'travel' %}" class="category-box travel">
-            🌍 Travel
-        </a>
-
-        <a href="{% url 'reading' %}" class="category-box reading">
-            📚 Reading
-        </a>
-
-        <a href="{% url 'movies' %}" class="category-box movies">
-            🎬 Movies
-        </a>
-
-        <a href="{% url 'game_calculator' %}" class="category-box games">
-            🎮 Games
-        </a>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-4 g-4">
+        <div class="col">
+            <a href="{% url 'travel' %}" class="btn btn-outline-primary w-100 py-3 text-start fs-5">
+                🌍 Travel
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'reading' %}" class="btn btn-outline-success w-100 py-3 text-start fs-5">
+                📚 Reading
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'movies' %}" class="btn btn-outline-danger w-100 py-3 text-start fs-5">
+                🎬 Movies
+            </a>
+        </div>
+        <div class="col">
+            <a href="{% url 'games' %}" class="btn btn-outline-warning w-100 py-3 text-start fs-5">
+                🎮 Games
+            </a>
+        </div>
     </div>
+</div>
 {% endblock %}
+

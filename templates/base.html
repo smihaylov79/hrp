@@ -24,13 +24,15 @@
 
     <div class="collapse navbar-collapse" id="navbarMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="/reports/">Справки</a></li>
+        <li class="nav-item"><a class="nav-link" href="/reports/">Отчети/Анализи</a></li>
         <li class="nav-item"><a class="nav-link" href="/shopping/">Пазаруване/Разходи</a></li>
         <li class="nav-item"><a class="nav-link" href="/inventory/">Наличности</a></li>
         <li class="nav-item"><a class="nav-link" href="/cooking/">Сготви</a></li>
         <li class="nav-item"><a class="nav-link" href="/finance/">Пари</a></li>
         <li class="nav-item"><a class="nav-link" href="/entertainment/">Забавление</a></li>
         <li class="nav-item"><a class="nav-link" href="/forum/">Форум</a></li>
+          <li class="nav-item"><a class="nav-link" href="/tasks/">
+              Задачи {% if incomplete_tasks > 0 %} ({{ incomplete_tasks }}) {% endif %}</a></li>
       </ul>
 
       <ul class="navbar-nav mb-2 mb-lg-0">

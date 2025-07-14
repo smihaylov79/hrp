@@ -15,6 +15,7 @@ from inventory.models import InventoryProduct, UserProductCategory
 from .forms import *
 
 
+@login_required
 def shopping_list(request):
     shoppings = Shopping.objects.filter(user=request.user).order_by("-date")
 

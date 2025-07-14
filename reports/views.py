@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Count, Max, Min, Avg
 from django.db.models.functions import TruncMonth, TruncWeek, ExtractWeek
 from django.shortcuts import render, get_object_or_404
@@ -13,7 +14,7 @@ from .utils import calculate_price_changes
 # Create your views here.
 
 
-class ReportsHomeView(TemplateView):
+class ReportsHomeView(LoginRequiredMixin, TemplateView):
     template_name = 'reports/reports_home.html'
 
 

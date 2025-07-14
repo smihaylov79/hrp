@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container my-5">
+        <h2 class="mb-4">🗓️ Списък със задачи</h2>
+        <a href="{% url 'create_task' %}" class="btn btn-success mb-3">➕ Нова задача</a>
+        <ul class="list-group">
+            {% for task in tasks %}
+                <form action="{% url 'toggle_task' task.pk %}" method="POST" class="w-100">
+                    {% csrf_token %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="checkbox" onchange="this.form.submit()"
+                                   {% if task.completed %}checked{% endif %}>
+                            <a href="{% url 'update_task' task.pk %}"
+                               class="{% if task.completed %}text-decoration-line-through text-muted{% endif %}">
+                                {{ task.title }}
+                            </a>
+                            <span class="text-secondary">— {{ task.due_date }}</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if task.priority == 'Висок' %}
+                                <span class="badge bg-danger">{{ task.priority }}</span>
+                            {% elif task.priority == 'Нормален' %}
+                                <span class="badge bg-warning text-dark">{{ task.priority }}</span>
+                            {% else %}
+                                <span class="badge bg-success">{{ task.priority }}</span>
+                            {% endif %}
+                            {% if task.completed %}
+                                <span class="badge bg-success">Изпълнена</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">В процес</span>
+                                {% if task.due_date < today %}
+                                    <span class="badge bg-danger">Просрочена</span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </li>
+                </form>
+
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

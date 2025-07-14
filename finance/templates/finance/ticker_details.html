@@ -3,37 +3,80 @@
 {% block finance_navigation %}
 
 
-    <h2>{{ stock_info.name }} ({{ stock_info.symbol }}) - Детайли</h2>
+    <form method="get" action="{% url 'ticker-details' ticker='dummy' %}" class="mb-4 d-flex" onsubmit="event.preventDefault(); window.location.href=this.action.replace('dummy', this.ticker.value);">
+    <input type="text" name="ticker" class="form-control me-2" placeholder="Search ticker..." required>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
 
+<h2 class="mb-4">{{ stock_info.name }} ({{ stock_info.symbol }}) - Детайли</h2>
 
-    <!-- Stock Metrics Grid -->
-<div class="metrics-grid">
-    <div class="metric"><span>Market Cap:</span> ${{ stock_info.marketcapitalization }}</div>
-    <div class="metric"><span>EPS:</span> {{ stock_info.eps }}</div>
-    <div class="metric"><span>Trailing P/E:</span> {{ stock_info.trailingpe }}</div>
-    <div class="metric"><span>Forward P/E:</span> {{ stock_info.forwardpe }}</div>
-    <div class="metric"><span>PEG Ratio:</span> {{ stock_info.pegratio }}</div>
-    <div class="metric"><span>EV/Revenue:</span> {{ stock_info.evtorevenue }}</div>
-    <div class="metric"><span>EV/EBITDA:</span> {{ stock_info.evtoebitda }}</div>
-    <div class="metric"><span>Beta:</span> {{ stock_info.beta }}</div>
-    <div class="metric"><span>Target Price:</span> ${{ stock_info.analysttargetprice }}</div>
-    <div class="metric"><span>Revenue/share (TTM):</span> ${{ stock_info.revenuepersharettm }}</div>
-    <div class="metric"><span>52-Week High:</span> ${{ stock_info.52weekhigh }}</div>
-    <div class="metric"><span>52-Week Low:</span> ${{ stock_info.52weeklow }}</div>
-    <div class="metric"><span>50-Day Avg:</span> ${{ stock_info.50daymovingaverage }}</div>
-    <div class="metric"><span>200-Day Avg:</span> ${{ stock_info.200daymovingaverage }}</div>
-    <div class="metric"><span>Ex-Dividend Date:</span> {{ stock_info.exdividenddate }}</div>
+<!-- Stock Metrics Grid -->
+<div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+    <div class="col"><strong>Market Cap:</strong> ${{ stock_info.marketcapitalization }}</div>
+    <div class="col"><strong>EPS:</strong> {{ stock_info.eps }}</div>
+    <div class="col"><strong>Trailing P/E:</strong> {{ stock_info.trailingpe }}</div>
+    <div class="col"><strong>Forward P/E:</strong> {{ stock_info.forwardpe }}</div>
+    <div class="col"><strong>PEG Ratio:</strong> {{ stock_info.pegratio }}</div>
+    <div class="col"><strong>EV/Revenue:</strong> {{ stock_info.evtorevenue }}</div>
+    <div class="col"><strong>EV/EBITDA:</strong> {{ stock_info.evtoebitda }}</div>
+    <div class="col"><strong>Beta:</strong> {{ stock_info.beta }}</div>
+    <div class="col"><strong>Target Price:</strong> ${{ stock_info.analysttargetprice }}</div>
+    <div class="col"><strong>Revenue/share (TTM):</strong> ${{ stock_info.revenuepersharettm }}</div>
+    <div class="col"><strong>52-Week High:</strong> ${{ stock_info.52weekhigh }}</div>
+    <div class="col"><strong>52-Week Low:</strong> ${{ stock_info.52weeklow }}</div>
+    <div class="col"><strong>50-Day Avg:</strong> ${{ stock_info.50daymovingaverage }}</div>
+    <div class="col"><strong>200-Day Avg:</strong> ${{ stock_info.200daymovingaverage }}</div>
+    <div class="col"><strong>Ex-Dividend Date:</strong> {{ stock_info.exdividenddate }}</div>
 </div>
 
-
-    <!-- Company Info Card -->
-    <div class="company-card">
-    <h3>{{ stock_info.name }} <span>({{ stock_info.symbol }})</span></h3>
-    <p><strong>Sector:</strong> {{ stock_info.sector }}</p>
-    <p><strong>Industry:</strong> {{ stock_info.industry }}</p>
-    <p><strong>Country:</strong> {{ stock_info.country }}</p>
-    <p><strong>EBITDA:</strong> ${{ stock_info.ebitda }}</p>
-    <p class="description">{{ stock_info.description }}</p>
+<!-- Company Info Card -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title">{{ stock_info.name }} <span class="text-muted">({{ stock_info.symbol }})</span></h5>
+        <p class="mb-1"><strong>Sector:</strong> {{ stock_info.sector }}</p>
+        <p class="mb-1"><strong>Industry:</strong> {{ stock_info.industry }}</p>
+        <p class="mb-1"><strong>Country:</strong> {{ stock_info.country }}</p>
+        <p class="mb-1"><strong>EBITDA:</strong> ${{ stock_info.ebitda }}</p>
+        <p class="mt-3">{{ stock_info.description }}</p>
+    </div>
 </div>
+
+    <!-- Related News Section -->
+<div class="mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">🗞️ Последни новини за {{ stock_info.symbol }}</h4>
+  </div>
+
+  {% if news %}
+    <div class="row row-cols-1 g-3">
+      {% for article in news %}
+        <div class="col">
+          <div class="card h-100 border-light shadow-sm">
+            <div class="row g-0">
+              <div class="col-md-4">
+                {% if article.image_url %}
+                  <img src="{{ article.image_url }}" class="img-fluid rounded-start w-50" alt="Новина">
+                {% endif %}
+              </div>
+              <div class="col-md-8">
+                <div class="card-body">
+                  <h5 class="card-title">{{ article.title }}</h5>
+                  <p class="card-text">{{ article.description }}</p>
+                  <p class="card-text">
+                    <small class="text-muted">🕒 {{ article.published_at }} | 📺 {{ article.source }}</small>
+                  </p>
+                  <a href="{{ article.url }}" target="_blank" class="btn btn-outline-primary btn-sm">Прочети</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">Няма новини за този символ.</div>
+  {% endif %}
+</div>
+
 
 {% endblock %}

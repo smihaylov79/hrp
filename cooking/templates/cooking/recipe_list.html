@@ -12,9 +12,9 @@
 <a href="{% url 'login' %}" class="btn btn-primary mb-3">Влез в профила си за повече възможности</a>
 {% endif %}
 <div class="btn-group mb-4" role="group" aria-label="Категории">
-    <button type="button" class="btn btn-outline-secondary category-btn" data-category="all">Всички</button>
+    <button type="button" class="btn btn-outline-secondary category-btn" data-category="all">Всички({{ total_recipes }})</button>
     {% for category in categories %}
-        <button type="button" class="btn btn-outline-secondary category-btn" data-category="{{ category.name }}">{{ category.name }}</button>
+        <button type="button" class="btn btn-outline-secondary category-btn" data-category="{{ category.name }}">{{ category.name }}({{ category.recipe_count }})</button>
     {% endfor %}
 </div>
 

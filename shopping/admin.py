@@ -37,12 +37,3 @@ class ShoppingListAdmin(admin.ModelAdmin):
 @admin.register(RecipeShoppingList)
 class RecipeShoppingListAdmin(admin.ModelAdmin):
     ...
-
-@admin.register(BasketItem)
-class BasketItemAdmin(admin.ModelAdmin):
-    ...
-
-
-@admin.register(Basket)
-class BasketAdmin(admin.ModelAdmin):
-    ...

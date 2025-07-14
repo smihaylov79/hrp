@@ -24,6 +24,7 @@
         <option value="$MODULE_DIR$/forum/templates" />
         <option value="$MODULE_DIR$/weather/templates" />
         <option value="$MODULE_DIR$/reports/templates" />
+        <option value="$MODULE_DIR$/taskmanager/templates" />
       </list>
     </option>
   </component>
