@@ -19,7 +19,7 @@ def get_weather_data(request):
     if response.status_code == 200:
         return response.json()
     else:
-        request.session["geo_location"] = "Sofia"  # Fallback silently
+        request.session["geo_location"] = "Sofia"
         return {"error": "Градът не беше намерен. Показвам прогнозата за София."}
 
 

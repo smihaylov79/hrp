@@ -28,10 +28,27 @@ class SpendingsView(FormView):
 
         if form.is_valid():
             user = self.request.user
-            shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+            household = user.household
+
+            if household:
+                members = CustomUser.objects.filter(household=household)
+                shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+
+            else:
+                shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+
+
             main_category = form.cleaned_data.get('main_category')
             date_from = form.cleaned_data.get('date_from')
             date_to = form.cleaned_data.get('date_to')
+            household_filter = form.cleaned_data.get("not_for_household_filter", "all")
+
+            if household_filter == "household":
+                shopping_data = shopping_data.filter(not_for_household=False)
+            elif household_filter == "external":
+                shopping_data = shopping_data.filter(not_for_household=True)
 
             if main_category:
                 shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
@@ -102,16 +119,28 @@ class SpendingsView(FormView):
 
 def product_price_history(request):
     user = request.user
-    products = Product.objects.filter(
-        shoppingproduct__shopping__user=user).distinct()
+    household = user.household
+
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        products = Product.objects.filter(
+            shoppingproduct__shopping__user__in=members).distinct()
+    else:
+        products = Product.objects.filter(
+                                        shoppingproduct__shopping__user=user).distinct()
+
     selected_product_id = request.GET.get("product")
     price_data = []
 
     if selected_product_id:
         product = get_object_or_404(Product, id=selected_product_id)
 
-        price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
-            .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
+        if household:
+            price_changes = ShoppingProduct.objects.filter(shopping__user__in=members, product=product) \
+                .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
+        else:
+            price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
+                .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
 
         price_data = [{"date": entry["shopping__date"].strftime("%Y-%m-%d"), "price": float(entry["avg_price"])} for entry in price_changes]
 
@@ -126,6 +155,8 @@ def product_price_history(request):
 
 def spendings_by_shop(request):
     user = request.user
+    household = user.household
+
     selected_shop_ids = request.GET.getlist("shops")
     main_categories = MainCategory.objects.all()
 
@@ -136,11 +167,13 @@ def spendings_by_shop(request):
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
 
-    # Fetch all shops the user has shopped at
-    user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
-
-    # Base query: user's shopping products
-    shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user__in=members).values("shop")).distinct()
+        shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+    else:
+        user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
+        shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
 
     if main_category_filter and main_category_filter.strip():
         shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)

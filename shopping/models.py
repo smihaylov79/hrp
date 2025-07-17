@@ -1,7 +1,6 @@
 from django.db import models
 
-from users.models import CustomUser
-
+from users.models import *
 
 
 class MainCategory(models.Model):
@@ -16,8 +15,8 @@ class MainCategory(models.Model):
 
 class ProductCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    main_category = models.ForeignKey(MainCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='subcategories')
-
+    main_category = models.ForeignKey(MainCategory, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='subcategories')
 
     class Meta:
         verbose_name_plural = 'Product Categories'
@@ -28,7 +27,8 @@ class ProductCategory(models.Model):
 
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='products')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     available_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
@@ -36,6 +36,7 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.category}"
+
 
 #
 # class Basket(models.Model):
@@ -58,8 +59,8 @@ class Shop(models.Model):
 
 
 class Shopping(models.Model):
-
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_shopping', null=True, blank=True, default=None)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='user_shopping', null=True, blank=True,
+                             default=None)
     date = models.DateField()
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -80,30 +81,52 @@ class ShoppingProduct(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0.00)
+    not_for_household = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         self.amount = self.quantity * self.price - self.discount
         super().save(*args, **kwargs)
 
+
     def __str__(self):
         return f"{self.product.name} in Shopping {self.shopping.id}"
 
 
-class ShoppingList(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    date_generated = models.DateField(auto_now_add=True)
+class BaseShoppingList(models.Model):
     executed = models.BooleanField(default=False)
     items = models.JSONField(default=list)
+
+    class Meta:
+        abstract = True
+
+
+class ShoppingList(BaseShoppingList):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    date_generated = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return f"Лист за пазаруване на {self.user.first_name} - {self.date_generated}"
 
 
-class RecipeShoppingList(models.Model):
+class RecipeShoppingList(BaseShoppingList):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     recipe_name = models.CharField(max_length=150)
-    executed = models.BooleanField(default=False)
-    items = models.JSONField(default=list)
 
     def __str__(self):
         return f"Лист за пазаруване на {self.user.first_name} - {self.recipe_name}"
+
+
+class HouseholdShoppingList(BaseShoppingList):
+    household = models.ForeignKey(HouseHold, on_delete=models.CASCADE)
+    date_generated = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Лист за пазаруване на {self.household.name} - {self.date_generated}'
+
+
+class HouseholdRecipeShoppingList(BaseShoppingList):
+    household = models.ForeignKey(HouseHold, on_delete=models.CASCADE)
+    recipe_name = models.CharField(max_length=150)
+
+    def __str__(self):
+        return f'Лист за пазаруване на {self.household.name} - {self.recipe_name}'

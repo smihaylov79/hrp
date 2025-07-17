@@ -1,21 +1,128 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="profile-container">
-    <h2>Профил</h2>
+<div class="container mt-5">
+    <h2 class="mb-5 text-center">Профил</h2>
 
-    <form method="post" class="profile-form">
-        {% csrf_token %}
-        <h3>Редактиране на профил</h3>
-        {{ profile_form.as_p }}
-        <button type="submit" name="update_profile">Запази промените</button>
-    </form>
+    <div class="row">
+        <!-- Left Column: Profile & Password -->
+        <div class="col-md-6">
+            <div class="mb-4">
+                <h4 class="mb-3">Редактиране на профил</h4>
+                <form method="post" class="p-3 bg-light rounded shadow-sm">
+                    {% csrf_token %}
+                    {% for field in profile_form %}
+                        <div class="row mb-3 align-items-center">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" name="update_profile" class="btn btn-primary w-100">Запази промените</button>
+                </form>
+            </div>
 
-    <form method="post" class="password-form">
-        {% csrf_token %}
-        <h3>Смяна на парола</h3>
-        {{ password_form.as_p }}
-        <button type="submit" name="change_password">Смени паролата</button>
-    </form>
+            <div>
+                <h4 class="mb-3">Смяна на парола</h4>
+                <form method="post" class="p-3 bg-light rounded shadow-sm">
+                    {% csrf_token %}
+                    {% for field in password_form %}
+                        <div class="row mb-3 align-items-center">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% for error in field.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" name="change_password" class="btn btn-warning w-100">Смени паролата</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Household -->
+    <div class="col-md-6">
+    {% if incoming_requests %}
+    <div class="alert alert-info mb-4">
+        <strong>Очакващи заявки за домакинството(а):</strong><br>
+        {% for req in incoming_requests %}
+            {{ req.user.get_full_name }} иска да се присъедини към <strong>{{ req.household.nickname }}</strong> <br>
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="membership_id" value="{{ req.id }}">
+                <button type="submit" name="approve_request" class="btn btn-sm btn-success">Одобри</button>
+                <button type="submit" name="reject_request" class="btn btn-sm btn-danger">Откажи</button>
+            </form>
+        {% endfor %}
+    </div>
+{% endif %}
+
+    {% if pending_requests %}
+    <div class="alert alert-warning text-center mb-4">
+        <strong>Заявки за присъединяване:</strong><br>
+        {% for request in pending_requests %}
+            Изчаква одобрение за домакинство <strong>{{ request.household.nickname }}</strong> (изпратена на {{ request.requested_at|date:"d.m.Y H:i" }})<br>
+        {% endfor %}
+    </div>
+{% endif %}
+
+
+        {% if user_household %}
+    <div class="bg-success bg-opacity-10 p-4 rounded shadow-sm mb-4">
+        <h4>Член на домакинство</h4>
+        <p><strong>Име:</strong> {{ user_household.name }}</p>
+        <p><strong>Псевдоним:</strong> {{ user_household.nickname }}</p>
+        <p><strong>Адрес:</strong> {{ user_household.address }}</p>
+        <p><strong>Собственик:</strong> {{ user_household.owner.get_full_name }}</p>
+        <a href="{% url 'household' user_household.pk %}" class="btn btn-outline-success mt-2">Преглед на домакинството</a>
+
+    {% if user_household.owner != request.user %}
+<form method="POST" action="{% url 'leave_household' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Напусни домакинството</button>
+</form>
+{% endif %}
+
+    </div>
+{% else %}
+    <!-- Show Create and Join Forms -->
+            <div class="col-md-6">
+    <div class="mb-4">
+        <h4 class="mb-3">Създай домакинство</h4>
+        <form method="post" class="p-3 bg-light rounded shadow-sm">
+            {% csrf_token %}
+            {% for field in household_form %}
+                <div class="mb-3">
+                    {{ field.label_tag }}
+                    {{ field }}
+                </div>
+            {% endfor %}
+            <button type="submit" name="create_household" class="btn btn-success w-100">Създай</button>
+        </form>
+    </div>
+            </div>
+
+    <div>
+    <div class="col-md-6">
+        <h4 class="mb-3">Присъедини се към домакинство</h4>
+        <form method="post" class="p-3 bg-light rounded shadow-sm">
+            {% csrf_token %}
+            {% for field in join_form %}
+                <div class="mb-3">
+                    {{ field.label_tag }}
+                    {{ field }}
+                </div>
+            {% endfor %}
+            <button type="submit" name="join_household" class="btn btn-info w-100">Изпрати заявка</button>
+        </form>
+    </div>
+    </div>
+{% endif %}
+    </div>
+    </div>
 </div>
 {% endblock %}

@@ -22,7 +22,7 @@
   <button type="submit" class="btn btn-outline-primary btn-sm">Промени</button>
 </form>
           <h6 class="card-title mb-1">
-            {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }}
+            {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }} ({{ weather_data.location.region }})
           </h6>
           <p class="mb-0">
             🌡️ {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
@@ -54,7 +54,7 @@
     {% if user.is_authenticated %}
   {% if task_total > 0 %}
     <div class="alert alert-info mt-3">
-      🗓️ Имате {{ tasks_today|length }} задачи за днес
+      📝 Имате {{ tasks_today|length }} задачи за днес
       {% if tasks_overdue %}
         и {{ tasks_overdue|length }} просрочени!
       {% endif %}
@@ -146,7 +146,7 @@
       <a href="{% url 'task_list' %}" class="text-decoration-none">
         <div class="card text-center shadow-sm h-100">
           <div class="card-body">
-            <h5 class="card-title">🗓️ Задачи</h5>
+            <h5 class="card-title">📝 Задачи</h5>
           </div>
         </div>
       </a>

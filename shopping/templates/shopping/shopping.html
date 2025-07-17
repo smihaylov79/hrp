@@ -18,53 +18,50 @@
   </div>
 </div>
 
-  <!-- 📋 Shopping Table -->
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Дата</th>
-          <th>Магазин</th>
-          <th>Общо</th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for shopping in page_obj.object_list %}
-        <tr>
-          <td>{{ shopping.date }}</td>
-          <td>{{ shopping.shop.name }}</td>
-          <td>{{ shopping.total_amount }} лв</td>
-          <td>
-            <a href="{% url 'edit_shopping' shopping.id %}" class="btn btn-sm btn-outline-primary">✏️ Редактирай</a>
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="4" class="text-center text-muted">Няма покупки към момента.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+<form method="get" class="mb-3 d-flex gap-2">
+  <select name="product_id" class="form-select" onchange="this.form.submit()">
+    <option value="">🔍 Покупки с всички продукти</option>
+    {% for product in products %}
+      <option value="{{ product.id }}" {% if product.id|stringformat:"s" == selected_product_id %}selected{% endif %}>
+  {{ product.name }}
+</option>
+    {% endfor %}
+  </select>
+  {% if selected_product_id %}
+    <a href="{% url 'shopping' %}" class="btn btn-sm btn-outline-secondary">❌ Премахни филтъра</a>
+  {% endif %}
+</form>
 
-  <!-- 🔁 Pagination Controls -->
-  <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-    <div>
-      {% if page_obj.has_previous %}
-      <a class="btn btn-outline-secondary btn-sm" href="?page=1">⏪ Първа</a>
-      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.previous_page_number }}">⬅️ Предишна</a>
-      {% endif %}
-    </div>
+<div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Потребител</th>
+        <th>Дата</th>
+        <th>Магазин</th>
+        <th>Общо</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for shopping in shoppings %}
+      <tr>
+        <td>{{ shopping.user.first_name }}</td>
+        <td>{{ shopping.date }}</td>
+        <td>{{ shopping.shop.name }}</td>
+        <td>{{ shopping.total_amount }} лв</td>
+        <td>
+          <a href="{% url 'edit_shopping' shopping.id %}?product_id={{ selected_product_id }}" class="btn btn-sm btn-outline-primary">✏️ Редактирай</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="text-center text-muted">Няма покупки към момента.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-    <span class="text-muted">Страница {{ page_obj.number }} от {{ page_obj.paginator.num_pages }}</span>
-
-    <div>
-      {% if page_obj.has_next %}
-      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.next_page_number }}">Следваща ➡️</a>
-      <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.paginator.num_pages }}">⏩ Последна</a>
-      {% endif %}
-    </div>
-  </div>
 </div>
 {% endblock %}

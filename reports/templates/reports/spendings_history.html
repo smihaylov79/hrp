@@ -23,6 +23,16 @@
             <label for="id_date_to" class="form-label">До</label>
             <input type="date" name="date_to" id="id_date_to" class="form-control" value="{{ request.GET.date_to }}">
         </div>
+
+    <div class="mb-3">
+  <label for="id_not_for_household_filter" class="form-label">🔍 Показване на вид разход:</label>
+  <select name="not_for_household_filter" class="form-select" id="id_not_for_household_filter">
+    <option value="all" {% if request.GET.not_for_household_filter == "all" %}selected{% endif %}>Всички</option>
+    <option value="household" {% if request.GET.not_for_household_filter == "household" %}selected{% endif %}>Само за домакинството</option>
+    <option value="external" {% if request.GET.not_for_household_filter == "external" %}selected{% endif %}>Само извън домакинството</option>
+  </select>
+</div>
+
         <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">Филтрирай</button>
         </div>

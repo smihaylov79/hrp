@@ -1,10 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>Само за регистрирани потребители</h2>
-<p>Това съдържание е само за регистрирани потребители. Моля <a href="{% url 'login' %}?next={{ request.GET.next }}">влез</a>
-    или се
-    <a href="{% url 'register' %}?next={{ request.GET.next }}">регистрирай</a> за да продължиш.</p>
-
-
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="alert alert-info text-center p-4 shadow-sm">
+                <h2 class="mb-3">Само за регистрирани потребители</h2>
+                <p>
+                    Това съдържание е само за регистрирани потребители. Моля
+                    <a href="{% url 'login' %}?next={{ request.GET.next }}" class="btn btn-outline-primary mx-1">влез</a>
+                    или се
+                    <a href="{% url 'register' %}?next={{ request.GET.next }}" class="btn btn-outline-success mx-1">регистрирай</a>
+                    за да продължиш.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

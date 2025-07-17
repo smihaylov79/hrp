@@ -4,6 +4,12 @@ from django.utils.timezone import localdate
 
 
 class SpendingsReportFilterForm(forms.Form):
+    SPENDINGS_CHOICES = [
+        ("all", "Всички"),
+        ("household", "Само за домакинството"),
+        ("external", "Само извън домакинството"),
+        ]
+
     main_category = forms.ModelChoiceField(
         queryset=MainCategory.objects.all(),
         required=False,
@@ -16,6 +22,12 @@ class SpendingsReportFilterForm(forms.Form):
     date_to = forms.DateField(required=False,
                               label="До",
                               widget=forms.DateInput(attrs={'type': 'date'}))
+
+    not_for_household_filter = forms.ChoiceField(
+        choices=SPENDINGS_CHOICES,
+        required=False,
+        label="Филтър за домакинство"
+    )
 
     def clean(self):
         cleaned_data = super().clean()

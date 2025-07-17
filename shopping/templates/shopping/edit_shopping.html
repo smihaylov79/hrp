@@ -32,6 +32,7 @@
             <th>Цена</th>
             <th>Отстъпка</th>
               <th>Сума</th>
+              <th>Не за домакинството</th>
             <th>Действие</th>
           </tr>
         </thead>
@@ -51,6 +52,9 @@
                 <td>
                 <input type="number" step="0.01" name="amount_{{ item.id }}" class="form-control form-control-sm" value="{{ item.amount }}" readonly>
               </td>
+                 <td>
+                 <input type="checkbox" name="not_for_household_{{ item.id }}" {% if item.not_for_household %}checked{% endif %}>
+</td>
               <td>
                 <button type="submit" name="delete_product" value="{{ item.id }}" class="btn btn-sm btn-danger">
                   ❌ Премахни
@@ -67,10 +71,11 @@
     </tfoot>
       </table>
     </div>
-
+<input type="hidden" name="product_id" value="{{ selected_product_id }}">
 
     <div class="d-flex justify-content-between mt-4">
       <button type="submit" class="btn btn-success">💾 Запази промените</button>
+
       <a href="{% url 'shopping' %}" class="btn btn-secondary">⛔ Отказ</a>
     </div>
   </form>
