@@ -3,13 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.safestring import mark_safe
+
 from shopping.models import *
 from .models import *
+from taskmanager.models import Task
+
 
 @login_required
 def inventory_list(request):
     user = request.user
-    household =user.household
+    household = user.household
 
     if household:
         user_categories = HouseholdProductCategory.objects.filter(household=household)
@@ -95,6 +100,8 @@ def update_inventory(request):
 def user_category_settings(request):
     user = request.user
     household = user.household
+    all_categories = ProductCategory.objects.all()
+
     if household:
         user_categories = HouseholdProductCategory.objects.filter(household=household)
     else:
@@ -180,6 +187,28 @@ def generate_shopping_list(request):
                 total_consumption = 0
 
     shopping_list.save()
+
+    link = reverse("shopping_list_view", args=[shopping_list.id])
+
+    if household:
+        household_members = CustomUser.objects.filter(household=household)
+        description = mark_safe(f'Списък за пазаруване, генериран от {shopping_list.household.name} -> '
+                                f'<a href="{link}">Отиди на списъка</a>')
+        for member in household_members:
+            Task.objects.create(
+                title=f'Пазаруване {shopping_list.date_generated}',
+                description=description,
+                due_date=shopping_list.date_generated,
+                user=member,
+            )
+    else:
+        Task.objects.create(
+            title=f'Пазаруване {shopping_list.date_generated}',
+            description=f'Списък за пазаруване, генериран от {shopping_list.user.first_name}',
+            due_date=shopping_list.date_generated,
+            user=shopping_list.user
+        )
+
     return redirect("shopping_list_view", list_id=shopping_list.id)
 
 
@@ -233,7 +262,6 @@ def execute_recipe_shopping_list(request, list_id):
     return redirect("all_shopping_lists")
 
 
-
 @login_required
 def shopping_list_view(request, list_id):
     user = request.user
@@ -274,7 +302,7 @@ def all_shopping_lists(request):
     }
 
     return render(
-        request,"inventory/all_shopping_lists.html", context
+        request, "inventory/all_shopping_lists.html", context
     )
 
 
@@ -288,6 +316,3 @@ def recipe_shopping_list_view(request, list_id):
         recipe_list = get_object_or_404(RecipeShoppingList, id=list_id, user=user)
 
     return render(request, "inventory/recipe_shopping_list.html", {"recipe_list": recipe_list})
-
-
-

@@ -187,3 +187,5 @@ MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
 LOGIN_REDIRECT_URL = '/'
 
 LOGIN_URL = '/users/please-login/'
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

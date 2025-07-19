@@ -29,25 +29,12 @@ class Product(models.Model):
     name = models.CharField(max_length=255, unique=True)
     category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name='products')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    available_stock = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     image = models.ImageField(upload_to='product_images/', blank=True, null=True)
     calories = models.PositiveIntegerField(default=0, null=True, blank=True)
+    suitable_for_cooking = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.name} - {self.category}"
-
-
-#
-# class Basket(models.Model):
-#     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     products = models.ManyToManyField(Product, through="BasketItem")
-#
-#
-# class BasketItem(models.Model):
-#     basket = models.ForeignKey(Basket, on_delete=models.CASCADE)
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     quantity = models.DecimalField(max_digits=10, decimal_places=3, default=0)
 
 
 class Shop(models.Model):

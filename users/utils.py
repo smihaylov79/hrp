@@ -1,8 +1,9 @@
-from inventory.models import InventoryProduct, HouseholdInventoryProduct
+from inventory.models import InventoryProduct, HouseholdInventoryProduct, UserProductCategory, HouseholdProductCategory
 
 
 def merge_user_inventory_to_household(user, household):
     user_inventory = InventoryProduct.objects.filter(user=user)
+    user_categories = UserProductCategory.objects.filter(user=user)
 
     for item in user_inventory:
         household_item, created = HouseholdInventoryProduct.objects.get_or_create(
@@ -29,3 +30,12 @@ def merge_user_inventory_to_household(user, household):
             # Recalculate average price
             household_item.calculate_average_price()
             household_item.save()
+
+    for item in user_categories:
+        HouseholdProductCategory.objects.get_or_create(
+            household=household,
+            product_category=item.product_category,
+            direct_planning=item.direct_planning,
+            daily_consumption = item.daily_consumption,
+            minimum_quantity=item.minimum_quantity,
+        )

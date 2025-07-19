@@ -21,11 +21,10 @@
 
   <h2 class="mb-4">🆕 Създай нова покупка</h2>
 
-  <form id="shopping-form" action="{% url 'save_shopping' %}" method="POST">
+  <form id="shopping-form" action="{% url 'regular_shopping' %}" method="POST">
     {% csrf_token %}
 
   <div class="row g-3 mb-3">
-  <!-- 🔹 Main Category Filter -->
   <div class="col-md-4">
     <h5>🗂️ Основна категория:</h5>
     <div class="btn-group flex-wrap" role="group" id="main-category-buttons">
@@ -35,8 +34,6 @@
       {% endfor %}
     </div>
   </div>
-
-  <!-- 🔸 Subcategory Filter -->
   <div class="col-md-8">
     <h5>📂 Подкатегория:</h5>
     <div class="btn-group flex-wrap" role="group" id="subcategory-buttons">
@@ -60,9 +57,9 @@
   </div>
   <div class="mb-1">
     <label class="form-label invisible">Добави</label>
-    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#productModal">
-      Добави нов продукт
-    </button>
+      <button type="button" class="btn btn-outline-secondary btn-sm" onclick="checkNewProduct({ value: 'new' })">
+  ➕ Добави нов продукт
+</button>
   </div>
 </div>
 
@@ -74,9 +71,8 @@
          data-main-category="{{ product.category.main_category.id }}">
     <div class="card h-100 shadow-sm">
       <div class="card-body py-3 px-3">
-        <h5 class="card-title text-truncate mb-2">{{ product.name }} / {{ product.category.name }}</h5>
+        <h6 class="card-title text-truncate mb-2">{{ product.name }} / {{ product.category.name }}</h6>
 
-        <!-- Inline Inputs Row -->
         <div class="row g-1 align-items-end mb-2">
           <div class="col-4">
             <label class="form-label mb-1">К-во:</label>
@@ -102,19 +98,15 @@
 </div>
   </div>
 
-
+<p></p>
     <div class="mb-3">
       <label for="shop" class="form-label">🛍️ Избери магазин:</label>
-      <select name="shop_id" class="form-select">
-        {% for shop in shops %}
-          <option value="{{ shop.id }}">{{ shop.name }}</option>
-        {% endfor %}
-      </select>
+        {{ form.shop }}
     </div>
 
     <div class="mb-3">
       <label for="date" class="form-label">📅 Дата на покупка:</label>
-      <input type="date" name="date" class="form-control" required>
+        {{ form.date }}
     </div>
 
     <h4 class="mt-4">🧺 Преглед на покупката</h4>
@@ -175,8 +167,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td><input type="number" step="0.01" value="${item.price}" class="form-control form-control-sm"></td>
                 <td><input type="number" step="0.01" value="${item.discount}" class="form-control form-control-sm"></td>
                 <td>${amount.toFixed(2)} лв</td>
-                {#<td>${trackingStatus}</td>#}
-
                    <td>
   <input type="checkbox" class="not-for-household-toggle" ${item.not_for_household ? "checked" : ""}>
 </td>
@@ -271,47 +261,95 @@ notForHouseholdCheckbox.addEventListener("change", function () {
 });
 </script>
 
-
-
-   <!-- Product Modal -->
-<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<!-- Modal for new product -->
+<div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <form id="new-product-form">
+      <form id="new-product-form" method="POST">
         {% csrf_token %}
-        <div class="modal-header">
-          <h5 class="modal-title" id="productModalLabel">Добави нов продукт</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
-        </div>
-        <div class="modal-body">
 
-          <div class="mb-3">
-            <label for="new_product_name" class="form-label">Име на продукта</label>
-            <input type="text" class="form-control" id="new_product_name" name="new_product_name" required>
-          </div>
-          <div class="mb-3">
-            <label for="category_id" class="form-label">Категория</label>
-            <select class="form-select" id="category_id" name="category_id" required>
-              {% for category in categories %}
-                <option value="{{ category.id }}">{{ category.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="new_calories" class="form-label">Калории</label>
-            <input type="number" class="form-control" id="new_calories" name="new_calories" required>
-          </div>
+        <div class="modal-header">
+          <h5 class="modal-title" id="productModalLabel">➕ Добави нов продукт</h5>
+          <button type="button" class="btn-close" onclick="closeModal()"></button>
         </div>
+
+       <div class="p-3 rounded shadow-sm bg-light border">
+    {{ create_product_form.as_p }}
+  </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
-          <button type="submit" class="btn btn-primary">Добави</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Затвори</button>
+          <button type="submit" class="btn btn-primary">Запази продукта</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+    <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("new-product-form");
+    const modalEl = document.getElementById("product-modal");
 
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("{% url 'add_product' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Update all product dropdowns
+          document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
+            const option = document.createElement("option");
+            option.value = data.id;
+            option.textContent = data.name;
+            option.selected = true;
+            dropdown.appendChild(option);
+          });
+
+          // Reset form and close modal
+          form.reset();
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+setTimeout(() => {
+    location.reload();
+  }, 100);
+
+        } else {
+          // Show Django form error
+          alert(data.error || "Грешка при добавянето на продукта.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Възникна грешка при добавянето на продукта.");
+      }
+    });
+  });
+
+  // Show modal when "new" is selected
+  function checkNewProduct(selectElement) {
+    if (selectElement.value === "new") {
+      const modal = new bootstrap.Modal(document.getElementById("product-modal"));
+      modal.show();
+    }
+  }
+
+  // Modal close logic
+  function closeModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById("product-modal"));
+    modal.hide();
+  }
+</script>
 
     <script>
         function filterProductsByName() {
@@ -328,39 +366,6 @@ notForHouseholdCheckbox.addEventListener("change", function () {
             });
         }
     </script>
-
-   <script>
-  document.getElementById("new-product-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-
-    const form = e.target;
-    const data = new FormData(form);
-
-    fetch("{% url 'add_product' %}", {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": data.get("csrfmiddlewaretoken"),
-      },
-      body: data,
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        alert(data.error);
-      } else {
-        alert(`Продуктът "${data.name}" беше добавен успешно!`);
-        form.reset();
-        const modal = bootstrap.Modal.getInstance(document.getElementById("productModal"));
-        modal.hide();
-        location.reload(); // Optional: reload to show new product
-      }
-    })
-    .catch(error => {
-      console.error("Error:", error);
-      alert("Възникна грешка при добавянето на продукта.");
-    });
-  });
-</script>
 
 <script>
 let selectedMain = 'all';
@@ -408,6 +413,5 @@ function updateVisibleProducts() {
   });
 }
 </script>
-
 
 {% endblock %}

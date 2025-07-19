@@ -21,13 +21,20 @@
     </div>
   </div>
 
-  <div class="products-scroll-wrapper mb-4" style="max-height: 50vh; overflow-y: auto;">
+  <div class="products-scroll-wrapper mb-4" style="max-height: 60vh; overflow-y: auto;">
     <div class="row g-3">
       {% for bill in bills %}
         <div class="col-md-6 col-lg-4">
           <div class="card h-100 shadow-sm">
             <div class="card-body">
               <h5 class="card-title mb-3">{{ bill.name }}</h5>
+
+                <div class="form-check float-end">
+  <input class="form-check-input not-household" type="checkbox" data-product-id="{{ bill.id }}" id="not-household-{{ bill.id }}">
+  <label class="form-check-label small" for="not-household-{{ bill.id }}">
+      външен
+  </label>
+</div>
 
               <div class="row g-2 mb-2">
                 <div class="col-4">
@@ -72,12 +79,15 @@ document.getElementById('bill-form').addEventListener('submit', function (e) {
     const quantity = parseFloat(qInput.value);
     const priceInput = document.querySelector(`.price[data-product-id="${id}"]`);
     const price = parseFloat(priceInput.value);
+    const checkbox = document.querySelector(`.not-household[data-product-id="${id}"]`);
+    const notForHousehold = checkbox?.checked || false;
 
     if (quantity && price) {
       selected.push({
         product_id: id,
         quantity: quantity.toFixed(3),
-        price: price.toFixed(2)
+        price: price.toFixed(2),
+        not_for_household: notForHousehold
       });
     }
   });

@@ -1,13 +1,6 @@
 from django.shortcuts import render
-
-
-# def home(request):
-#     return render(request, 'home.html')
-
 from datetime import date, datetime, time
-
 from django.views.generic import TemplateView
-
 from taskmanager.models import Task, Event
 
 class HomeView(TemplateView):

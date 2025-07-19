@@ -122,8 +122,6 @@ def profile_view(request):
                 messages.error(request, "Заявката не беше намерена.")
             return redirect("profile")
 
-
-
     return render(request, "users/profile.html", {
         "profile_form": profile_form,
         "password_form": password_form,

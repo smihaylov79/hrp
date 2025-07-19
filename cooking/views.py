@@ -1,14 +1,15 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.core.paginator import Paginator
+# from django.core.paginator import Paginator
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 
 from cooking.models import *
-from inventory.models import InventoryProduct
-from shopping.models import RecipeShoppingList, ProductCategory
+from inventory.models import *
+from shopping.forms import CreateProductForm
+from shopping.models import *
 
 
 # Create your views here.
@@ -19,8 +20,7 @@ def recipe_list(request):
     categories = RecipeCategory.objects.annotate(recipe_count=Count('recipes'))
     total_recipes = recipes.count()
 
-
-    all_products = Product.objects.all()
+    all_products = Product.objects.filter(suitable_for_cooking=True)
 
     ingredient = request.GET.get('ingredient', 'all')
 
@@ -28,15 +28,24 @@ def recipe_list(request):
         recipes = recipes.filter(ingredients__id=ingredient)
 
     user = None
+    household = None
+
     times_cooked = 0
     if request.user.is_authenticated:
         user = request.user
-
+        household = getattr(user, 'household', None)
+    else:
+        household = None
 
     if category_name != 'all':
         recipes = recipes.filter(category__name=category_name)
 
-    user_inventory = InventoryProduct.objects.filter(user=user)
+    if household is not None:
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+
+    else:
+        user_inventory = InventoryProduct.objects.filter(user=user)
+
     product_price_map = {item.product.id: item.average_price for item in user_inventory}
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
@@ -47,8 +56,10 @@ def recipe_list(request):
                                        for ingredient in recipe.recipe_ingredients.all())
         recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
         recipe.user_availability_status = recipe.check_availability(user)
-
-        recipe.times_cooked = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).count()
+        if household is not None:
+            recipe.times_cooked = HouseholdRecipeTimesCooked.objects.filter(household=household, recipe=recipe).count()
+        else:
+            recipe.times_cooked = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).count()
 
     top_ids = sorted(recipes, key=lambda x: x.times_cooked, reverse=True)[:6]
     top_ids_set = set(r.id for r in top_ids)
@@ -62,7 +73,7 @@ def recipe_list(request):
                'categories': categories,
                'selected_category': category_name,
                'times_cooked': times_cooked,
-               'prducts': all_products,
+               'products': all_products,
                'ingredient': ingredient,
                'total_recipes': total_recipes,
                }
@@ -74,12 +85,16 @@ def create_recipe(request):
     products = Product.objects.all()
     categories = RecipeCategory.objects.all()
     product_categories = ProductCategory.objects.all()
+    create_product_form = CreateProductForm()
 
-    return render(request, "cooking/create_recipe.html", {
+    context = {
         "products": products,
         "categories": categories,
         'product_categories': product_categories,
-    })
+        'create_product_form': create_product_form,
+    }
+
+    return render(request, "cooking/create_recipe.html", context)
 
 
 @login_required
@@ -124,8 +139,13 @@ def save_recipe(request):
 
 @login_required
 def cook_recipe(request, recipe_id):
+    user = request.user
+    household = user.household
     recipe = Recipe.objects.get(id=recipe_id)
-    user_inventory = InventoryProduct.objects.filter(user=request.user)
+    if household:
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+    else:
+        user_inventory = InventoryProduct.objects.filter(user=user)
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
 
@@ -142,16 +162,23 @@ def cook_recipe(request, recipe_id):
                 inventory_product.amount = 0
                 inventory_product.calculate_average_price()
                 inventory_product.save()
-
-    RecipeTimesCooked.objects.create(user=request.user, recipe=recipe)
+    if household:
+        HouseholdRecipeTimesCooked.objects.create(household=household, recipe=recipe)
+    else:
+        RecipeTimesCooked.objects.create(user=request.user, recipe=recipe)
 
     return redirect("recipe_list")
 
 
 @login_required
 def generate_recipe_shopping_list(request, recipe_id):
+    user = request.user
+    household = user.household
     recipe = Recipe.objects.get(id=recipe_id)
-    user_inventory = InventoryProduct.objects.filter(user=request.user)
+    if household:
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+    else:
+        user_inventory = InventoryProduct.objects.filter(user=user)
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
     ingredients = RecipeIngredient.objects.filter(recipe=recipe)
@@ -163,7 +190,10 @@ def generate_recipe_shopping_list(request, recipe_id):
     ]
 
     if missing_products:
-        RecipeShoppingList.objects.create(user=request.user, recipe_name=recipe.name, items=missing_products)
+        if household:
+            HouseholdRecipeShoppingList.objects.create(household=household, recipe_name=recipe.name, items=missing_products)
+        else:
+            RecipeShoppingList.objects.create(user=user, recipe_name=recipe.name, items=missing_products)
         messages.success(request, f"Списъкът с липсващи продукти за {recipe.name} е успешно генериран!")
     else:
         messages.info(request, f"Всички продукти за {recipe.name} са налични, няма нужда от пазаруване.")
@@ -173,18 +203,26 @@ def generate_recipe_shopping_list(request, recipe_id):
 
 def recipe_view(request, recipe_id):
     user = None
+    household = None
     times_cooked = 0
     last_cooked = ''
     if request.user.is_authenticated:
         user = request.user
+        household = user.household
         recipe = Recipe.objects.get(id=recipe_id)
-        cooking_history = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).order_by('date')
+        if household:
+            cooking_history = HouseholdRecipeTimesCooked.objects.filter(household=household, recipe=recipe).order_by('date')
+        else:
+            cooking_history = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).order_by('date')
         if cooking_history:
             times_cooked = cooking_history.count()
             last_cooked = cooking_history.last().date
 
     recipe = get_object_or_404(Recipe, id=recipe_id)
-    user_inventory = InventoryProduct.objects.filter(user=user)
+    if household and household is not None:
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+    else:
+        user_inventory = InventoryProduct.objects.filter(user=user)
     product_price_map = {item.product.id: item.average_price for item in user_inventory}
     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 

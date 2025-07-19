@@ -1,7 +1,7 @@
 from django.db import models
 from shopping.models import Product
-from inventory.models import InventoryProduct
-from users.models import CustomUser
+from inventory.models import *
+from users.models import *
 
 
 # Create your models here.
@@ -24,8 +24,16 @@ class Recipe(models.Model):
     image = models.ImageField(upload_to='recipe_images/', null=True, blank=True)
 
     def check_availability(self, user):
-        user_inventory = InventoryProduct.objects.filter(user=user,
-            product__in=[ingredient.product for ingredient in self.recipe_ingredients.all()])
+        household = None
+        if user:
+            household = user.household
+        if household:
+            user_inventory = HouseholdInventoryProduct.objects.filter(household=household,
+                                                             product__in=[ingredient.product for ingredient in
+                                                                          self.recipe_ingredients.all()])
+        else:
+            user_inventory = InventoryProduct.objects.filter(user=user,
+                product__in=[ingredient.product for ingredient in self.recipe_ingredients.all()])
         product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
 
         for ingredient in self.recipe_ingredients.all():
@@ -34,7 +42,11 @@ class Recipe(models.Model):
         return "OK"
 
     def calculate_cost(self, user):
-        user_products = InventoryProduct.objects.filter(user=user)
+        household = user.household
+        if household:
+            user_products = HouseholdInventoryProduct.objects.filter(household=household)
+        else:
+            user_products = InventoryProduct.objects.filter(user=user)
 
         product_price_map = {up.product.id: up.average_price for up in user_products}
         total_cost = sum(product_price_map.get(ingredient.product.id, 0) * ingredient.quantity
@@ -63,4 +75,10 @@ class RecipeIngredient(models.Model):
 class RecipeTimesCooked(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='recipe_times_cooked')
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='recipe_times_cooked')
+    date = models.DateTimeField(auto_now_add=True)
+
+
+class HouseholdRecipeTimesCooked(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='household_recipe_times_cooked')
+    household = models.ForeignKey(HouseHold, on_delete=models.CASCADE, related_name='household_recipe_times_cooked')
     date = models.DateTimeField(auto_now_add=True)

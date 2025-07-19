@@ -2,20 +2,53 @@
 
 {% block content %}
 <div class="container py-5">
-    <h2 class="mb-4 text-center">✏️ Редактирай задача</h2>
+  <h2 class="mb-4 text-center">✏️ Редактирай задача</h2>
 
-    <form method="POST" class="card p-4 shadow-sm">
-        {% csrf_token %}
-        {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label">{{ field.label_tag }}</label>
-                {{ field }}
-                {% if field.errors %}
-                    <div class="text-danger small">{{ field.errors }}</div>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary w-100">💾 Запиши промените</button>
-    </form>
+  <form method="POST" class="card p-4 shadow-sm">
+    {% csrf_token %}
+
+    {% for field in form %}
+      <div class="mb-3">
+        <label class="form-label">{{ field.label_tag }}</label>
+
+      {% if field.name == "description" %}
+      {{ field.value|safe }}
+          {% else %}
+          {{ field }}
+      {% endif %}
+
+        {% if field.errors %}
+          <div class="text-danger small">{{ field.errors }}</div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary w-100">💾 Запиши промените</button>
+  </form>
 </div>
 {% endblock %}
+{##}
+{##}
+{#{% extends "base.html" %}#}
+{##}
+{#{% block content %}#}
+{#<div class="container py-5">#}
+{#    <h2 class="mb-4 text-center">✏️ Редактирай задача</h2>#}
+{##}
+{#    <form method="POST" class="card p-4 shadow-sm">#}
+{#        {% csrf_token %}#}
+{#        {% for field in form %}#}
+{#            <div class="mb-3">#}
+{#                <label class="form-label">{{ field.label_tag }}</label>#}
+{#                {{ field }}#}
+{#                {% if field.errors %}#}
+{#                    <div class="text-danger small">{{ field.errors }}</div>#}
+{#                {% endif %}#}
+{#            </div>#}
+{#        {% endfor %}#}
+{#        <button type="submit" class="btn btn-primary w-100">💾 Запиши промените</button>#}
+{#    </form>#}
+{#</div>#}
+{#{% endblock %}#}
+{##}

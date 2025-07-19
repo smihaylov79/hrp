@@ -83,33 +83,20 @@
 <div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form id="new-product-form">
+      <form id="new-product-form" method="POST">
         {% csrf_token %}
+
         <div class="modal-header">
           <h5 class="modal-title" id="productModalLabel">➕ Добави нов продукт</h5>
           <button type="button" class="btn-close" onclick="closeModal()"></button>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label for="category" class="form-label">Категория:</label>
-            <select name="category_id" class="form-select">
-              {% for category in product_categories %}
-                <option value="{{ category.id }}">{{ category.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="new-product-name" class="form-label">Име:</label>
-            <input type="text" name="new_product_name" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label for="new-calories" class="form-label">Калории:</label>
-            <input type="number" step="1" name="new_calories" class="form-control" required>
-          </div>
-        </div>
+
+       <div class="p-3 rounded shadow-sm bg-light border">
+    {{ create_product_form.as_p }}
+  </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal()">Затвори</button>
-          <button type="button" class="btn btn-primary" onclick="saveNewProduct()">Запази продукта</button>
+          <button type="submit" class="btn btn-primary">Запази продукта</button>
         </div>
       </form>
     </div>
@@ -134,44 +121,69 @@ document.querySelectorAll(".removeRow").forEach(button => {
     this.closest("tr").remove();
   });
 });
+</script>
 
-// Modal logic
-function checkNewProduct(selectElement) {
-  if (selectElement.value === "new") {
-    new bootstrap.Modal(document.getElementById("product-modal")).show();
-  }
-}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("new-product-form");
+    const modalEl = document.getElementById("product-modal");
 
-function closeModal() {
-  const modalEl = document.getElementById("product-modal");
-  const modal = bootstrap.Modal.getInstance(modalEl);
-  modal.hide();
-}
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-async function saveNewProduct() {
-  const formData = new FormData(document.getElementById("new-product-form"));
-  const response = await fetch("{% url 'add_product' %}", {
-    method: "POST",
-    body: formData,
-    headers: {
-      "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
-      "Accept": "application/json"
-    }
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch("{% url 'add_product' %}", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+            "Accept": "application/json"
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Update all product dropdowns
+          document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
+            const option = document.createElement("option");
+            option.value = data.id;
+            option.textContent = data.name;
+            option.selected = true;
+            dropdown.appendChild(option);
+          });
+
+          // Reset form and close modal
+          form.reset();
+          const modal = bootstrap.Modal.getInstance(modalEl);
+          modal.hide();
+        } else {
+          // Show Django form error
+          alert(data.error || "Грешка при добавянето на продукта.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Възникна грешка при добавянето на продукта.");
+      }
+    });
   });
 
-  if (response.ok) {
-    const newProduct = await response.json();
-    document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
-      const option = document.createElement("option");
-      option.value = newProduct.id;
-      option.textContent = newProduct.name;
-      option.selected = true;
-      dropdown.appendChild(option);
-    });
-    closeModal();
-  } else {
-    alert("Грешка при добавянето на продукта.");
+  // Show modal when "new" is selected
+  function checkNewProduct(selectElement) {
+    if (selectElement.value === "new") {
+      const modal = new bootstrap.Modal(document.getElementById("product-modal"));
+      modal.show();
+    }
   }
-}
+
+  // Modal close logic
+  function closeModal() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById("product-modal"));
+    modal.hide();
+  }
 </script>
+
+
 {% endblock %}
