@@ -1,5 +1,8 @@
 # from decimal import Decimal
 import json
+import time
+
+from django.contrib import messages
 # from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError
@@ -62,6 +65,20 @@ def regular_shopping(request):
         shopping.user = user
         shopping.save()
 
+        base_currency = shopping.currency
+        date = shopping.date
+
+        target_currencies = [c for c in CurrencyChoice.values]
+
+        for target_currency in target_currencies:
+            if base_currency == target_currency:
+                continue
+            try:
+                get_exchange_rate(base_currency, target_currency, date)
+                time.sleep(1)
+            except Exception as e:
+                messages.warning(request, f"Unable to fetch exchange rate for {base_currency} → {target_currency}")
+
         selected_products = json.loads(request.POST["selected_products"])
         save_shopping_products(selected_products, shopping, user, household)
         return redirect("shopping")
@@ -84,6 +101,9 @@ def utility_bills(request):
     selected_categories = ['Битови сметки', 'Наем']
     category = ProductCategory.objects.filter(name__in=selected_categories)
     bills = Product.objects.filter(category__in=category)
+    electricity_price = fetch_electricity_price()
+    cold_water = fetch_cold_water()
+    heating_price = get_heating_price()
 
     if request.method == "POST":
         form = UtilityBillForm(request.POST)
@@ -91,6 +111,16 @@ def utility_bills(request):
             shopping = form.save(commit=False)
             shopping.user = request.user
             shopping.save()
+
+            base_currency = shopping.currency
+            date = shopping.date
+
+            target_currencies = [c for c in CurrencyChoice.values]
+            for target_currency in target_currencies:
+                try:
+                    get_exchange_rate(base_currency, target_currency, date)
+                except Exception as e:
+                    messages.warning(request, f"Unable to fetch exchange rate for {base_currency} → {target_currency}")
 
             selected_products = json.loads(request.POST.get("selected_products"))
             for product_data in selected_products:
@@ -111,6 +141,9 @@ def utility_bills(request):
     context = {
         "bills": bills,
         'form': form,
+        'electricity_price': electricity_price,
+        'cold_water': cold_water,
+        'heating_price': heating_price,
     }
     return render(request, "shopping/utility_bills.html", context)
 
@@ -121,6 +154,7 @@ def edit_shopping(request, shopping_id):
     members = CustomUser.objects.filter(household=household)
     shopping = get_object_or_404(Shopping, id=shopping_id, user__in=members)
     shops = Shop.objects.all()
+    currencies = CurrencyChoice.values
 
     product_id = request.GET.get("product_id")
 
@@ -131,6 +165,7 @@ def edit_shopping(request, shopping_id):
         else:
             shopping.date = request.POST.get("date")
             shopping.shop_id = request.POST.get("shop_id")
+            shopping.currency = request.POST.get("currency")
             shopping.save()
 
             for item in shopping.shopping_products.all():
@@ -145,7 +180,7 @@ def edit_shopping(request, shopping_id):
             redirect_url += f"?product_id={product_id}"
         return HttpResponseRedirect(redirect_url)
 
-    context = {"shopping": shopping, 'shops': shops, 'product_id': product_id}
+    context = {"shopping": shopping, 'shops': shops, 'product_id': product_id, 'currencies': currencies}
 
     return render(request, "shopping/edit_shopping.html", context)
 

@@ -8,14 +8,16 @@ from .models import *
 class BaseShoppingForm(forms.ModelForm):
     class Meta:
         model = Shopping
-        fields = ['shop', 'date']
+        fields = ['shop', 'date', 'currency']
         widgets = {
             'shop': forms.Select(attrs={'name': 'shop_id', 'class': 'form-select'}),
             'date': forms.DateInput(attrs={'name': 'date', 'class': 'form-control', 'type': 'date'}),
+            'currency': forms.Select(attrs={'name': 'currency', 'class': 'form-select'}),
         }
         labels = {
             'shop': 'Магазин/Доставчик',
-            'date': 'Дата на разход'
+            'date': 'Дата на разход',
+            'currency': 'Валута'
         }
 
     def __init__(self, *args, **kwargs):

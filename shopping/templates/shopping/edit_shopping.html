@@ -20,6 +20,16 @@
           {% endfor %}
         </select>
       </div>
+
+     <div class="col-md-6">
+        <label for="currency" class="form-label">💵 Валута:</label>
+        <select name="currency" class="form-select">
+          {% for currency in currencies %}
+            <option value="{{ currency }}" {% if shopping.currency == currency %}selected{% endif %}>{{ currency }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
     </div>
 
     <h4 class="mb-3">📦 Продукти в покупката</h4>
@@ -31,8 +41,8 @@
             <th>Количество</th>
             <th>Цена</th>
             <th>Отстъпка</th>
-              <th>Сума</th>
-              <th>Не за домакинството</th>
+            <th>Сума</th>
+            <th>Не за домакинството</th>
             <th>Действие</th>
           </tr>
         </thead>
@@ -66,7 +76,7 @@
       <tfoot>
       <tr class="table-secondary">
         <td colspan="4" class="text-end fw-bold">Общо:</td>
-        <td class="fw-bold text-success">{{ shopping.total_amount|floatformat:2 }} лв</td>
+        <td class="fw-bold text-success">{{ shopping.total_amount|floatformat:2 }} {{ shopping.currency }}</td>
       </tr>
     </tfoot>
       </table>

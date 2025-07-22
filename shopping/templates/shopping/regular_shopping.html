@@ -108,6 +108,10 @@
       <label for="date" class="form-label">📅 Дата на покупка:</label>
         {{ form.date }}
     </div>
+  <div class="mb-3">
+      <label for="currency" class="form-label">💵 Валута:</label>
+        {{ form.currency }}
+    </div>
 
     <h4 class="mt-4">🧺 Преглед на покупката</h4>
   <table class="table table-bordered table-sm mt-3">
@@ -115,10 +119,10 @@
     <tr>
       <th>Продукт</th>
       <th>Количество</th>
-      <th>Цена (лв)</th>
-      <th>Отстъпка (лв)</th>
-      <th>Сума (лв)</th>
-        <th>Не за домакинството</th>
+      <th>Цена</th>
+      <th>Отстъпка</th>
+      <th>Сума</th>
+      <th>Не за домакинството</th>
       <th>Премахни</th>
     </tr>
   </thead>
@@ -126,7 +130,7 @@
   </tbody>
 </table>
 
-    <p id="total-amount" class="fw-bold">Общо: 0.00 лв</p>
+    <p id="total-amount" class="fw-bold">Общо: 0.00</p>
 
     <input type="hidden" id="selected-products" name="selected_products">
     <button type="button" id="submit-shopping" class="btn btn-primary">💾 Запази покупката</button>
@@ -166,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td><input type="number" step="0.001" value="${item.quantity}" class="form-control form-control-sm"></td>
                 <td><input type="number" step="0.01" value="${item.price}" class="form-control form-control-sm"></td>
                 <td><input type="number" step="0.01" value="${item.discount}" class="form-control form-control-sm"></td>
-                <td>${amount.toFixed(2)} лв</td>
+                <td>${amount.toFixed(2)}</td>
                    <td>
   <input type="checkbox" class="not-for-household-toggle" ${item.not_for_household ? "checked" : ""}>
 </td>
@@ -198,7 +202,7 @@ notForHouseholdCheckbox.addEventListener("change", function () {
         });
 
         document.getElementById("total-amount").textContent =
-            `Общо: ${totalAmount.toFixed(2)} лв (Продукти: ${count})`;
+            `Общо: ${totalAmount.toFixed(2)} (Продукти: ${count})`;
 
         localStorage.setItem("shoppingBasket", JSON.stringify(shoppingBasket));
     }

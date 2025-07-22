@@ -16,16 +16,19 @@ from shopping.models import *
 
 def recipe_list(request):
     category_name = request.GET.get('category', 'all')
-    recipes = Recipe.objects.all()
+    recipes = Recipe.objects.all().order_by('category__name')
     categories = RecipeCategory.objects.annotate(recipe_count=Count('recipes'))
     total_recipes = recipes.count()
 
-    all_products = Product.objects.filter(suitable_for_cooking=True)
+    all_products = Product.objects.filter(suitable_for_cooking=True).order_by('name')
 
     ingredient = request.GET.get('ingredient', 'all')
 
+    selected_product = None
+
     if ingredient != 'all':
         recipes = recipes.filter(ingredients__id=ingredient)
+        selected_product = Product.objects.filter(id=ingredient).first()
 
     user = None
     household = None
@@ -76,6 +79,7 @@ def recipe_list(request):
                'products': all_products,
                'ingredient': ingredient,
                'total_recipes': total_recipes,
+               'product': selected_product,
                }
     return render(request, 'cooking/recipe_list.html', context)
 

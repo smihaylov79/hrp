@@ -31,6 +31,7 @@
       <option value="{{ product.id }}"
           {% if request.GET.ingredient == product.id|stringformat:"s" %}selected{% endif %}>
     {{ product.id|get_product_name }}
+      </option>
     {% endfor %}
   </select>
   <input type="hidden" name="category" value="{{ selected_category }}">
@@ -95,11 +96,12 @@
 
     {% endfor %}
 {% else %}
-    <div class="d-flex align-items-center justify-content-center text-center py-3">
-  <span>Няма рецепти с този продукт! Посети&nbsp;</span>
-  <a href="https://inthebeniskitchen.com/" class="ms-1">тук</a>
-  <span>&nbsp;за идеи</span>
-</div>
+  <div class="d-flex align-items-center justify-content-center text-center py-3">
+    <span>Няма рецепти с този продукт! Потърси в&nbsp;</span>
+
+    <a href="https://www.google.com/search?q=рецепти+с+{{ product.name|urlencode }}" target="_blank" class="ms-1">Google</a>
+    <span>&nbsp;за идеи</span>
+  </div>
 {% endif %}
 </div>
 

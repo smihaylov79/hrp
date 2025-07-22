@@ -23,6 +23,8 @@ class SpendingsReportFilterForm(forms.Form):
                               label="До",
                               widget=forms.DateInput(attrs={'type': 'date'}))
 
+    currency = forms.ChoiceField(choices = CurrencyChoice.choices, required=False, label = "Валута")
+
     not_for_household_filter = forms.ChoiceField(
         choices=SPENDINGS_CHOICES,
         required=False,

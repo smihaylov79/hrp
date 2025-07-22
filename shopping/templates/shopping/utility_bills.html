@@ -5,21 +5,44 @@
 <form method="POST" id="bill-form">
   {% csrf_token %}
 
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">💡 Въведи битови сметки</h5>
+  <div class="row">
+  <!-- Input Form Card -->
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">💡 Въведи битови сметки</h5>
 
-      <div class="mb-3">
-        <label class="form-label">🛍️ Доставчик:</label>
-        {{ form.shop}}
-      </div>
+        <div class="mb-3">
+          <label class="form-label">🛍️ Доставчик:</label>
+          {{ form.shop }}
+        </div>
 
-      <div class="mb-3">
-        <label class="form-label">📅 Дата на сметката:</label>
-        {{ form.date }}
+        <div class="mb-3">
+          <label class="form-label">📅 Дата на сметката:</label>
+          {{ form.date }}
+        </div>
+
+        <div class="mb-3">
+          <label for="currency" class="form-label">💵 Валута:</label>
+          {{ form.currency }}
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Utility Prices Card -->
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">📊 Текущи цени</h5>
+        <p>⚡ Електроенергия: <strong>{{ electricity_price }}</strong> лв / kWh</p>
+        <p>💧 Студена вода: <strong>{{ cold_water }}</strong> лв / m³</p>
+        <p>♨️ Топлофикация: <strong>{{ heating_price }}</strong> лв / мегаватчас</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <div class="products-scroll-wrapper mb-4" style="max-height: 60vh; overflow-y: auto;">
     <div class="row g-3">

@@ -1,6 +1,14 @@
 from django.db import models
+from django.db.models import TextChoices
 
 from users.models import *
+
+
+class CurrencyChoice(TextChoices):
+    BGN = 'BGN', 'лв.'
+    EUR = 'EUR', 'Euro'
+    USD = 'USD', 'US Dollar'
+    # GBP = 'GBP', 'Pound'
 
 
 class MainCategory(models.Model):
@@ -50,6 +58,7 @@ class Shopping(models.Model):
                              default=None)
     date = models.DateField()
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
+    currency = models.CharField(max_length=3, choices=CurrencyChoice.choices, default=CurrencyChoice.BGN)
 
     def total_amount(self):
         return sum(sp.amount for sp in self.shopping_products.all())
@@ -73,7 +82,6 @@ class ShoppingProduct(models.Model):
     def save(self, *args, **kwargs):
         self.amount = self.quantity * self.price - self.discount
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return f"{self.product.name} in Shopping {self.shopping.id}"

@@ -40,6 +40,7 @@
         <th>Дата</th>
         <th>Магазин</th>
         <th>Общо</th>
+        <th>Валута</th>
         <th>Действия</th>
       </tr>
     </thead>
@@ -49,7 +50,8 @@
         <td>{{ shopping.user.first_name }}</td>
         <td>{{ shopping.date }}</td>
         <td>{{ shopping.shop.name }}</td>
-        <td>{{ shopping.total_amount }} лв</td>
+        <td>{{ shopping.total_amount }}</td>
+        <td>{{ shopping.currency }}</td>
         <td>
           <a href="{% url 'edit_shopping' shopping.id %}?product_id={{ selected_product_id }}" class="btn btn-sm btn-outline-primary">✏️ Редактирай</a>
         </td>

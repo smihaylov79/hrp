@@ -24,6 +24,15 @@
             <input type="date" name="date_to" id="id_date_to" class="form-control" value="{{ request.GET.date_to }}">
         </div>
 
+    <div class="col-md-3">
+        <label for="currency" class="form-label">Валута</label>
+        <select name="currency" class="form-select">
+          {% for code, label in form.fields.currency.choices %}
+            <option value="{{ code }}" {% if request.GET.currency == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+    </div>
+
     <div class="mb-3">
   <label for="id_not_for_household_filter" class="form-label">🔍 Показване на вид разход:</label>
   <select name="not_for_household_filter" class="form-select" id="id_not_for_household_filter">
@@ -45,17 +54,17 @@
     <div class="d-flex flex-wrap gap-4 mb-4">
     <!-- Monthly Line Chart -->
 {#    <div id="monthly_spent" style="width:60%; height: 400px;"></div>#}
-    <div class="card p-3 shadow-sm" style="width:45%; height:300px">
-        <h5 class="mb-3">📊 Статистика за избрания период</h5>
+    <div class="card p-3 shadow-sm" style="width:45%; height:400px">
+        <h5 class="mb-3">📊 Статистика за избрания период в <strong>{{ request.GET.currency }}</strong></h5>
         <ul class="list-unstyled">
-            <li><strong>Общо разходи:</strong> {{ total_spent }} лв.</li>
+            <li><strong>Общо разходи:</strong> {{ total_spent }} {{ request.GET.currency }}</li>
             <li><strong>Брой покупки:</strong> {{ shoppings_count }}</li>
             <li><strong>5 най-купувани продукта:</strong> {{ most_purchased_names }}</li>
-            <li><strong>Най-голям разход за:</strong> {{ biggest_spent.product__name }} – {{ biggest_spent.spent }} лв.</li>
-            <li><strong>Най-скъп продукт:</strong> {{ highest_price.product__name }} – {{ highest_price.price }} лв.</li>
-            <li><strong>Най-евтин продукт:</strong> {{ lowest_price.product__name }} – {{ lowest_price.price }} лв.</li>
-            <li><strong>Най-голямо увеличение:</strong> {{ top_increase.product }} – {{ top_increase.change }} лв.</li>
-            <li><strong>Най-голямо намаление:</strong> {{ top_decrease.product }} – {{ top_decrease.change }} лв.</li>
+            <li><strong>Най-голям разход за:</strong> {{ biggest_spent.product__name }} – {{ biggest_spent.spent }} {{ request.GET.currency }}</li>
+            <li><strong>Най-скъп продукт:</strong> {{ highest_price.product__name }} – {{ highest_price.price }} {{ request.GET.currency }}</li>
+            <li><strong>Най-евтин продукт:</strong> {{ lowest_price.product__name }} – {{ lowest_price.price }} {{ request.GET.currency }}</li>
+            <li><strong>Най-голямо увеличение:</strong> {{ top_increase.product }} – {{ top_increase.change }} {{ request.GET.currency }}</li>
+            <li><strong>Най-голямо намаление:</strong> {{ top_decrease.product }} – {{ top_decrease.change }} {{ request.GET.currency }}</li>
         </ul>
     </div>
 
@@ -68,6 +77,8 @@
         {% endif %}
     </div>
 </div>
+
+    <div id="yearly-spending-chart"></div>
 
     <div id="monthly_spent" style="width:100%; height: 400px;"></div>
 
@@ -87,7 +98,7 @@
         if (mainChartContainer) {
             Highcharts.chart('main-category-chart', {
                 chart: {type: 'pie'},
-                title: {text: 'Разход по категория'},
+                title: {text: 'Разход по категория {{ request.GET.currency }}'},
                 series: [{
                     name: 'Разход',
                     data: {{ main_chart_data|safe }}
@@ -98,9 +109,9 @@
             chart: { type: 'pie' },
             title: {
                 text: {% if main_category_name == "" %}
-                                'Разход по подкатегория'
+                                'Разход по подкатегория {{ request.GET.currency }}'
                             {% else %}
-                                'Разход за {{ main_category_name }} (подкатегории)'
+                                'Разход за {{ main_category_name }} (подкатегории) {{ request.GET.currency }}'
                             {% endif %}
             },
             series: [{
@@ -116,6 +127,8 @@
     <script>
         const data = JSON.parse('{{ monthly_data|escapejs }}');
 
+
+
         Highcharts.chart('monthly_spent', {
             chart: {
                 type: 'line'
@@ -123,9 +136,9 @@
             title: {
                 text:
                     {% if main_category_name == "" %}
-                    'Разходи по месец'
+                    'Разходи по месец {{ request.GET.currency }}'
                 {% else %}
-                                'Разход за {{ main_category_name }} по месец'
+                                'Разход за {{ main_category_name }} по месец {{ request.GET.currency }}'
                             {% endif %}
             },
             xAxis: {
@@ -134,7 +147,7 @@
             },
             yAxis: {
                 min: 0,
-                title: { text: 'лв.' }
+                title: { text: '{{ request.GET.currency }}' }
             },
             series: [{
                 name: 'Общо',
@@ -142,8 +155,40 @@
             }]
         });
     </script>
+
     <script>
         const weeklyData = JSON.parse('{{ weekly_data|escapejs }}');
+
+
+        const yearBreaks = [];
+for (let i = 1; i < weeklyData.length; i++) {
+    if (weeklyData[i].year !== weeklyData[i - 1].year) {
+        yearBreaks.push(i);  // Store the index where the year changes
+    }
+}
+
+
+// Prepare plotLines for each break
+const plotLines = yearBreaks.map((index, i) => {
+    const currentYear = weeklyData[index].year;
+    const prevYear = weeklyData[index - 1]?.year;
+    return {
+        color: 'grey',
+        dashStyle: 'Dash',
+        width: 2,
+        value: index,  // This is the index in the categories array
+        zIndex: 5,
+        label: {
+            text: `${prevYear} ←   → ${currentYear}`,
+            rotation: 0,
+            y: -10,
+            style: {
+                color: 'black'
+            }
+        }
+    };
+});
+
 
         Highcharts.chart('weekly_spent', {
             chart: {
@@ -152,19 +197,20 @@
             title: {
                 text:
                     {% if main_category_name == "" %}
-                    'Разходи по седмица'
+                    'Разходи по седмица {{ request.GET.currency }}'
                 {% else %}
-                                'Разход за {{ main_category_name }} по седмица'
+                                'Разход за {{ main_category_name }} по седмица {{ request.GET.currency }}'
                             {% endif %}
 
             },
             xAxis: {
                 categories: weeklyData.map(item => item.week),
+                plotLines: plotLines,
                 title: { text: 'седмица' }
             },
             yAxis: {
                 min: 0,
-                title: { text: 'лв.' }
+                title: { text: '{{ request.GET.currency }}'  }
             },
             series: [{
                 name: 'Общо',
@@ -172,5 +218,26 @@
             }]
         });
     </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        Highcharts.chart('yearly-spending-chart', {
+            chart: { type: 'line' },
+            title: { text: 'Месечен разход по години' },
+            xAxis: {
+                categories: {{ month_labels|safe }},
+                title: { text: 'Месец' }
+            },
+            yAxis: {
+                title: { text: 'Сума ({{ request.GET.currency }})' }
+            },
+            tooltip: {
+                shared: true,
+                valueSuffix: ' {{ request.GET.currency }}'
+            },
+            series: {{ yearly_series|safe }}
+        });
+    });
+</script>
 
 {% endblock %}
