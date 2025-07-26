@@ -51,22 +51,39 @@
                 <th>Премахни</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
-                    <option value="" disabled selected>Избери продукт</option>
-                    <option value="new">➕ Добави нов продукт</option>
-                    {% for product in products %}
-                      <option value="{{ product.id }}">{{ product.name }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td><input type="number" name="quantity[]" class="form-control" step="0.001" required></td>
-                <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
-                <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
-              </tr>
-            </tbody>
+
+              <tbody>
+  <tr>
+    <td>
+      <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
+        <option value="" disabled>Избери продукт</option>
+        <option value="new">➕ Добави нов продукт</option>
+        {% for product in products %}
+          <option value="{{ product.id }}" {% if product.name == "Сол" %}selected{% endif %}>{{ product.name }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td><input type="number" name="quantity[]" class="form-control" step="0.001" value="0.01" required></td>
+    <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
+    <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
+  </tr>
+
+  <tr>
+    <td>
+      <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
+        <option value="" disabled>Избери продукт</option>
+        <option value="new">➕ Добави нов продукт</option>
+        {% for product in products %}
+          <option value="{{ product.id }}" {% if product.name == "Олио" %}selected{% endif %}>{{ product.name }}</option>
+        {% endfor %}
+      </select>
+    </td>
+    <td><input type="number" name="quantity[]" class="form-control" step="0.001" value="0.01" required></td>
+    <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
+    <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
+  </tr>
+</tbody>
+
           </table>
         </div>
 

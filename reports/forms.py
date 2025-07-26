@@ -30,6 +30,17 @@ class SpendingsReportFilterForm(forms.Form):
         required=False,
         label="Филтър за домакинство"
     )
+    shops = forms.ModelMultipleChoiceField(
+        queryset=Shop.objects.none(),  # default, updated in __init__
+        required=False,
+        label="Магазини",
+        widget=forms.SelectMultiple(attrs={'class': 'form-select'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        user_shops = kwargs.pop('user_shops', Shop.objects.none())
+        super().__init__(*args, **kwargs)
+        self.fields['shops'].queryset = user_shops
 
     def clean(self):
         cleaned_data = super().clean()

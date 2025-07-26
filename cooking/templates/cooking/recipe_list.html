@@ -37,7 +37,9 @@
   <input type="hidden" name="category" value="{{ selected_category }}">
 </form>
 
-<div class="row">
+
+
+<div class="products-scroll-wrapper" style="max-height: 70vh; overflow-y: auto;">
 
 {% if recipes %}
 
@@ -93,17 +95,34 @@
   </div>
 </div>
 
-
     {% endfor %}
+    </div>
+    {% if product %}
+        <div class="d-flex align-items-center justify-content-center text-center py-3">
+    <span>Потърси в&nbsp;</span>
+
+    <a href="https://www.google.com/search?q=рецепти+с+{{ product.name|urlencode }}" target="_blank" class="ms-1">Google</a>
+    <span>&nbsp;за още идеи за рецепти с {{ product.name }}</span>
+  </div>
+        {% else %}
+
+    <div class="d-flex align-items-center justify-content-center text-center py-3">
+    <span>Потърси в&nbsp;</span>
+
+    <a href="https://www.google.com/search?q=рецепти+с+{{ product.name|urlencode }}" target="_blank" class="ms-1">Google</a>
+    <span>&nbsp;за още идеи</span>
+  </div>
+        {% endif %}
+
 {% else %}
   <div class="d-flex align-items-center justify-content-center text-center py-3">
     <span>Няма рецепти с този продукт! Потърси в&nbsp;</span>
 
     <a href="https://www.google.com/search?q=рецепти+с+{{ product.name|urlencode }}" target="_blank" class="ms-1">Google</a>
-    <span>&nbsp;за идеи</span>
+  <span>&nbsp;за идеи</span>
   </div>
 {% endif %}
-</div>
+
 
 </div>
     <script>

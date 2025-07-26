@@ -86,7 +86,7 @@ def recipe_list(request):
 
 @login_required
 def create_recipe(request):
-    products = Product.objects.all()
+    products = Product.objects.filter(suitable_for_cooking=True).order_by('name')
     categories = RecipeCategory.objects.all()
     product_categories = ProductCategory.objects.all()
     create_product_form = CreateProductForm()

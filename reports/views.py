@@ -69,10 +69,6 @@ class SpendingsView(FormView):
                 data_for_monthly_comparison = shopping_data.filter(current_period | previous_years_period)
 
                 shopping_data = shopping_data.filter(current_period)
-            # elif date_from:
-            #     shopping_data = shopping_data.filter(shopping__date__gte=date_from)
-            # elif date_to:
-            #     shopping_data = shopping_data.filter(shopping__date__lte=date_to)
 
             shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
 
@@ -85,11 +81,9 @@ class SpendingsView(FormView):
             most_purchased_names = ', '.join([entry['product__name'] for entry in most_purchased])
 
             df = db_to_df(shopping_data, currency)
-            print(data_for_monthly_comparison)
             if data_for_monthly_comparison:
                 data_for_monthly_comparison = data_for_monthly_comparison.select_related('shopping', 'product__category__main_category')
                 df_monthly_comparison = db_to_df(data_for_monthly_comparison, currency)
-                print(df_monthly_comparison['year'].sort_values(ascending=False))
             else:
                 df_monthly_comparison = df
 
@@ -114,135 +108,102 @@ class SpendingsView(FormView):
         return self.render_to_response(context)
 
 
-# class SpendingsView(FormView):
-#     template_name = 'reports/spendings_history.html'
-#     form_class = SpendingsReportFilterForm
-#
-#     def get(self, request, *args, **kwargs):
-#         form = self.form_class(self.request.GET or None)
-#         context = self.get_context_data(form=form)
-#
-#         if form.is_valid():
-#             user = self.request.user
-#
-#             household = user.household
-#
-#             # currencies = CurrencyChoice.values
-#
-#             if household:
-#                 members = CustomUser.objects.filter(household=household)
-#                 shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
-#
-#             else:
-#                 shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
-#
-#             main_category = form.cleaned_data.get('main_category')
-#             date_from = form.cleaned_data.get('date_from')
-#             date_to = form.cleaned_data.get('date_to')
-#             currency = form.cleaned_data.get('currency')
-#             household_filter = form.cleaned_data.get("not_for_household_filter", "all")
-#
-#             if household_filter == "household":
-#                 shopping_data = shopping_data.filter(not_for_household=False)
-#             elif household_filter == "external":
-#                 shopping_data = shopping_data.filter(not_for_household=True)
-#
-#             if main_category:
-#                 shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
-#
-#             if date_from and date_to:
-#                 shopping_data = shopping_data.filter(shopping__date__range=(date_from, date_to))
-#             elif date_from:
-#                 shopping_data = shopping_data.filter(shopping__date__gte=date_from)
-#             elif date_to:
-#                 shopping_data = shopping_data.filter(shopping__date__lte=date_to)
-#
-#             shopping_data = shopping_data.select_related('shopping')
-#
-#             rate_map = {}
-#             for item in shopping_data:
-#                 key = (item.shopping.currency, currency, item.shopping.date)
-#                 if key not in rate_map:
-#                     rate = ExchangeRate.objects.filter(
-#                         base_currency=key[0],
-#                         target_currency=key[1],
-#                     ).order_by('-date_extracted').first()
-#                     rate_map[key] = Decimal(str(rate.rate)) if rate else Decimal('1.0')
-#             for item in shopping_data:
-#                 key = (item.shopping.currency, currency, item.shopping.date)
-#                 print(f"Date: {item.shopping.date}, type: {type(item.shopping.date)}")
-#                 rate = rate_map.get(key, Decimal('1.0'))
-#                 item.converted_amount = item.amount * rate
-#
-#             converted_total = sum(item.converted_amount for item in shopping_data)
-#
-#             monthly_data = defaultdict(Decimal)
-#             weekly_data = defaultdict(Decimal)
-#             for item in shopping_data:
-#                 month_key = item.shopping.date.strftime('%m.%Y')
-#                 week_key = item.shopping.date.isocalendar()[1]
-#                 monthly_data[month_key] += item.converted_amount
-#                 weekly_data[week_key] += item.converted_amount
-#
-#             monthly_spent = [{'month': k, 'total': float(v)} for k, v in sorted(monthly_data.items(), key=lambda x: datetime.strptime(x[0], "%m.%Y"))]
-#             weekly_spent = [{'week': k, 'total': float(v)} for k, v in sorted(weekly_data.items(), key=lambda x: x[0])]
-#
-#             monthly_data = [
-#                 {'month': entry['month'], 'total': round(float(entry['total']), 2)} for entry in
-#                 monthly_spent
-#             ]
-#             weekly_data = [{'week': entry['week'], 'total': round(float(entry['total']),2)} for entry in weekly_spent]
-#
-#
-#
-#             main_category_spending = shopping_data.values("product__category__main_category__name").annotate(
-#                 total_spent=Sum("amount"))
-#             subcategory_spending = shopping_data.values("product__category__name").annotate(total_spent=Sum("amount"))
-#
-#             main_chart_data = [
-#                 {"name": entry["product__category__main_category__name"], "y": float(entry["total_spent"])}
-#                 for entry in main_category_spending]
-#             sub_chart_data = [{"name": entry["product__category__name"], "y": float(entry["total_spent"])}
-#                               for entry in subcategory_spending]
-#
-#             shoppings_count = shopping_data.aggregate(shoppings_count=Count('shopping', distinct=True))[
-#                 'shoppings_count']
-#             most_purchased = (
-#                 shopping_data.values('product__name').annotate(purchase_count=Count('id')).order_by('-purchase_count')[
-#                 :5]
-#             )
-#             most_purchased_names = ', '.join([entry['product__name'] for entry in most_purchased])
-#             biggest_spent = shopping_data.values('product__name').annotate(spent=Max('amount')).order_by(
-#                 '-spent').first()
-#             lowest_price = shopping_data.exclude(price=0).values('product__name').annotate(price=Min('price')).order_by(
-#                 'price').first()
-#             highest_price = shopping_data.values('product__name').annotate(price=Max('price')).order_by(
-#                 '-price').first()
-#
-#             price_changes = calculate_price_changes(shopping_data.exclude(price=0).values(
-#                 'product__name', 'price', 'shopping__date').order_by('product__name', 'shopping__date'))
-#             top_increase = price_changes[0][:1][0] if price_changes[0] else None
-#             top_decrease = price_changes[1][:1][0] if price_changes[1] else None
-#
-#             context = self.get_context_data(form=form, )
-#             context.update({'monthly_data': json.dumps(monthly_data),
-#                             'weekly_data': json.dumps(weekly_data),
-#                             # 'total_spent': total_spent,
-#                             'total_spent': round(converted_total, 2),
-#                             'main_category_name': main_category.name if main_category else '',
-#                             'main_chart_data': json.dumps(main_chart_data),
-#                             'sub_chart_data': json.dumps(sub_chart_data),
-#                             'most_purchased': most_purchased,
-#                             'shoppings_count': shoppings_count,
-#                             'most_purchased_names': most_purchased_names,
-#                             'biggest_spent': biggest_spent,
-#                             'lowest_price': lowest_price,
-#                             'highest_price': highest_price,
-#                             'top_increase': top_increase,
-#                             'top_decrease': top_decrease,
-#                             # 'currencies': currencies
-#                             })
-#         return self.render_to_response(context)
+class SpendingsByShopView(FormView):
+    template_name = 'reports/by_shop.html'
+    form_class = SpendingsReportFilterForm
+
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        household = user.household
+        if household:
+            members = CustomUser.objects.filter(household=household)
+            user_shops = Shop.objects.filter(
+                id__in=Shopping.objects.filter(user__in=members).values("shop")).distinct()
+            shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+        else:
+            user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
+            shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+        form = self.form_class(self.request.GET or None, user_shops=user_shops)
+        context = self.get_context_data(form=form)
+
+        if form.is_valid():
+            main_category = form.cleaned_data.get('main_category')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            currency = form.cleaned_data.get('currency')
+            household_filter = form.cleaned_data.get("not_for_household_filter", "all")
+            selected_shop_ids = form.cleaned_data.get("shops")
+
+            selected_shops = user_shops.filter(id__in=selected_shop_ids)
+
+            if selected_shops:
+                shopping_data = shopping_data.filter(shopping__shop__id__in=selected_shops)
+
+            if household_filter == "household":
+                shopping_data = shopping_data.filter(not_for_household=False)
+            elif household_filter == "external":
+                shopping_data = shopping_data.filter(not_for_household=True)
+
+            if main_category:
+                shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
+
+            if date_from and date_to:
+                shopping_data = shopping_data.filter(date__range=(date_from, date_to))
+
+            shopping_data = shopping_data.select_related('shopping', 'shop', 'product__category__main_category')
+
+            df = db_to_df(shopping_data, currency)
+
+            avg_price_changes = df.groupby('product__name')['total'].mean()
+
+            shop_spending_totals = df.groupby('shopping__shop__name')['total'].sum()
+
+            spending_chart_data = [{
+                "name": shop,
+                "y": total
+            } for shop, total in shop_spending_totals.items()]
+
+            shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])['converted_price'].mean().round(
+                2).unstack().fillna('-')
+            shop_price_changes['Обща средна цена'] = df.groupby('product__name')['converted_price'].mean().round(2)
+
+            highlighted_table = []
+
+            if selected_shops:
+                for product, row in shop_price_changes.iterrows():
+                    # Find the lowest numeric price (ignoring dashes)
+                    prices_only = row.drop('Обща средна цена')
+                    numeric_prices = [price for price in prices_only if isinstance(price, (int, float))]
+                    min_price = min(numeric_prices) if numeric_prices else None
+
+                    row_data = {
+                        'product': product,
+                        'overall_avg': row['Обща средна цена'],
+                        'shops': []
+                    }
+
+                    for shop in prices_only.index:
+                        value = row[shop]
+                        row_data['shops'].append({
+                            'shop': shop,
+                            'price': value if isinstance(value, (int, float)) else None,
+                            'is_lowest': value == min_price
+                        })
+                    highlighted_table.append(row_data)
+
+            context.update({"spending_chart_data": json.dumps(spending_chart_data),
+                            "avg_price_changes": avg_price_changes,
+                            "shop_price_changes": shop_price_changes,
+                            'user_shops': user_shops,
+                            'highlighted_table': highlighted_table if selected_shops else None,
+                            "selected_shop_ids": [str(shop.id) for shop in selected_shop_ids],
+                            }
+
+            )
+
+        return self.render_to_response(context)
+
 
 
 def product_price_history(request):
@@ -360,7 +321,5 @@ def spendings_by_shop(request):
         "main_category_name": main_category_name,
         "spending_chart_data": json.dumps(spending_chart_data),
     }
-
-    # TODO refine the filters to work together
 
     return render(request, "reports/spendings_by_shop.html", context)

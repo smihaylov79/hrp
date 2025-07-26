@@ -11,7 +11,7 @@
         <div class="card h-100 shadow-sm border-primary">
           <div class="card-body text-center">
             <h5 class="card-title text-primary">📆 История на разходите</h5>
-            <p class="card-text text-muted">Преглед на всички покупки и общи разходи по дати.</p>
+            <p class="card-text text-muted">Преглед на всички разходи по дати и категория.</p>
           </div>
         </div>
       </a>
@@ -31,17 +31,18 @@
 
     <!-- 🛍️ Spendings by Shop -->
     <div class="col-md-4">
-      <a href="{% url 'spendings_by_shop' %}" class="text-decoration-none">
+      <a href="{% url 'by_shop' %}" class="text-decoration-none">
         <div class="card h-100 shadow-sm border-success">
           <div class="card-body text-center">
             <h5 class="card-title text-success">🏬 Разходи по магазини</h5>
-            <p class="card-text text-muted">Сравни сумите, похарчени в различни магазини.</p>
+            <p class="card-text text-muted">Сравни сумите и цените в различни магазини.</p>
           </div>
         </div>
       </a>
     </div>
   </div>
 </div>
+
     {% block report_body %}
 
     {% endblock %}

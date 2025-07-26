@@ -149,7 +149,7 @@ def fetch_cold_water():
                 divs = td_with_price.find_all('div')
                 for div in divs:
                     try:
-                        price = round(float(div.text.strip())/1.95583, 2)
+                        price = round(float(div.text.strip()), 2)
                         return price
                     except ValueError:
                         continue

@@ -22,6 +22,7 @@ def db_to_df(db_shopping, currency):
         'discount',
         'shopping__currency',
         'shopping__date',
+        'shopping__shop__name',
         'product__name',
         'product__category__name',
         'product__category__main_category__name',

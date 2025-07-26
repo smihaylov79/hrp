@@ -51,10 +51,11 @@
 
      <script src="https://code.highcharts.com/highcharts.js"></script>
 
-    <div class="d-flex flex-wrap gap-4 mb-4">
-    <!-- Monthly Line Chart -->
-{#    <div id="monthly_spent" style="width:60%; height: 400px;"></div>#}
-    <div class="card p-3 shadow-sm" style="width:45%; height:400px">
+    <div class="row mt-4">
+  <!-- 📈 Left: Statistics Panel -->
+  <div class="col-md-6">
+    <div class="card p-3 shadow-sm">
+
         <h5 class="mb-3">📊 Статистика за избрания период в <strong>{{ request.GET.currency }}</strong></h5>
         <ul class="list-unstyled">
             <li><strong>Общо разходи:</strong> {{ total_spent }} {{ request.GET.currency }}</li>
@@ -67,13 +68,14 @@
             <li><strong>Най-голямо намаление:</strong> {{ top_decrease.product }} – {{ top_decrease.change }} {{ request.GET.currency }}</li>
         </ul>
     </div>
+  </div>
 
     <!-- Pie Chart -->
-    <div style="width:45%;">
+    <div class="col-md-6">
         {% if main_category_name == "" %}
-            <div id="main-category-chart" style="height: 300px;"></div>
+            <div id="main-category-chart" class="shadow-sm p-3 bg-white rounded" style="height: 400px;"></div>
         {% else %}
-            <div id="subcategory-chart" style="height: 300px;"></div>
+            <div id="subcategory-chart" class="shadow-sm p-3 bg-white rounded" style="height: 400px;"></div>
         {% endif %}
     </div>
 </div>

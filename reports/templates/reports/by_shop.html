@@ -1,0 +1,138 @@
+{% extends 'reports/reports_home.html' %}
+
+{% load filters_for_shop_comparison %}
+
+{% block report_body %}
+
+
+    <form method="get" class="border rounded p-4 mb-4 bg-light">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="id_main_category" class="form-label">Категория</label>
+            <select name="main_category" id="id_main_category" class="form-select">
+                <option value="">-- Всички --</option>
+                {% for category in form.fields.main_category.queryset %}
+                    <option value="{{ category.id }}" {% if request.GET.main_category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="id_date_from" class="form-label">От</label>
+            <input type="date" name="date_from" id="id_date_from" class="form-control" value="{{ request.GET.date_from }}">
+        </div>
+        <div class="col-md-3">
+            <label for="id_date_to" class="form-label">До</label>
+            <input type="date" name="date_to" id="id_date_to" class="form-control" value="{{ request.GET.date_to }}">
+        </div>
+
+    <div class="col-md-3">
+        <label for="currency" class="form-label">Валута</label>
+        <select name="currency" class="form-select">
+          {% for code, label in form.fields.currency.choices %}
+            <option value="{{ code }}" {% if request.GET.currency == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+  <label for="id_not_for_household_filter" class="form-label">🔍 Показване на вид разход:</label>
+  <select name="not_for_household_filter" class="form-select" id="id_not_for_household_filter">
+    <option value="all" {% if request.GET.not_for_household_filter == "all" %}selected{% endif %}>Всички</option>
+    <option value="household" {% if request.GET.not_for_household_filter == "household" %}selected{% endif %}>Само за домакинството</option>
+    <option value="external" {% if request.GET.not_for_household_filter == "external" %}selected{% endif %}>Само извън домакинството</option>
+  </select>
+</div>
+
+    <div class="mb-3">
+      <label for="shop_select" class="form-label">Избери магазини:</label>
+      <select multiple name="shops" id="shop_select" class="form-select">
+        {% for shop in form.fields.shops.queryset %}
+          <option value="{{ shop.id }}" {% if shop.id|stringformat:"s" in selected_shop_ids %}selected{% endif %}>
+            {{ shop.name }}
+          </option>
+        {% endfor %}
+      </select>
+      <small class="text-muted">Задръж Ctrl (или Cmd на Mac), за да избереш няколко</small>
+    </div>
+
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Филтрирай</button>
+        </div>
+    </div>
+</form>
+
+<!-- 📊 Full-Width Pie Chart Section -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div id="spendingPieChart" class="p-0 bg-white rounded" style="width: 100%; height: 500px;"></div>
+  </div>
+</div>
+
+    <!-- 📋 Price Comparison Table -->
+
+<div class="overflow-auto" style="max-height: 500px;">
+  <table class="table table-bordered table-striped align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>🛒 Продукт</th>
+        <th>📊 Средна цена {{ request.GET.currency }}</th>
+        {% for shop in highlighted_table.0.shops %}
+          <th>{{ shop.shop }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in highlighted_table %}
+      <tr>
+        <td>{{ row.product }}</td>
+        <td>
+          {% if row.overall_avg %}
+            {{ row.overall_avg|floatformat:2 }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        {% for shop_data in row.shops %}
+          <td {% if shop_data.is_lowest %}class="table-success"{% endif %}>
+            {% if shop_data.price %}
+              {{ shop_data.price|floatformat:2 }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    Highcharts.chart('spendingPieChart', {
+        chart: { type: 'pie' },
+        title: { text: '🛍️ Разходи по магазини' },
+        tooltip: { pointFormat: '{series.name}: <b>{point.y:.2f}</b>' },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: { enabled: true, format: '{point.name}: {point.y:.2f} {{ request.GET.currency }}' }
+            }
+        },
+        series: [{
+            name: 'Общо',
+            colorByPoint: true,
+            data: {{ spending_chart_data|safe }}
+        }]
+    });
+});
+</script>
+
+
+
+{% endblock %}

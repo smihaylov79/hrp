@@ -7,5 +7,6 @@ urlpatterns = [
     path('spending-history/', SpendingsView.as_view(), name='spendings_history'),
     path('product-price-history/', product_price_history, name='product_price_history'),
     path('spendings-by-shop/', spendings_by_shop, name='spendings_by_shop'),
+    path('by-shop/', SpendingsByShopView.as_view(), name='by_shop'),
 
 ]

@@ -17,7 +17,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'suitable_for_cooking')
-    fields = ('name', 'category', 'suitable_for_cooking', 'image')
+    fields = ('name', 'category', 'suitable_for_cooking', 'calories', 'image')
 
     def save_model(self, request, obj, form, change):
         if obj.suitable_for_cooking and not obj.calories:
