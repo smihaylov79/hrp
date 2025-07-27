@@ -3,12 +3,11 @@ from collections import defaultdict
 from decimal import Decimal
 
 import pandas as pd
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Count, Max, Min, Avg, Q
 from django.db.models.functions import TruncMonth, TruncWeek, ExtractWeek
-from django.shortcuts import render, get_object_or_404
-from inventory.models import *
-from shopping.models import *
+from django.shortcuts import render, get_object_or_404, redirect
 import json
 from django.views.generic import FormView, TemplateView
 from .forms import *
@@ -24,7 +23,7 @@ class ReportsHomeView(LoginRequiredMixin, TemplateView):
     template_name = 'reports/reports_home.html'
 
 
-class SpendingsView(FormView):
+class SpendingsView(LoginRequiredMixin, FormView):
     template_name = 'reports/spendings_history.html'
     form_class = SpendingsReportFilterForm
 
@@ -108,7 +107,7 @@ class SpendingsView(FormView):
         return self.render_to_response(context)
 
 
-class SpendingsByShopView(FormView):
+class SpendingsByShopView(LoginRequiredMixin, FormView):
     template_name = 'reports/by_shop.html'
     form_class = SpendingsReportFilterForm
 
@@ -205,121 +204,132 @@ class SpendingsByShopView(FormView):
         return self.render_to_response(context)
 
 
-
-def product_price_history(request):
+def price_changes(request):
     user = request.user
     household = user.household
 
+    total_inflation_data = {}
     if household:
-        members = CustomUser.objects.filter(household=household)
-        products = Product.objects.filter(
-            shoppingproduct__shopping__user__in=members).distinct()
+        members = [m for m in CustomUser.objects.filter(household=household)]
+        inflation_baskets = HouseholdInflationBasket.objects.all()
+        for basket in inflation_baskets:
+            selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
+            shopping_products = ShoppingProduct.objects.filter(shopping__user__in=members, product__household_inventory_product__in=selected_ids)
+            shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
+            shopping_products = db_to_df(shopping_products, 'BGN')
+            inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
+            total_change = ((inflation_data['total'].iloc[-1] - inflation_data['total'].iloc[0]) /
+                            inflation_data['total'].iloc[0]) * 100
+            total_change = round(total_change, 2)
+            basket.total_change = total_change
+            total_inflation_data[basket.id] = inflation_data, total_change
+
     else:
-        products = Product.objects.filter(
-            shoppingproduct__shopping__user=user).distinct()
+        inflation_baskets = UserInflationBasket.objects.all()
+        for basket in inflation_baskets:
+            selected_ids = UserInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
+            shopping_products = ShoppingProduct.objects.filter(shopping__user=user, product__inventory_product__in=selected_ids)
+            shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
+            shopping_products = db_to_df(shopping_products, 'BGN')
+            inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
+            total_change = ((inflation_data['total'].iloc[-1] - inflation_data['total'].iloc[0]) /
+                            inflation_data['total'].iloc[0]) * 100
+            total_change = round(total_change, 2)
+            basket.total_change = total_change
+            total_inflation_data[basket.id] = inflation_data, total_change
 
-    selected_product_id = request.GET.get("product")
-    price_data = []
+    chart_data = {}
+    for basket_id, (inflation_data, total_change) in total_inflation_data.items():
+        chart_data[basket_id] = {
+            'months': inflation_data['month'].tolist(),
+            'inflation_values': inflation_data['inflation_mom'].fillna(0).round(2).tolist(),
+            'total_inflation': round(total_change, 2),
+        }
 
-    if selected_product_id:
-        product = get_object_or_404(Product, id=selected_product_id)
+    products, selected_product_id, price_data, currency = product_price_history(request)
 
-        if household:
-            price_changes = ShoppingProduct.objects.filter(shopping__user__in=members, product=product) \
-                .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
-        else:
-            price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product) \
-                .values("shopping__date").annotate(avg_price=Avg("price")).order_by("shopping__date")
-
-        price_data = [{"date": entry["shopping__date"].strftime("%Y-%m-%d"), "price": float(entry["avg_price"])} for
-                      entry in price_changes]
+    currencies = CurrencyChoice.choices
 
     context = {
+        'inflation_baskets': inflation_baskets,
+        'chart_data_json': json.dumps(chart_data),
         "products": products,
         "selected_product_id": selected_product_id,
-        "price_data": json.dumps(price_data) if price_data else "[]"
+        "price_data": json.dumps(price_data),
+        'currency': currency,
+        'currencies': currencies,
+
     }
+    return render(request, 'reports/price_changes.html', context)
 
-    return render(request, "reports/price_history.html", context)
 
-
-def spendings_by_shop(request):
+@login_required
+def create_inflation_basket(request):
     user = request.user
     household = user.household
-
-    selected_shop_ids = request.GET.getlist("shops")
-    main_categories = MainCategory.objects.all()
-
-    main_category_name = ""
-
-    main_category_filter = request.GET.get("main_category", "")
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
-
     if household:
-        members = CustomUser.objects.filter(household=household)
-        user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user__in=members).values("shop")).distinct()
-        shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+        products = HouseholdInventoryProduct.objects.all().order_by('product__name')
     else:
-        user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
-        shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+        products = InventoryProduct.objects.all().order_by('product__name')
+    context = {
+        'products': products,
+    }
+    return render(request, 'reports/create_inflation_basket.html', context)
 
-    if main_category_filter and main_category_filter.strip():
-        shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category_filter)
-        main_category = main_categories.filter(id=main_category_filter).first()
-        main_category_name = main_category.name
 
-    if start_date and end_date:
-        shopping_data = shopping_data.filter(shopping__date__range=[start_date, end_date])
+def save_inflation_basket(request):
+    user = request.user
+    household = user.household
+    if request.method == "POST":
+        name = request.POST['name']
+        product_ids = request.POST.getlist("product_id[]")
+        if household:
+            basket = HouseholdInflationBasket.objects.create(household=household, name=name)
+            for i in range(len(product_ids)):
+                product = HouseholdInventoryProduct.objects.get(id=product_ids[i])
+                HouseholdInflationBasketItem.objects.create(basket=basket, product=product)
 
-    # Global average price per product
-    avg_price_changes = shopping_data.values("product__name").annotate(
-        avg_price=Avg("price")
-    )
-    for item in avg_price_changes:
-        item["avg_price"] = round(item["avg_price"], 2)
+        else:
+            basket = UserInflationBasket.objects.create(user=user, name=name)
+            for i in range(len(product_ids)):
+                product = InventoryProduct.objects.get(id=product_ids[i])
+                UserInflationBasketItem.objects.create(basket=basket, product=product)
+        return redirect('price_changes')
 
-    shop_spending_totals = shopping_data.values("shopping__shop__name").annotate(
-        total_spent=Sum("amount")
-    )
-    spending_chart_data = [
-        {
-            "name": entry["shopping__shop__name"],
-            "y": float(entry["total_spent"])
-        }
-        for entry in shop_spending_totals
-    ]
 
-    # If shops are selected, build comparison data
-    shop_price_changes = []
-    if selected_shop_ids:
-        selected_shops = user_shops.filter(id__in=selected_shop_ids)
+@login_required
+def edit_inflation_basket(request, basket_id):
+    user = request.user
+    household = user.household
+    if household:
+        basket = HouseholdInflationBasket.objects.get(id=basket_id, household=user.household)
+        products = HouseholdInventoryProduct.objects.all().order_by('product__name')
+        selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
 
-        for shop in selected_shops:
-            shop_avg_prices = shopping_data.filter(shopping__shop=shop).values("product__name").annotate(
-                shop_avg_price=Avg("price")
-            )
+    else:
+        basket = UserInflationBasket.objects.get(id=basket_id, user=user)
+        products = InventoryProduct.objects.all().order_by('product__name')
+        selected_ids = UserInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
 
-            shop_data = {
-                "shop_name": shop.name,
-                "shop_id": shop.id,
-                "prices": {
-                    item["product__name"]: round(item["shop_avg_price"], 2)
-                    for item in shop_avg_prices
-                }
-            }
-
-            shop_price_changes.append(shop_data)
+    if request.method == "POST":
+        basket.name = request.POST['name']
+        basket.save()
+        new_ids = request.POST.getlist("product_id[]")
+        if household:
+            basket.household_basket_items.all().delete()
+            for i in new_ids:
+                product = HouseholdInventoryProduct.objects.get(id=i)
+                HouseholdInflationBasketItem.objects.create(basket=basket, product=product)
+        else:
+            basket.user_basket_items.all().delete()
+            for i in new_ids:
+                product = InventoryProduct.objects.get(id=i)
+                UserInflationBasketItem.objects.create(basket=basket, product=product)
+        return redirect('price_changes')
 
     context = {
-        "user_shops": user_shops,
-        "selected_shops": selected_shop_ids,
-        "avg_price_changes": avg_price_changes,
-        "shop_price_changes": shop_price_changes,
-        "main_categories": main_categories,
-        "main_category_filter": main_category_filter,
-        "main_category_name": main_category_name,
-        "spending_chart_data": json.dumps(spending_chart_data),
+        'basket': basket,
+        'products': products,
+        'selected_ids': selected_ids,
     }
-
-    return render(request, "reports/spendings_by_shop.html", context)
+    return render(request, 'reports/edit_inflation_basket.html', context)

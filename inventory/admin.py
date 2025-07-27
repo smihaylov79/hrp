@@ -14,6 +14,8 @@ class InventoryProductAdmin(admin.ModelAdmin):
 @admin.register(UserProductCategory)
 class UserProductCategory(admin.ModelAdmin):
     list_display = ('user__first_name', 'product_category', 'direct_planning', 'daily_consumption', 'minimum_quantity')
+    list_filter = ('product_category', )
+    search_fields = ('user__first_name', )
 
 
 @admin.register(HouseholdInventoryProduct)

@@ -1,5 +1,10 @@
 from collections import defaultdict
 from decimal import Decimal
+
+from django.shortcuts import get_object_or_404
+
+from shopping.models import Product, ShoppingProduct
+from users.models import CustomUser
 from .models import ExchangeRate
 import pandas as pd
 from calendar import month_name
@@ -119,5 +124,48 @@ def by_product_statistics(df):
     return biggest_spent, lowest_price, highest_price
 
 
+def calculate_inflation(data):
+    df = pd.DataFrame(data)
 
+    df['prev_total'] = df['total'].shift(1)
+    df['inflation_mom'] = ((df['total'] - df['prev_total']) / df['prev_total']) * 100
+    df['inflation_mom'] = df['inflation_mom'].round(2)
+    return df
+
+
+def product_price_history(request):
+    user = request.user
+    household = user.household
+
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        products = Product.objects.filter(
+            shoppingproduct__shopping__user__in=members).distinct()
+    else:
+        products = Product.objects.filter(
+            shoppingproduct__shopping__user=user).distinct()
+
+    selected_product_id = request.GET.get("product")
+    currency = request.GET.get("currency")
+    price_data_json = []
+
+    if selected_product_id:
+        product = get_object_or_404(Product, id=selected_product_id)
+
+        if household:
+            price_changes = ShoppingProduct.objects.filter(shopping__user__in=members, product=product)
+        else:
+            price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product)
+
+        price_data = price_changes.select_related('shopping', 'shop', 'product__category__main_category')
+        price_data = db_to_df(price_data, currency)
+
+        minimal_df = pd.DataFrame({
+            'date': pd.to_datetime(price_data['shopping__date'], errors='coerce').dt.strftime('%Y-%m-%d'),
+            'price': price_data['converted_price'].astype(float)
+        })
+
+        price_data_json = minimal_df.to_dict(orient='records')
+
+    return products, selected_product_id, price_data_json, currency
 

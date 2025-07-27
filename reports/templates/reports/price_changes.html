@@ -1,0 +1,103 @@
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+<p></p>
+   <div class="mb-4">
+        <a href="{% url 'create_inflation_basket' %}" class="btn btn-primary">Създай нова потребителска кошница</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white text-center">
+            <h4 class="mb-0">Инфлация на потребителски кошници</h4>
+        </div>
+
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+
+
+<script>
+  const chartData = {{ chart_data_json|safe }};
+</script>
+
+<div class="card-body">
+  {% for basket in inflation_baskets %}
+    <div class="mb-5">
+      <h5>
+        <a href="{% url 'edit_inflation_basket' basket.id %}">
+          {{ basket.name }}
+        </a>
+          {{ basket.total_change }} %
+      </h5>
+
+      <div id="chart-container-{{ basket.id }}" style="height: 300px;"></div>
+
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const cleanedData = chartData[{{ basket.id }}].inflation_values.map(val => val === 0 ? null : val);
+          Highcharts.chart("chart-container-{{ basket.id }}", {
+            chart: { type: "line" },
+            title: { text: "MoM Инфлация" },
+            xAxis: { categories: chartData[{{ basket.id }}].months },
+            yAxis: { title: { text: "% Промяна" } },
+            series: [{
+              name: "{{ basket.name }}",
+                data: cleanedData,
+            }]
+          });
+        });
+      </script>
+    </div>
+  {% endfor %}
+</div>
+
+    </div>
+
+    <h2>Движение на цена {{ product.name }}</h2>
+
+    <form method="GET" action="{% url 'price_changes' %}">
+    <label for="product">Валута:</label>
+       <select name="currency" onchange="this.form.submit()">
+    <option value="">-- Изберете --</option>
+    {% for code, label in currencies %}
+        <option value="{{ code }}" {% if code == currency %}selected{% endif %}>
+            {{ label }}
+        </option>
+    {% endfor %}
+</select>
+        <label for="product">Изберете продукт:</label>
+        <select name="product" onchange="this.form.submit()">
+            <option value="">-- Изберете --</option>
+            {% for product in products %}
+                <option value="{{ product.id }}" {% if product.id|stringformat:"s" == selected_product_id %}selected{% endif %}>
+                    {{ product.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <div id="price-history-chart"></div>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rawData = JSON.parse('{{ price_data|safe }}');
+        let formattedData = rawData.map(entry => [Date.parse(entry.date), entry.price]);
+
+        Highcharts.chart('price-history-chart', {
+            chart: { type: 'line' },
+            title: { text: 'Движение на цена {{ product.name }}' },
+            xAxis: { type: 'datetime' },
+            yAxis: { title: { text: 'Цена {{ currency }}' } },
+            series: [{
+                name: "История на цените",
+                data: formattedData
+            }]
+        });
+    });
+</script>
+
+
+
+
+{% endblock %}

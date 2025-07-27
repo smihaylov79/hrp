@@ -1,0 +1,66 @@
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+
+
+<h3>Редактирай инфлационна кошница</h3>
+<form method="POST">
+  {% csrf_token %}
+  <div class="mb-3">
+    <input type="text" name="name" value="{{ basket.name }}" placeholder="Име на кошницата" class="form-control" required>
+  </div>
+
+  <h4 class="mt-4 mb-3">🧺 Продукти</h4>
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle" id="editBasketTable">
+      <thead class="table-light">
+        <tr>
+          <th>Продукт</th>
+          <th>Премахни</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product_id in selected_ids %}
+          <tr>
+            <td>
+              <select name="product_id[]" class="form-select">
+                <option value="" disabled>Избери продукт</option>
+                {% for product in products %}
+                  <option value="{{ product.id }}" {% if product.id == product_id %}selected{% endif %}>{{ product.product.name }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td>
+              <button type="button" class="removeRow btn btn-sm btn-danger">✖</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <button type="button" class="btn btn-primary mt-2" onclick="addRow()">➕ Добави продукт</button>
+  <button type="submit" class="btn btn-success mt-3">Запази промените</button>
+</form>
+
+    <script>
+  function addRow() {
+    const tableBody = document.querySelector('#editBasketTable tbody');
+    const newRow = tableBody.rows[0].cloneNode(true);
+    newRow.querySelector('select').selectedIndex = 0;
+    tableBody.appendChild(newRow);
+  }
+
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.classList.contains("removeRow")) {
+      const row = e.target.closest("tr");
+      const tableBody = document.querySelector('#editBasketTable tbody');
+      if (tableBody.rows.length > 1) {
+        row.remove();
+      }
+    }
+  });
+</script>
+
+
+{% endblock %}

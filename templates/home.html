@@ -57,9 +57,9 @@
   {% if task_total > 0 %}
     <div class="alert alert-info mt-3">
       {% if tasks_today %}
-        📝 Имате {{ tasks_today|length }} задачи за днес
+        📝 Имаш {{ tasks_today|length }} задачи за днес
       {% else %}
-        ✅ Нямате задачи за днес!
+        ✅ Няма задачи за днес!
       {% endif %}
 
       {% if tasks_overdue %}
@@ -70,18 +70,18 @@
     </div>
   {% else %}
     <div class="alert alert-success mt-3">
-      ✅ Нямате задачи за днес! Насладете се на деня!
+      ✅ Няма задачи за днес!
     </div>
   {% endif %}
 
   {% if events_today %}
     <div class="alert alert-primary mt-3">
-      📅 Имате {{ events_today|length }} събития за днес
+      📅 Имаш {{ events_today|length }} събития за днес
       <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary ms-3">Виж календар</a>
     </div>
   {% else %}
     <div class="alert alert-success mt-3">
-      📅 Нямате събития за деня!
+      📅 Няма събития за деня!
     </div>
   {% endif %}
 {% endif %}

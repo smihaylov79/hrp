@@ -12,6 +12,7 @@ class RecipeIngredientInline(admin.TabularInline):  # Show ingredients as inline
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'time_to_prepare')
+    list_filter = ('category', )
     search_fields = ("name", "category__name")
     inlines = [RecipeIngredientInline]
 
@@ -24,4 +25,5 @@ class RecipeCategoryAdmin(admin.ModelAdmin):
 @admin.register(RecipeIngredient)
 class RecipeIngredientAdmin(admin.ModelAdmin):
     list_display = ('recipe', 'product', 'quantity')
+    list_filter = ('recipe__category',)
     search_fields = ("recipe__name", "product__name")

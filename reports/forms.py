@@ -1,6 +1,7 @@
 from django import forms
 from shopping.models import *
 from django.utils.timezone import localdate
+from .models import *
 
 
 class SpendingsReportFilterForm(forms.Form):
