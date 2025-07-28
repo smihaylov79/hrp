@@ -1,15 +1,13 @@
 from decimal import Decimal
 
 from django.contrib import messages
-# from django.core.paginator import Paginator
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-
-from cooking.models import *
-from inventory.models import *
+from cooking.models import Recipe, RecipeCategory, RecipeIngredient, HouseholdRecipeTimesCooked, RecipeTimesCooked
+from inventory.models import InventoryProduct, HouseholdInventoryProduct
 from shopping.forms import CreateProductForm
-from shopping.models import *
+from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingList, RecipeShoppingList
 
 
 # Create your views here.

@@ -1,11 +1,8 @@
 from decimal import Decimal
 import os
-
 import requests
 from bs4 import BeautifulSoup
 import re
-from django.db.models import TextChoices
-
 from inventory.models import HouseholdInventoryProduct, HouseholdProductCategory, InventoryProduct, UserProductCategory
 from reports.models import ExchangeRate
 from shopping.models import HouseholdShoppingList, ShoppingList, Product, ShoppingProduct, Shopping

@@ -1,17 +1,10 @@
-from calendar import month_name
-from collections import defaultdict
-from decimal import Decimal
-
-import pandas as pd
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum, Count, Max, Min, Avg, Q
-from django.db.models.functions import TruncMonth, TruncWeek, ExtractWeek
-from django.shortcuts import render, get_object_or_404, redirect
+from django.db.models import Count, Q
+from django.shortcuts import render, redirect
 import json
 from django.views.generic import FormView, TemplateView
 from .forms import *
-from datetime import date, datetime
 from .utils import *
 
 
@@ -171,7 +164,6 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
 
             if selected_shops:
                 for product, row in shop_price_changes.iterrows():
-                    # Find the lowest numeric price (ignoring dashes)
                     prices_only = row.drop('Обща средна цена')
                     numeric_prices = [price for price in prices_only if isinstance(price, (int, float))]
                     min_price = min(numeric_prices) if numeric_prices else None

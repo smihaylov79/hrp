@@ -1,21 +1,41 @@
 {% extends "forum/forum_nav.html" %}
 
 {% block forum_content %}
-
-    <h2>{{ category.name }}</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">{{ category.name }}</h2>
 
     {% if user.is_authenticated %}
-        <a href="{% url 'create_thread' category.id %}" class="button">➕ Отвори тема</a>
+        <a href="{% url 'create_thread' category.id %}" class="btn btn-success mb-3">
+            ➕ Отвори тема
+        </a>
     {% endif %}
 
-    <div class="thread-list">
+    <div class="row">
         {% for thread in threads %}
-            <div class="thread-card">
-                <h3><a href="{% url 'thread_detail' thread.id %}">{{ thread.title }}</a></h3>
-                <p>Created by {{ thread.created_by.first_name }} {{ thread.created_by.last_name }}</p>
-                <small>Last activity: {{ thread.last_activity }}</small>
-                <span class="views">👁️ {{ thread.views }} views</span>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'thread_detail' thread.id %}" class="text-decoration-none">
+                                {{ thread.title }}
+                            </a>
+                        </h5>
+                        <p class="card-text">
+                            Създадена от: <strong>{{ thread.created_by.first_name }} {{ thread.created_by.last_name }}</strong>
+                        </p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Последна активност: {{ thread.last_activity }}</small>
+                        <span class="badge bg-primary">
+                            👁️ {{ thread.views }} преглеждания
+                        </span>
+                    </div>
+                </div>
             </div>
+        {% empty %}
+            <p class="text-muted">Няма теми в тази категория все още.</p>
         {% endfor %}
     </div>
+</div>
 {% endblock %}
+

@@ -1,5 +1,6 @@
 from datetime import datetime
 import pytz
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 import os
@@ -185,7 +186,7 @@ def finance_news(request):
     context = {'ticker': ticker, 'news': news_data}
     return render(request, "finance/news.html", context)
 
-
+@login_required
 def portfolio(request):
     return render(request, 'finance/portfolio.html')
 

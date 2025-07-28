@@ -1,4 +1,8 @@
+from datetime import datetime
+
 from django.db import models
+from django.utils import timezone
+
 from users.models import CustomUser
 
 
@@ -14,7 +18,7 @@ class PriorityLevel(models.TextChoices):
 class Task(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    due_date = models.DateField()
+    due_date = models.DateField(default=timezone.now)
     priority = models.CharField(max_length=10, choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)
     completed = models.BooleanField(default=False)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

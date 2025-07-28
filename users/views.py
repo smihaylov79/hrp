@@ -3,12 +3,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
-from .forms import *
+from .forms import RegistrationForm, ProfileUpdateForm, HouseholdCreationForm, JoinHouseholdForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
-from .forms import ProfileUpdateForm
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView, DetailView
+from .models import HouseholdMembership, HouseHold, CustomUser
 from .utils import merge_user_inventory_to_household
 
 

@@ -1,18 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4 shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'forum_home' %}">🏠 Forum Home</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#forumNavDropdown" aria-controls="forumNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-<nav class="forum-nav">
-    <ul>
-        <li><a href="{% url 'forum_home' %}">🏠 Forum Home</a></li>
-        {% for category in categories %}
-            <li><a href="{% url 'category_threads' category.id %}">{{ category.name }}</a></li>
-        {% endfor %}
-    </ul>
+        <div class="collapse navbar-collapse" id="forumNavDropdown">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                {% for category in categories %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'category_threads' category.id %}">{{ category.name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
 </nav>
 
 {% block forum_content %}
-
-    {% endblock %}
+{% endblock %}
 
 {% endblock %}
+

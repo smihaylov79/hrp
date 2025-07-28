@@ -1,12 +1,12 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, CreateView, UpdateView, View
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
-from taskmanager.models import Task
-from .forms import *
+from taskmanager.models import Task, Event
+from .forms import TaskForm, EventForm
 
 # Create your views here.
 

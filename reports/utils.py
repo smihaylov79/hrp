@@ -1,6 +1,3 @@
-from collections import defaultdict
-from decimal import Decimal
-
 from django.shortcuts import get_object_or_404
 
 from shopping.models import Product, ShoppingProduct

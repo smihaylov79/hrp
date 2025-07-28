@@ -1,24 +1,20 @@
-# from decimal import Decimal
 import json
 import time
+from decimal import Decimal
 
 from django.contrib import messages
-# from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError
-# from django.db.models import Sum, Count, Case, When, IntegerField
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-# from django.views.decorators.http import require_POST
-
-# from forum.models import Category
-# from .models import *
-# from inventory.models import *
-from .forms import *
-from users.models import *
-from .helpers import *
+from .forms import CreateProductForm, UtilityBillForm, RegularShoppingForm
+from users.models import CustomUser
+from .helpers import load_prefill_data, get_exchange_rate, save_shopping_products, fetch_electricity_price, \
+    fetch_cold_water, get_heating_price
+from .models import Shop, ProductCategory, MainCategory, CurrencyChoice, Shopping, Product, HouseholdShoppingList, \
+    ShoppingList, ShoppingProduct
 
 
 @login_required

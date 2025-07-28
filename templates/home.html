@@ -28,8 +28,12 @@
                             <p class="mb-0">
                                 🌡️ {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
                                 <img src="{{ weather_data.current.condition.icon }}" alt="Weather icon">
+                                <div class="mb-0">
+                        {{ rate.base_currency }} / {{ rate.target_currency }}: {{ rate.rate }}
+                    </div>
                             </p>
                         </div>
+
                         <div class="d-flex gap-3 flex-wrap">
                             {% for day in weather_data.forecast.forecastday|slice:":3" %}
                                 <div class="text-center">

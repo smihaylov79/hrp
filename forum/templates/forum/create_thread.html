@@ -1,13 +1,20 @@
-{% extends "forum/base_forum.html" %}
+{% extends "forum/forum_nav.html" %}
 
+{% block forum_content %}
 
-{% block content %}
-    <div class="thread-form-container">
-        <h2>Отвори нова тема за {{ category.name }}</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="button">Отвори тема</button>
-        </form>
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Отвори нова тема за {{ category.name }}</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-success">➕ Отвори тема</button>
+            </form>
+        </div>
     </div>
+</div>
 {% endblock %}
+

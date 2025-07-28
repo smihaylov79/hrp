@@ -86,7 +86,6 @@ def update_inventory(request):
                     except ValueError:
                         data[product_id][field] = 0.0
 
-                # data[product_id][field] = float(value)
         if household:
             HouseholdInventoryProduct.bulk_update_inventory(data)
         else:
@@ -100,7 +99,6 @@ def update_inventory(request):
 def user_category_settings(request):
     user = request.user
     household = user.household
-    all_categories = ProductCategory.objects.all()
 
     if household:
         user_categories = HouseholdProductCategory.objects.filter(household=household)
@@ -116,7 +114,11 @@ def user_category_settings(request):
 
         return redirect("user_category_settings")
 
-    return render(request, "inventory/user_category_settings.html", {"user_categories": user_categories})
+    context = {
+        "user_categories": user_categories
+    }
+
+    return render(request, "inventory/user_category_settings.html", context)
 
 
 @login_required
@@ -272,18 +274,6 @@ def shopping_list_view(request, list_id):
         shopping_list = get_object_or_404(ShoppingList, id=list_id, user=user)
 
     return render(request, "inventory/shopping_list.html", {"shopping_list": shopping_list})
-
-
-# @login_required
-# def all_shopping_lists(request):
-#     user = request.user
-#     household = user.household
-#     if household:
-#         shopping_lists = HouseholdShoppingList.objects.filter(household=household).order_by("-date_generated")
-#     else:
-#         shopping_lists = ShoppingList.objects.filter(user=user).order_by("-date_generated")
-#
-#     return render(request, "inventory/all_shopping_lists.html", {"shopping_lists": shopping_lists})
 
 
 @login_required

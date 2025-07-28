@@ -1,10 +1,10 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-from django.utils.timezone import now
 import requests
 from django.utils.timezone import now
 from datetime import datetime
 import os
+from reports.models import ExchangeRate
 
 # Create your views here.
 
@@ -26,6 +26,7 @@ def get_weather_data(request):
 def weather_data_context_processor(request):
     weather_data = get_weather_data(request)
     error_message = None
+    rate = ExchangeRate.objects.filter(target_currency='USD').order_by('-date_extracted').first()
 
     if weather_data and 'forecast' in weather_data:
 
@@ -43,6 +44,7 @@ def weather_data_context_processor(request):
         'weather_data': weather_data,
         'weather_error': error_message,
         'now': now(),
+        'rate': rate
     }
 
 

@@ -7,4 +7,5 @@ urlpatterns = [
     path("create-category/", create_category, name="create_category"),
     path("category/<int:category_id>/", category_threads, name="category_threads"),
     path("create-thread/<int:category_id>/", create_thread, name="create_thread"),
+    path("edit-request-thread/<int:request_id>/", edit_request_thread, name="edit_request_thread"),
 ]

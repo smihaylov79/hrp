@@ -21,13 +21,11 @@ def merge_user_inventory_to_household(user, household):
         )
 
         if not created:
-            # Merge quantities and amounts
             household_item.quantity += item.quantity
             household_item.amount += item.amount
             household_item.daily_consumption = max(household_item.daily_consumption, item.daily_consumption)
             household_item.minimum_quantity = max(household_item.minimum_quantity, item.minimum_quantity)
 
-            # Recalculate average price
             household_item.calculate_average_price()
             household_item.save()
 
