@@ -8,7 +8,6 @@ from .forms import *
 from .utils import *
 
 
-
 # Create your views here.
 
 
@@ -72,31 +71,36 @@ class SpendingsView(LoginRequiredMixin, FormView):
             )
             most_purchased_names = ', '.join([entry['product__name'] for entry in most_purchased])
 
-            df = db_to_df(shopping_data, currency)
+            df = None
+
+            if shopping_data:
+                df = db_to_df(shopping_data, currency)
+
             if data_for_monthly_comparison:
-                data_for_monthly_comparison = data_for_monthly_comparison.select_related('shopping', 'product__category__main_category')
+                data_for_monthly_comparison = data_for_monthly_comparison.select_related('shopping',
+                                                                                         'product__category__main_category')
                 df_monthly_comparison = db_to_df(data_for_monthly_comparison, currency)
             else:
                 df_monthly_comparison = df
 
-
             context = self.get_context_data(form=form, )
-            context.update({'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
-                            'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
-                            'total_spent': round(df['total'].sum(), 2),
-                            'main_category_name': main_category.name if main_category else '',
-                            'main_chart_data': json.dumps(by_category_spending(df)[0]),
-                            'sub_chart_data': json.dumps(by_category_spending(df)[1]),
-                            'shoppings_count': shoppings_count,
-                            'most_purchased_names': most_purchased_names,
-                            'biggest_spent': by_product_statistics(df)[0],
-                            'lowest_price': by_product_statistics(df)[1],
-                            'highest_price': by_product_statistics(df)[2],
-                            'top_increase': calculate_price_changes(df)[0],
-                            'top_decrease': calculate_price_changes(df)[1],
-                            'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
-                            'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
-                            })
+            if df is not None and not df.empty:
+                context.update({'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
+                                'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
+                                'total_spent': round(df['total'].sum(), 2),
+                                'main_category_name': main_category.name if main_category else '',
+                                'main_chart_data': json.dumps(by_category_spending(df)[0]),
+                                'sub_chart_data': json.dumps(by_category_spending(df)[1]),
+                                'shoppings_count': shoppings_count,
+                                'most_purchased_names': most_purchased_names,
+                                'biggest_spent': by_product_statistics(df)[0],
+                                'lowest_price': by_product_statistics(df)[1],
+                                'highest_price': by_product_statistics(df)[2],
+                                'top_increase': calculate_price_changes(df)[0],
+                                'top_decrease': calculate_price_changes(df)[1],
+                                'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
+                                'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
+                                })
         return self.render_to_response(context)
 
 
@@ -143,22 +147,28 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
             if date_from and date_to:
                 shopping_data = shopping_data.filter(date__range=(date_from, date_to))
 
-            shopping_data = shopping_data.select_related('shopping', 'shop', 'product__category__main_category')
+            shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
 
-            df = db_to_df(shopping_data, currency)
+            df = None
+            shop_price_changes = None
+            avg_price_changes = None
+            spending_chart_data = None
 
-            avg_price_changes = df.groupby('product__name')['total'].mean()
+            if shopping_data:
+                df = db_to_df(shopping_data, currency)
 
-            shop_spending_totals = df.groupby('shopping__shop__name')['total'].sum()
+                avg_price_changes = df.groupby('product__name')['total'].mean()
 
-            spending_chart_data = [{
+                shop_spending_totals = df.groupby('shopping__shop__name')['total'].sum()
+
+                spending_chart_data = [{
                 "name": shop,
                 "y": total
             } for shop, total in shop_spending_totals.items()]
 
-            shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])['converted_price'].mean().round(
+                shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])['converted_price'].mean().round(
                 2).unstack().fillna('-')
-            shop_price_changes['Обща средна цена'] = df.groupby('product__name')['converted_price'].mean().round(2)
+                shop_price_changes['Обща средна цена'] = df.groupby('product__name')['converted_price'].mean().round(2)
 
             highlighted_table = []
 
@@ -191,7 +201,7 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
                             "selected_shop_ids": [str(shop.id) for shop in selected_shop_ids],
                             }
 
-            )
+                           )
 
         return self.render_to_response(context)
 
@@ -205,8 +215,10 @@ def price_changes(request):
         members = [m for m in CustomUser.objects.filter(household=household)]
         inflation_baskets = HouseholdInflationBasket.objects.all()
         for basket in inflation_baskets:
-            selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
-            shopping_products = ShoppingProduct.objects.filter(shopping__user__in=members, product__household_inventory_product__in=selected_ids)
+            selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id",
+                                                                                                  flat=True)
+            shopping_products = ShoppingProduct.objects.filter(shopping__user__in=members,
+                                                               product__household_inventory_product__in=selected_ids)
             shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
             shopping_products = db_to_df(shopping_products, 'BGN')
             inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
@@ -220,7 +232,8 @@ def price_changes(request):
         inflation_baskets = UserInflationBasket.objects.all()
         for basket in inflation_baskets:
             selected_ids = UserInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
-            shopping_products = ShoppingProduct.objects.filter(shopping__user=user, product__inventory_product__in=selected_ids)
+            shopping_products = ShoppingProduct.objects.filter(shopping__user=user,
+                                                               product__inventory_product__in=selected_ids)
             shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
             shopping_products = db_to_df(shopping_products, 'BGN')
             inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
