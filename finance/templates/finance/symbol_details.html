@@ -1,0 +1,62 @@
+{% extends "finance/navigation.html" %}
+{% block finance_navigation %}
+
+<div class="container mt-5">
+    <div class="card shadow-sm p-4">
+        <h2 class="mb-3">📈 Детайли за: {{ data.description }}</h2>
+        <form method="GET" onsubmit="encodeHash(this)">
+  <input type="text" id="symbolInput" name="symbol" placeholder="Въведи символ" value="{{ symbol }}" />
+  <button type="submit">Провери</button>
+</form>
+
+
+
+
+{% if data %}
+  {% if data.error %}
+    <div class="alert alert-danger">⚠️ {{ data.error }}</div>
+  {% else %}
+    <div class="alert alert-info">
+      <strong>{{ symbol }} ({{ data.currency_base }})</strong><br>
+      🟢 Bid: {{ data.bid }}<br>
+      🔵 Ask: {{ data.ask }}<br>
+    </div>
+  {% endif %}
+{% endif %}
+
+    </div>
+</div>
+
+    <script>
+  function encodeHash(form) {
+    const input = form.symbol;
+    if (input.value.includes('#')) {
+      input.value = encodeURIComponent(input.value);
+    }
+  }
+</script>
+
+    <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const symbol = urlParams.get('symbol');
+
+    if (symbol) {
+      fetch(`/finance/symbol-details/?symbol=${encodeURIComponent(symbol)}&ajax=true`)
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('resultContainer').innerHTML = html;
+        })
+        .catch(err => {
+          document.getElementById('resultContainer').textContent = '⚠️ Failed to load data.';
+          console.error(err);
+        });
+    } else {
+      document.getElementById('resultContainer').textContent = '🔎 No symbol provided.';
+    }
+  });
+</script>
+
+
+
+{% endblock %}

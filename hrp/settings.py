@@ -34,6 +34,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'smihailov79.pythonanywhere.com',
+    '.ngrok-free.app',
 ]
 
 
@@ -86,7 +87,8 @@ TEMPLATES = [
                 'shopping.context_processors.current_datetime',
                 'forum.views.get_categories',
                 'weather.views.weather_data_context_processor',
-                'taskmanager.context_processor.incomplete_tasks'
+                'taskmanager.context_processor.incomplete_tasks',
+                'finance.context_processors.fastapi_url'
             ],
         },
     },
@@ -189,3 +191,5 @@ LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/users/please-login/'
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
+FAST_API_URL = os.getenv('NGROK_URL')

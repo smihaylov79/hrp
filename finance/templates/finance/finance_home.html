@@ -19,45 +19,64 @@
     {% endfor %}
   </div>
 
-  <!-- Gainers and Losers -->
-  <div class="row g-4">
-    <!-- Gainers -->
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <h4 class="card-title text-success">📈 Top Gainers</h4>
-          {% for stock in top_gainers %}
-          <div class="d-flex justify-content-between border-bottom py-2">
-            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}
-                <span class="text-black ms-1">{{ stock.price }}</span>
-                <span class="text-success ms-1">(+{{ stock.change_amount }})</span>
-            </a>
-            <span class="text-success fw-semibold">+{{ stock.change_percentage }}%</span>
-          </div>
-          {% endfor %}
+  <div class="container my-4">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+            <div class="col">
+                <a href="{% url 'trade' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">💱 Търговия</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col">
+                <a href="{% url 'invest' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">🌱 Инвестиции</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col">
+                <a href="{% url 'news' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">📰 Новини</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col">
+                <a href="{% url 'markets' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">💹 Пазари</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col">
+                <a href="{% url 'portfolio' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">💼 Портфейл</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col">
+                <a href="{% url 'screener' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">🔍 Радар</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
-      </div>
     </div>
-
-    <!-- Losers -->
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <h4 class="card-title text-danger">📉 Top Losers</h4>
-          {% for stock in top_losers %}
-          <div class="d-flex justify-content-between border-bottom py-2">
-            <a href="{% url 'ticker-details' ticker=stock.ticker %}" class="text-decoration-none fw-bold">{{ stock.ticker }}
-            <span class="text-black ms-1">{{ stock.price }}</span>
-                <span class="text-danger ms-1">({{ stock.change_amount }})</span>
-            </a>
-            <span class="text-danger fw-semibold">{{ stock.change_percentage }}%</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- Countdown Script -->
 <script>

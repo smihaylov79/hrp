@@ -1,16 +1,22 @@
-from datetime import datetime
+from datetime import datetime, date
 import pytz
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 import os
 import requests
+from django.http import JsonResponse
+from .models import DailyData
+
+from finance.helpers import deep_clean, create_dataframe
 
 # Create your views here.
 
 API_KEY = os.environ.get("API_KEY")
 API_KEY_NEWS = os.environ.get("API_KEY_NEWS")
 URL_NEWS = os.environ.get("URL_NEWS")
+NGROK_URL = os.environ.get("NGROK_URL")
 
 
 # target_exchanges = ["NASDAQ", "NYSE", "London", "XETRA", "Tokyo", "Hong Kong"]
@@ -45,15 +51,17 @@ def finance_home(request):
     market_url = f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={API_KEY}"
     response = requests.get(market_url)
     market_data = response.json().get("markets", [])
-    url_top_movers = f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={API_KEY}"
-    response = requests.get(url_top_movers)
-    top_movers = response.json()
+    # url_top_movers = f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={API_KEY}"
+    # response = requests.get(url_top_movers)
+    # top_movers = response.json()
 
-    for stock in top_movers.get("top_gainers", [])[:10]:
-        stock["change_percentage"] = clean_percentage(stock["change_percentage"])
-
-    for stock in top_movers.get("top_losers", [])[:10]:
-        stock["change_percentage"] = clean_percentage(stock["change_percentage"])
+    # print(market_data)
+    #
+    # for stock in top_movers.get("top_gainers", [])[:10]:
+    #     stock["change_percentage"] = clean_percentage(stock["change_percentage"])
+    #
+    # for stock in top_movers.get("top_losers", [])[:10]:
+    #     stock["change_percentage"] = clean_percentage(stock["change_percentage"])
 
     timezone_map = {
         "NASDAQ": "America/New_York",
@@ -84,11 +92,64 @@ def finance_home(request):
     filtered_markets = [enrich_market(m) for m in market_data if enrich_market(m)]
     context = {
         "market_data": filtered_markets,
-        "top_gainers": top_movers.get("top_gainers", [])[:10],
-        "top_losers": top_movers.get("top_losers", [])[:10]
+        # "top_gainers": top_movers.get("top_gainers", [])[:10],
+        # "top_losers": top_movers.get("top_losers", [])[:10]
     }
 
     return render(request, "finance/finance_home.html", context)
+
+
+def trade(request):
+    last_extraction = DailyData.objects.order_by('-date').first()
+    extracted_data = None
+    top_gainers = None
+    top_loosers = None
+    number_of_symbols = 0
+
+    if last_extraction:
+        extracted_data = DailyData.objects.filter(date=last_extraction.date)
+        top_gainers = extracted_data.order_by('-gap_open_percentage')[:10]
+        top_loosers = extracted_data.order_by('gap_open_percentage')[:10]
+        number_of_symbols = extracted_data.count()
+    if request.method == 'POST':
+        url = f"{NGROK_URL}symbols"
+        response = requests.get(url, timeout=15)
+        data = response.json()
+        df = create_dataframe(data)
+        today = date.today()
+        records = []
+        for _, row in df.iterrows():
+            records.append(DailyData(
+                date=today,
+                symbol=row['symbol'],
+                company_name=row['company_name'],
+                open_price=row['open'],
+                previous_close_price=row['previous_close'],
+                gap_open_price=row['gap_open'],
+                gap_open_percentage=row['gap_open_percent'],
+                isin_number=row['isin'],
+                details=row['path'],
+            ))
+        extracted_data = DailyData.objects.bulk_create(records)
+        number_of_symbols = len(records)
+
+    context = {
+        'last_extraction': last_extraction,
+        'data': extracted_data if extracted_data else {},
+        'number_of_symbols': number_of_symbols,
+        'gainers': top_gainers if top_gainers else [],
+        'loosers': top_loosers if top_loosers else [],
+    }
+
+
+    return render(request, "finance/trade.html", context)
+
+
+def invest(request):
+    context = {
+
+    }
+    return render(request, "finance/invest.html", context)
 
 
 def ticker_details(request, ticker):
@@ -196,4 +257,78 @@ def markets(request):
 
 
 def screener(request):
-    return render(request, 'finance/screener.html')
+    symbol = request.GET.get("symbol")
+    data = {}
+    if symbol:
+        url = f"{NGROK_URL}tick/{symbol}"
+        symbol = symbol.replace('%23', '#')
+        try:
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as e:
+            data = {"error": str(e)}
+
+    context = {
+        "symbol": symbol,
+        "data": data
+    }
+    return render(request, "finance/screener.html", context)
+
+
+def delete_last_data(request):
+    if request.method == "POST":
+        latest_data = DailyData.objects.order_by('-date').values_list('date', flat=True).first()
+        if latest_data:
+            DailyData.objects.filter(date=latest_data).delete()
+    return redirect('mt_active')
+
+
+def trade_details(request):
+    last_date = DailyData.objects.order_by('-date').values_list('date', flat=True).first()
+    data = DailyData.objects.filter(date=last_date).order_by('-gap_open_percentage')
+    context = {
+        'data': data,
+    }
+
+    return render(request, 'finance/trade_details.html', context)
+
+
+# def symbol_details(request):
+#     symbol = request.GET.get("symbol")
+#     data = {}
+#     if symbol:
+#         url = f"{NGROK_URL}tick/{symbol}"
+#         symbol = symbol.replace('%23', '#')
+#         try:
+#             response = requests.get(url, timeout=5)
+#             response.raise_for_status()
+#             data = response.json()
+#         except requests.RequestException as e:
+#             data = {"error": str(e)}
+#
+#     context = {
+#         'data': data,
+#         'symbol': symbol
+#     }
+#     return render(request, 'finance/symbol_details.html', context)
+
+
+def symbol_details(request):
+    symbol = request.GET.get("symbol")
+    data = {}
+    if symbol:
+        url = f"{NGROK_URL}symbol-info/{symbol}"
+        symbol = symbol.replace('%23', '#')
+        try:
+            response = requests.get(url, timeout=5)
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as e:
+            data = {"error": str(e)}
+
+    context = {
+        'data': data,
+        'symbol': symbol
+    }
+    return render(request, 'finance/symbol_details.html', context)

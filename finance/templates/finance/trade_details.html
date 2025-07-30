@@ -1,0 +1,132 @@
+{% extends "finance/navigation.html" %}
+
+{% block finance_navigation %}
+
+    <div class="container mt-4">
+        <h2>📊 Trade Details (<span id="filteredCount">{{ data.count }}</span> / {{ data.count }})</h2>
+
+        <!-- 🔍 Filter Inputs -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <input type="text" id="filterSymbol" class="form-control" placeholder="Filter by Symbol">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="filterCompany" class="form-control" placeholder="Filter by Company Name">
+            </div>
+            <div class="col-md-4">
+                <input type="text" id="filterDetails" class="form-control" placeholder="Filter by Type, Exchange or Margin Group">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <!-- Open Price Filters -->
+            <div class="col-md-3">
+                <input type="number" id="minOpen" class="form-control" placeholder="Min Open Price">
+            </div>
+            <div class="col-md-3">
+                <input type="number" id="maxOpen" class="form-control" placeholder="Max Open Price">
+            </div>
+
+            <!-- Gap % Filters -->
+            <div class="col-md-3">
+                <input type="number" id="minPercent" class="form-control" placeholder="Min Gap %">
+            </div>
+            <div class="col-md-3">
+                <input type="number" id="maxPercent" class="form-control" placeholder="Max Gap %">
+            </div>
+        </div>
+        <button id="resetFilters" class="btn btn-secondary mt-2">Reset Filters</button>
+
+
+        <!-- 📋 Data Table -->
+        <table class="table table-striped table-hover" id="tradeTable">
+            <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Company Name</th>
+                <th>Open</th>
+                <th>Previous Close</th>
+                <th>Gap $</th>
+                <th>Gap %</th>
+                <th>Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in data %}
+                <tr>
+<td>
+  <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank"> {{ item.symbol }} </a>
+
+</td>
+
+{#                    <td>{{ item.symbol }}</td>#}
+                    <td>{{ item.company_name }}</td>
+                    <td>{{ item.open_price }}</td>
+                    <td>{{ item.previous_close_price }}</td>
+                    <td>{{ item.gap_open_price|floatformat:2 }}</td>
+                    <td>{{ item.gap_open_percentage|floatformat:2 }}</td>
+                    <td>{{ item.details }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function filterTable() {
+            const symbolInput = document.getElementById('filterSymbol').value.toLowerCase();
+            const companyInput = document.getElementById('filterCompany').value.toLowerCase();
+            const detailsInput = document.getElementById('filterDetails').value.toLowerCase();
+            const minOpen = parseFloat(document.getElementById('minOpen').value) || -Infinity;
+            const maxOpen = parseFloat(document.getElementById('maxOpen').value) || Infinity;
+            const minPercent = parseFloat(document.getElementById('minPercent').value) || -Infinity;
+            const maxPercent = parseFloat(document.getElementById('maxPercent').value) || Infinity;
+            const rows = document.querySelectorAll('#tradeTable tbody tr');
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const symbol = row.cells[0].textContent.toLowerCase();
+                const company = row.cells[1].textContent.toLowerCase();
+                const details = row.cells[6].textContent.toLowerCase();
+                const openPrice = parseFloat(row.cells[2].textContent) || 0;
+                const gapPercent = parseFloat(row.cells[5].textContent) || 0;
+
+                const match = symbol.includes(symbolInput) &&
+                    company.includes(companyInput) &&
+                    details.includes(detailsInput) &&
+                    openPrice >= minOpen &&
+                    openPrice <= maxOpen &&
+                    gapPercent >= minPercent &&
+                    gapPercent <= maxPercent;
+
+                row.style.display = match ? '' : 'none';
+                if (match) visibleCount++;
+            });
+            document.getElementById('filteredCount').textContent = visibleCount;
+        }
+
+        document.getElementById('filterSymbol').addEventListener('input', filterTable);
+        document.getElementById('filterCompany').addEventListener('input', filterTable);
+        document.getElementById('filterDetails').addEventListener('input', filterTable);
+        document.getElementById('minOpen').addEventListener('input', filterTable);
+        document.getElementById('maxOpen').addEventListener('input', filterTable);
+        document.getElementById('minPercent').addEventListener('input', filterTable);
+        document.getElementById('maxPercent').addEventListener('input', filterTable);
+
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('filterSymbol').value = '';
+            document.getElementById('filterCompany').value = '';
+            document.getElementById('filterDetails').value = '';
+            document.getElementById('minOpen').value = '';
+            document.getElementById('maxOpen').value = '';
+            document.getElementById('minPercent').value = '';
+            document.getElementById('maxPercent').value = '';
+            filterTable();
+        });
+
+
+    </script>
+
+
+{% endblock %}
