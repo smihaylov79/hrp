@@ -9,9 +9,11 @@ import requests
 from django.http import JsonResponse
 from django.utils import timezone
 
-from .models import DailyData, Market
+from .models import DailyData, Market, DailyDataInvest
 
 from finance.helpers import deep_clean, create_dataframe, convert_to_milliseconds
+from .helpers import symbol_fundamentals
+
 
 # Create your views here.
 
@@ -78,49 +80,6 @@ def finance_home(request):
 
     return render(request, "finance/finance_home.html", context)
 
-# def finance_home(request):
-#     market_url = f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={API_KEY}"
-#     response = requests.get(market_url)
-#     market_data = response.json().get("markets", [])
-#
-#     timezone_map = {
-#         "NASDAQ": "America/New_York",
-#         "NYSE": "America/New_York",
-#         "London": "Europe/London",
-#         "XETRA": "Europe/Berlin",
-#         "Tokyo": "Asia/Tokyo",
-#         "Hong Kong": "Asia/Hong_Kong"
-#     }
-#
-#     # Filter & process only relevant markets
-#     def enrich_market(market):
-#         exchange = next((e for e in timezone_map if e in market.get("primary_exchanges", "")), None)
-#         if not exchange:
-#             return None
-#         tz = pytz.timezone(timezone_map[exchange])
-#         today = datetime.now(tz).date()
-#
-#         # Build open/close datetimes and convert to UTC
-#         open_time = tz.localize(datetime.strptime(f"{today} {market.get('local_open')}", "%Y-%m-%d %H:%M"))
-#         close_time = tz.localize(datetime.strptime(f"{today} {market.get('local_close')}", "%Y-%m-%d %H:%M"))
-#
-#         market["exchange"] = exchange
-#         market["utc_open"] = open_time.astimezone(pytz.utc).isoformat()
-#         market["utc_close"] = close_time.astimezone(pytz.utc).isoformat()
-#
-#         return market
-#
-#     print(market_data)
-#     filtered_markets = [enrich_market(m) for m in market_data if enrich_market(m)]
-#     context = {
-#         "market_data": filtered_markets,
-#         # "top_gainers": top_movers.get("top_gainers", [])[:10],
-#         # "top_losers": top_movers.get("top_losers", [])[:10]
-#     }
-#
-#     return render(request, "finance/finance_home.html", context)
-
-
 def trade(request):
     last_extraction = DailyData.objects.order_by('-date').first()
     extracted_data = None
@@ -168,8 +127,46 @@ def trade(request):
 
 
 def invest(request):
-    context = {
+    last_extraction = DailyDataInvest.objects.order_by('-date').first()
+    extracted_data = None
+    top_gainers = None
+    top_loosers = None
+    number_of_symbols = 0
 
+    if last_extraction:
+        extracted_data = DailyDataInvest.objects.filter(date=last_extraction.date)
+        top_gainers = extracted_data.order_by('-gap_open_percentage')[:10]
+        top_loosers = extracted_data.order_by('gap_open_percentage')[:10]
+        number_of_symbols = extracted_data.count()
+    if request.method == 'POST':
+        url = f"{NGROK_URL}symbols-invest"
+        response = requests.get(url, timeout=15)
+        data = response.json()
+
+        df = create_dataframe(data)
+        today = date.today()
+        records = []
+        for _, row in df.iterrows():
+            records.append(DailyDataInvest(
+                date=today,
+                symbol=row['symbol'],
+                company_name=row['company_name'],
+                open_price=row['open'],
+                previous_close_price=row['previous_close'],
+                gap_open_price=row['gap_open'],
+                gap_open_percentage=row['gap_open_percent'],
+                isin_number=row['isin'],
+                details=row['path'],
+            ))
+        extracted_data = DailyDataInvest.objects.bulk_create(records)
+        number_of_symbols = len(records)
+
+    context = {
+        'last_extraction': last_extraction,
+        'data': extracted_data if extracted_data else {},
+        'number_of_symbols': number_of_symbols,
+        'gainers': top_gainers if top_gainers else [],
+        'loosers': top_loosers if top_loosers else [],
     }
     return render(request, "finance/invest.html", context)
 
@@ -303,7 +300,15 @@ def delete_last_data(request):
         latest_data = DailyData.objects.order_by('-date').values_list('date', flat=True).first()
         if latest_data:
             DailyData.objects.filter(date=latest_data).delete()
-    return redirect('mt_active')
+    return redirect('trade')
+
+
+def delete_last_data_invest(request):
+    if request.method == "POST":
+        latest_data = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
+        if latest_data:
+            DailyDataInvest.objects.filter(date=latest_data).delete()
+    return redirect('invest')
 
 
 def trade_details(request):
@@ -315,6 +320,25 @@ def trade_details(request):
 
     return render(request, 'finance/trade_details.html', context)
 
+
+def invest_details(request):
+    last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
+    data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
+    context = {
+        'data': data,
+    }
+
+    return render(request, 'finance/invest_details.html', context)
+
+
+def invest_details(request):
+    last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
+    data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
+    context = {
+        'data': data,
+    }
+
+    return render(request, 'finance/trade_details.html', context)
 
 def symbol_details(request):
     symbol = request.GET.get("symbol")
@@ -333,7 +357,6 @@ def symbol_details(request):
             hist_response = requests.get(history_url, timeout=5)
             hist_response.raise_for_status()
             history = hist_response.json()
-            print(history)
             ohlc_data = [
                 [convert_to_milliseconds(item['time']),
                  item['open'],
@@ -346,11 +369,14 @@ def symbol_details(request):
         except requests.RequestException as e:
             data = {"error": str(e)}
 
+    fundamentals_data = symbol_fundamentals(symbol)
+
     context = {
         'data': data,
         'symbol': symbol,
         'history': history,
         'ohlc_data': ohlc_data,
-        'selected_timeframe': timeframe
+        'selected_timeframe': timeframe,
+        'fundamentals': fundamentals_data
     }
     return render(request, 'finance/symbol_details.html', context)

@@ -13,4 +13,6 @@ urlpatterns = [
     path('invest/', invest, name='invest'),
     path('trade-details/', trade_details, name='trade_details'),
     path('symbol-details/', symbol_details, name='symbol_details'),
+    path('delete-latest-data-invest/', delete_last_data_invest, name='delete_last_data_invest'),
+    path('invest-details/', invest_details, name='invest_details'),
 ]
