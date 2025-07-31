@@ -21,3 +21,7 @@ def create_dataframe(data):
     df['gap_open_percent'] = df['gap_open'] / df['previous_close'] * 100
     df = df.sort_values('gap_open_percent', ascending=False)
     return df
+
+
+def convert_to_milliseconds(unix_ts):
+    return unix_ts * 1000

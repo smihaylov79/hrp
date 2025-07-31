@@ -3,21 +3,22 @@
 {% block finance_navigation %}
 <div class="container my-4">
 
-  <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
-    {% for market in market_data %}
-    <div class="col">
-      <div class="card border {% if market.current_status == 'open' %}border-success{% elif market.current_status == 'closed' %}border-danger{% else %}border-secondary{% endif %}">
-        <div class="card-body">
-          <h5 class="card-title">{{ market.exchange }}</h5>
-          <p class="mb-1">
-            🕒 <span class="time-local" data-utc="{{ market.utc_open }}"></span> – <span class="time-local" data-utc="{{ market.utc_close }}"></span>
-          </p>
-          <p class="text-muted countdown" data-open="{{ market.utc_open }}" data-close="{{ market.utc_close }}"></p>
-        </div>
+  <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+  {% for market in markets %}
+  <div class="col">
+    <div class="card border {% if market.current_status == 'open' %}border-success{% else %}border-danger{% endif %}">
+      <div class="card-body py-3 px-3">
+        <h5 class="card-title mb-2">{{ market.name }}</h5>
+        <p class="mb-1 small">
+          🕒 <span class="time-local" data-utc="{{ market.utc_open }}"></span> – <span class="time-local" data-utc="{{ market.utc_close }}"></span>
+        </p>
+        <p class="text-muted small">{{ market.countdown_text }}</p>
       </div>
     </div>
-    {% endfor %}
   </div>
+  {% endfor %}
+</div>
+</div>
 
   <div class="container my-4">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">

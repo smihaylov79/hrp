@@ -6,12 +6,14 @@
         <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
   <!-- Extract Button -->
+            {% if user.is_superuser %}
   <form method="POST">
     {% csrf_token %}
     <button type="submit" class="btn btn-success">
       🔄 Extract New Data
     </button>
   </form>
+            {% endif %}
 
   <!-- Filter Navigation Button -->
   <a href="{% url 'trade_details' %}" class="btn btn-primary mx-2">
@@ -19,9 +21,11 @@
   </a>
 
   <!-- Delete Button -->
+        {% if user.is_superuser %}
   <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteConfirmModal">
     🗑️ Clear Last Data
   </button>
+        {% endif %}
 </div>
 
 

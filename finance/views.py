@@ -7,9 +7,11 @@ from django.shortcuts import render, redirect
 import os
 import requests
 from django.http import JsonResponse
-from .models import DailyData
+from django.utils import timezone
 
-from finance.helpers import deep_clean, create_dataframe
+from .models import DailyData, Market
+
+from finance.helpers import deep_clean, create_dataframe, convert_to_milliseconds
 
 # Create your views here.
 
@@ -48,55 +50,75 @@ def format_market_cap(value):
 
 
 def finance_home(request):
-    market_url = f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={API_KEY}"
-    response = requests.get(market_url)
-    market_data = response.json().get("markets", [])
-    # url_top_movers = f"https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey={API_KEY}"
-    # response = requests.get(url_top_movers)
-    # top_movers = response.json()
+    markets = Market.objects.all()
+    local_tz = timezone.get_current_timezone()
 
-    # print(market_data)
-    #
-    # for stock in top_movers.get("top_gainers", [])[:10]:
-    #     stock["change_percentage"] = clean_percentage(stock["change_percentage"])
-    #
-    # for stock in top_movers.get("top_losers", [])[:10]:
-    #     stock["change_percentage"] = clean_percentage(stock["change_percentage"])
+    for market in markets:
+        market.current_status = "open" if market.is_open_now() else "closed"
 
-    timezone_map = {
-        "NASDAQ": "America/New_York",
-        "NYSE": "America/New_York",
-        "London": "Europe/London",
-        "XETRA": "Europe/Berlin",
-        "Tokyo": "Asia/Tokyo",
-        "Hong Kong": "Asia/Hong_Kong"
-    }
+        # Get today's open/close in market timezone
+        market_tz = pytz.timezone(market.time_zone)
+        now_market = timezone.now().astimezone(market_tz)
+        today = now_market.date()
 
-    # Filter & process only relevant markets
-    def enrich_market(market):
-        exchange = next((e for e in timezone_map if e in market.get("primary_exchanges", "")), None)
-        if not exchange:
-            return None
-        tz = pytz.timezone(timezone_map[exchange])
-        today = datetime.now(tz).date()
+        open_dt = market_tz.localize(datetime.combine(today, market.open_time))
+        close_dt = market_tz.localize(datetime.combine(today, market.close_time))
 
-        # Build open/close datetimes and convert to UTC
-        open_time = tz.localize(datetime.strptime(f"{today} {market.get('local_open')}", "%Y-%m-%d %H:%M"))
-        close_time = tz.localize(datetime.strptime(f"{today} {market.get('local_close')}", "%Y-%m-%d %H:%M"))
+        market.utc_open = open_dt.astimezone(pytz.UTC).isoformat()
+        market.utc_close = close_dt.astimezone(pytz.UTC).isoformat()
 
-        market["exchange"] = exchange
-        market["utc_open"] = open_time.astimezone(pytz.utc).isoformat()
-        market["utc_close"] = close_time.astimezone(pytz.utc).isoformat()
-        return market
+        # Countdown label
+        delta = market.time_until_event()
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, _ = divmod(remainder, 60)
+        label = "Closes in" if market.current_status == "open" else "Opens in"
+        market.countdown_text = f"{label} {hours}h {minutes}m"
 
-    filtered_markets = [enrich_market(m) for m in market_data if enrich_market(m)]
-    context = {
-        "market_data": filtered_markets,
-        # "top_gainers": top_movers.get("top_gainers", [])[:10],
-        # "top_losers": top_movers.get("top_losers", [])[:10]
-    }
+    context = {'markets': markets}
 
     return render(request, "finance/finance_home.html", context)
+
+# def finance_home(request):
+#     market_url = f"https://www.alphavantage.co/query?function=MARKET_STATUS&apikey={API_KEY}"
+#     response = requests.get(market_url)
+#     market_data = response.json().get("markets", [])
+#
+#     timezone_map = {
+#         "NASDAQ": "America/New_York",
+#         "NYSE": "America/New_York",
+#         "London": "Europe/London",
+#         "XETRA": "Europe/Berlin",
+#         "Tokyo": "Asia/Tokyo",
+#         "Hong Kong": "Asia/Hong_Kong"
+#     }
+#
+#     # Filter & process only relevant markets
+#     def enrich_market(market):
+#         exchange = next((e for e in timezone_map if e in market.get("primary_exchanges", "")), None)
+#         if not exchange:
+#             return None
+#         tz = pytz.timezone(timezone_map[exchange])
+#         today = datetime.now(tz).date()
+#
+#         # Build open/close datetimes and convert to UTC
+#         open_time = tz.localize(datetime.strptime(f"{today} {market.get('local_open')}", "%Y-%m-%d %H:%M"))
+#         close_time = tz.localize(datetime.strptime(f"{today} {market.get('local_close')}", "%Y-%m-%d %H:%M"))
+#
+#         market["exchange"] = exchange
+#         market["utc_open"] = open_time.astimezone(pytz.utc).isoformat()
+#         market["utc_close"] = close_time.astimezone(pytz.utc).isoformat()
+#
+#         return market
+#
+#     print(market_data)
+#     filtered_markets = [enrich_market(m) for m in market_data if enrich_market(m)]
+#     context = {
+#         "market_data": filtered_markets,
+#         # "top_gainers": top_movers.get("top_gainers", [])[:10],
+#         # "top_losers": top_movers.get("top_losers", [])[:10]
+#     }
+#
+#     return render(request, "finance/finance_home.html", context)
 
 
 def trade(request):
@@ -294,41 +316,41 @@ def trade_details(request):
     return render(request, 'finance/trade_details.html', context)
 
 
-# def symbol_details(request):
-#     symbol = request.GET.get("symbol")
-#     data = {}
-#     if symbol:
-#         url = f"{NGROK_URL}tick/{symbol}"
-#         symbol = symbol.replace('%23', '#')
-#         try:
-#             response = requests.get(url, timeout=5)
-#             response.raise_for_status()
-#             data = response.json()
-#         except requests.RequestException as e:
-#             data = {"error": str(e)}
-#
-#     context = {
-#         'data': data,
-#         'symbol': symbol
-#     }
-#     return render(request, 'finance/symbol_details.html', context)
-
-
 def symbol_details(request):
     symbol = request.GET.get("symbol")
-    data = {}
+    timeframe = request.GET.get("timeframe", "TIMEFRAME_D1")
+    data, history = {}, []
     if symbol:
-        url = f"{NGROK_URL}symbol-info/{symbol}"
         symbol = symbol.replace('%23', '#')
+        encoded_symbol = requests.utils.quote(symbol, safe='')
+        symbol_url = f"{NGROK_URL}symbol-info/{encoded_symbol}"
+        history_url = f"{NGROK_URL}price-history/{encoded_symbol}?timeframe={timeframe}&count=100"
         try:
-            response = requests.get(url, timeout=5)
+            response = requests.get(symbol_url, timeout=5)
             response.raise_for_status()
             data = response.json()
+
+            hist_response = requests.get(history_url, timeout=5)
+            hist_response.raise_for_status()
+            history = hist_response.json()
+            print(history)
+            ohlc_data = [
+                [convert_to_milliseconds(item['time']),
+                 item['open'],
+                 item['high'],
+                 item['low'],
+                 item['close']
+                 ]
+                for item in history
+            ]
         except requests.RequestException as e:
             data = {"error": str(e)}
 
     context = {
         'data': data,
-        'symbol': symbol
+        'symbol': symbol,
+        'history': history,
+        'ohlc_data': ohlc_data,
+        'selected_timeframe': timeframe
     }
     return render(request, 'finance/symbol_details.html', context)

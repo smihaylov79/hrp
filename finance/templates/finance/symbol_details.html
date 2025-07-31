@@ -23,17 +23,113 @@
     </div>
   {% endif %}
 {% endif %}
-
     </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.1.3"></script>
+
+
+
+{#<form method="GET">#}
+{#    <input type="hidden" name="symbol" value="{{ symbol }}">#}
+{#    <select name="timeframe" onchange="this.form.submit()">#}
+{#    <option value="D1" {% if selected_timeframe == 'D1' %}selected{% endif %}>1 Day</option>#}
+{#        <option value="M1" {% if selected_timeframe == 'M1' %}selected{% endif %}>1 Min</option>#}
+{#        <option value="M5" {% if selected_timeframe == 'M5' %}selected{% endif %}>5 Min</option>#}
+{#        <option value="M15" {% if selected_timeframe == 'M15' %}selected{% endif %}>15 Min</option>#}
+{#    <option value="M30" {% if selected_timeframe == 'M30' %}selected{% endif %}>30 Min</option>#}
+{#    <option value="H1" {% if selected_timeframe == 'H1' %}selected{% endif %}>1 Hour</option>#}
+{#    <option value="H4" {% if selected_timeframe == 'H4' %}selected{% endif %}>4 Hour</option>#}
+{#    <option value="W1" {% if selected_timeframe == 'W1' %}selected{% endif %}>1 Week</option>#}
+{#    <option value="MN1" {% if selected_timeframe == 'MN1' %}selected{% endif %}>1 Month</option>#}
+{#    </select>#}
+{#</form>#}
+{##}
+{#</div>#}
+{#    <label for="chartType">Вид графика:</label>#}
+{#<select id="chartType">#}
+{#  <option value="candlestick">Свещи</option>#}
+{#  <option value="line">Линия</option>#}
+{#</select>#}
+
+<form method="GET" style="display: flex; gap: 1rem; align-items: center;">
+  <input type="hidden" name="symbol" value="{{ symbol }}">
+
+  <!-- Timeframe selector -->
+  <select name="timeframe" onchange="this.form.submit()">
+    <option value="D1" {% if selected_timeframe == 'D1' %}selected{% endif %}>1 Day</option>
+    <option value="M1" {% if selected_timeframe == 'M1' %}selected{% endif %}>1 Min</option>
+    <option value="M5" {% if selected_timeframe == 'M5' %}selected{% endif %}>5 Min</option>
+    <option value="M15" {% if selected_timeframe == 'M15' %}selected{% endif %}>15 Min</option>
+    <option value="M30" {% if selected_timeframe == 'M30' %}selected{% endif %}>30 Min</option>
+    <option value="H1" {% if selected_timeframe == 'H1' %}selected{% endif %}>1 Hour</option>
+    <option value="H4" {% if selected_timeframe == 'H4' %}selected{% endif %}>4 Hour</option>
+    <option value="W1" {% if selected_timeframe == 'W1' %}selected{% endif %}>1 Week</option>
+    <option value="MN1" {% if selected_timeframe == 'MN1' %}selected{% endif %}>1 Month</option>
+  </select>
+
+  <!-- Chart type toggle -->
+  <div id="chartTypeToggle">
+    <label>
+      <input type="radio" name="chartType" value="candlestick" checked>
+      📊
+    </label>
+    <label>
+      <input type="radio" name="chartType" value="line">
+      📈
+    </label>
+  </div>
+</form>
+
+
+
+  <script src="https://code.highcharts.com/stock/highstock.js"></script>
+
+
+  <div id="container" style="height: 600px; min-width: 600px"></div>
 </div>
 
-    <script>
-  function encodeHash(form) {
-    const input = form.symbol;
-    if (input.value.includes('#')) {
-      input.value = encodeURIComponent(input.value);
-    }
+<script>
+  const ohlcData = {{ ohlc_data|safe }};
+
+  const lineData = ohlcData.map(d => [d[0], d[4]]); // timestamp and close price
+
+  let chart;
+
+  function renderChart(type) {
+    if (chart) chart.destroy();
+
+    chart = Highcharts.stockChart('container', {
+      rangeSelector: { selected: 1 },
+      title: { text: '{{ symbol }}' },
+      series: [
+        type === 'line'
+          ? {
+              type: 'line',
+              name: '{{ symbol }}',
+              data: lineData,
+              tooltip: { valueDecimals: 2 },
+            }
+          : {
+              type: 'candlestick',
+              name: '{{ symbol }}',
+              data: ohlcData,
+              tooltip: { valueDecimals: 2 }
+            }
+      ],
+    });
   }
+
+  // Initial chart based on default selected button
+  const defaultChartType = document.querySelector('input[name="chartType"]:checked').value;
+  renderChart(defaultChartType);
+
+  // Listener for button change
+  document.querySelectorAll('input[name="chartType"]').forEach(btn => {
+    btn.addEventListener('change', () => {
+      renderChart(btn.value);
+    });
+  });
 </script>
 
     <script>
@@ -56,7 +152,6 @@
     }
   });
 </script>
-
 
 
 {% endblock %}
