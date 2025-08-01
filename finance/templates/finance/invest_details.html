@@ -5,7 +5,7 @@
     <div class="container mt-4">
         <h2>📊Details (<span id="filteredCount">{{ data.count }}</span> / {{ data.count }})</h2>
 
-        <!-- 🔍 Filter Inputs -->
+
         <div class="row mb-3">
             <div class="col-md-4">
                 <input type="text" id="filterSymbol" class="form-control" placeholder="Filter by Symbol">
@@ -19,7 +19,7 @@
         </div>
 
         <div class="row mb-3">
-            <!-- Open Price Filters -->
+
             <div class="col-md-3">
                 <input type="number" id="minOpen" class="form-control" placeholder="Min Open Price">
             </div>
@@ -27,7 +27,6 @@
                 <input type="number" id="maxOpen" class="form-control" placeholder="Max Open Price">
             </div>
 
-            <!-- Gap % Filters -->
             <div class="col-md-3">
                 <input type="number" id="minPercent" class="form-control" placeholder="Min Gap %">
             </div>
@@ -37,8 +36,6 @@
         </div>
         <button id="resetFilters" class="btn btn-secondary mt-2">Reset Filters</button>
 
-
-        <!-- 📋 Data Table -->
         <table class="table table-striped table-hover" id="tradeTable">
             <thead>
             <tr>
@@ -59,7 +56,6 @@
 
 </td>
 
-{#                    <td>{{ item.symbol }}</td>#}
                     <td>{{ item.company_name }}</td>
                     <td>{{ item.open_price }}</td>
                     <td>{{ item.previous_close_price }}</td>

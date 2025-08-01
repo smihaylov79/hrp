@@ -2,35 +2,12 @@
 {% block finance_navigation %}
 
 <div class="container mt-5">
-    <div class="card shadow-sm p-4">
-        <h2 class="mb-3">📈 Получи тик данни за символ</h2>
-        <form method="GET" onsubmit="encodeHash(this)">
-  <input type="text" id="symbolInput" name="symbol" placeholder="Въведи символ" value="{{ symbol }}" />
-  <button type="submit">Провери</button>
-</form>
+   <h1>Screener Page</h1>
 
-{% if data %}
-  {% if data.error %}
-    <div class="alert alert-danger">⚠️ {{ data.error }}</div>
-  {% else %}
-    <div class="alert alert-info">
-      <strong>{{ symbol }}</strong><br>
-      🟢 Bid: {{ data.bid }}<br>
-      🔵 Ask: {{ data.ask }}<br>
-      🟡 Last: {{ data.last }}
-    </div>
-  {% endif %}
+{% if is_superuser %}
+    <a href="{% url 'screener_settings' %}" class="btn btn-primary">Go to Settings</a>
 {% endif %}
 
-    </div>
 </div>
 
-    <script>
-  function encodeHash(form) {
-    const input = form.symbol;
-    if (input.value.includes('#')) {
-      input.value = encodeURIComponent(input.value);
-    }
-  }
-</script>
 {% endblock %}

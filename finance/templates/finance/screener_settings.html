@@ -1,0 +1,29 @@
+{% extends "finance/navigation.html" %}
+{% block finance_navigation %}
+
+<div class="container mt-5">
+   <h1>Screener Page</h1>
+
+{% if is_superuser %}
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" name="action" value="generate_symbols">Generate Symbol Mapping</button>
+    <button type="submit" name="action" value="fetch_fundamentals">Fetch Fundamentals Data</button>
+</form>
+{% else %}
+<p>Welcome! Some admin tools are only visible to superusers.</p>
+{% endif %}
+{% if errors %}
+    <div class="alert alert-danger">
+        <h4>Errors during processing:</h4>
+        <ul>
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+</div>
+
+{% endblock %}

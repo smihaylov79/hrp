@@ -6,7 +6,7 @@ urlpatterns = [
     path('news/', finance_news, name='news'),
     path('markets/', markets, name='markets'),
     path('portfolio/', portfolio, name='portfolio'),
-    path('screener/', screener, name='screener'),
+    path('screener/', screener_view, name='screener'),
     path('finance/ticker/<str:ticker>/', ticker_details, name='ticker-details'),
     path('delete-latest-data/', delete_last_data, name='delete_last_data'),
     path('trade/', trade, name='trade'),
@@ -15,4 +15,5 @@ urlpatterns = [
     path('symbol-details/', symbol_details, name='symbol_details'),
     path('delete-latest-data-invest/', delete_last_data_invest, name='delete_last_data_invest'),
     path('invest-details/', invest_details, name='invest_details'),
+    path('screener-settings/', screener_settings, name='screener_settings'),
 ]

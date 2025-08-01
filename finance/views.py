@@ -9,10 +9,10 @@ import requests
 from django.http import JsonResponse
 from django.utils import timezone
 
-from .models import DailyData, Market, DailyDataInvest
+from .models import DailyData, Market, DailyDataInvest, FundamentalsData
 
-from finance.helpers import deep_clean, create_dataframe, convert_to_milliseconds
-from .helpers import symbol_fundamentals
+from finance.helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data
+from .helpers import symbol_fundamentals, generate_symbol_mapping
 
 
 # Create your views here.
@@ -22,24 +22,6 @@ API_KEY_NEWS = os.environ.get("API_KEY_NEWS")
 URL_NEWS = os.environ.get("URL_NEWS")
 NGROK_URL = os.environ.get("NGROK_URL")
 
-
-# target_exchanges = ["NASDAQ", "NYSE", "London", "XETRA", "Tokyo", "Hong Kong"]
-
-
-# def parse_market_time(market):
-#     exchange = next((e for e in timezone_map if e in market.get("primary_exchanges", "")), None)
-#     if not exchange:
-#         return market
-#     tz = pytz.timezone(timezone_map[exchange])
-#
-#     today = datetime.now(tz).date()
-#     open_str = market.get("local_open", "00:00")
-#     close_str = market.get("local_close", "00:00")
-#
-#     # Construct timezone-aware datetime objects
-#     market["utc_open"] = tz.localize(datetime.strptime(f"{today} {open_str}", "%Y-%m-%d %H:%M")).astimezone(pytz.utc)
-#     market["utc_close"] = tz.localize(datetime.strptime(f"{today} {close_str}", "%Y-%m-%d %H:%M")).astimezone(pytz.utc)
-#     return market
 
 def clean_percentage(value):
     """ Convert percentage strings like '5.723%' to rounded floats '5.72' """
@@ -266,6 +248,7 @@ def finance_news(request):
     context = {'ticker': ticker, 'news': news_data}
     return render(request, "finance/news.html", context)
 
+
 @login_required
 def portfolio(request):
     return render(request, 'finance/portfolio.html')
@@ -275,22 +258,33 @@ def markets(request):
     return render(request, 'finance/markets.html')
 
 
-def screener(request):
-    symbol = request.GET.get("symbol")
-    data = {}
-    if symbol:
-        url = f"{NGROK_URL}tick/{symbol}"
-        symbol = symbol.replace('%23', '#')
-        try:
-            response = requests.get(url, timeout=5)
-            response.raise_for_status()
-            data = response.json()
-        except requests.RequestException as e:
-            data = {"error": str(e)}
+@login_required
+def screener_settings(request):
+    errors = []
+    if request.method == 'POST':
+        if request.user.is_authenticated and request.user.is_superuser:
+            action = request.POST.get('action')
+            if action == 'generate_symbols':
+                generate_symbol_mapping()
+            elif action == 'fetch_fundamentals':
+                errors = fetch_fundamentals_data()
+
+    is_superuser = request.user.is_authenticated and request.user.is_superuser
+    context = {
+        'is_superuser': is_superuser,
+        'errors': errors
+    }
+    return render(request, "finance/screener_settings.html", context)
+
+
+def screener_view(request):
+    is_superuser = request.user.is_authenticated and request.user.is_superuser
+
+    data = FundamentalsData.objects.all()
+
 
     context = {
-        "symbol": symbol,
-        "data": data
+        'is_superuser': is_superuser,
     }
     return render(request, "finance/screener.html", context)
 
@@ -331,19 +325,20 @@ def invest_details(request):
     return render(request, 'finance/invest_details.html', context)
 
 
-def invest_details(request):
-    last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
-    data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
-    context = {
-        'data': data,
-    }
-
-    return render(request, 'finance/trade_details.html', context)
+# def invest_details(request):
+#     last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
+#     data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
+#     context = {
+#         'data': data,
+#     }
+#
+#     return render(request, 'finance/trade_details.html', context)
 
 def symbol_details(request):
     symbol = request.GET.get("symbol")
     timeframe = request.GET.get("timeframe", "TIMEFRAME_D1")
     data, history = {}, []
+    ohlc_data = []
     if symbol:
         symbol = symbol.replace('%23', '#')
         encoded_symbol = requests.utils.quote(symbol, safe='')

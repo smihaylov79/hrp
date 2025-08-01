@@ -8,7 +8,7 @@
   <input type="text" id="symbolInput" name="symbol" placeholder="Въведи символ" value="{{ symbol }}" />
   <button type="submit">Провери</button>
 </form>
-        <h2 class="mb-3">📈{{ data.description }}</h2>
+        <h2 class="mb-3">📈{{ fundamentals.shortName }}</h2>
 
 
 <div class="d-flex justify-content-between gap-3 mb-3 flex-wrap">
@@ -24,6 +24,8 @@
           🔵 Ask: {{ data.ask }}<br>
         </div>
       </div>
+        {% endif %}
+  {% endif %}
 
       <!-- Fundamentals Card 1 - 40% -->
       <div class="flex-grow-0" style="width: 40%;">
@@ -44,8 +46,7 @@
             <div class="d-flex justify-content-between"><span>EPS Forward:</span><b>{{ fundamentals.forwardEps }}</b></div>
         </div>
       </div>
-    {% endif %}
-  {% endif %}
+
 </div>
 
     </div>
@@ -85,12 +86,18 @@
 
   <script src="https://code.highcharts.com/stock/highstock.js"></script>
 
-
+{% if data %}
+    {% if data.error %}
+        <div class="alert alert-danger">⚠️ {{ data.error }}</div>
+        {% else %}
   <div id="container" style="height: 600px; min-width: 600px"></div>
+{% endif %}
+
+{% endif %}
 
    <div class="card mb-4 shadow-sm">
   <div class="card-header bg-light">
-    <h6 class="mb-0">📘 Business Summary</h6>
+    <h6 class="mb-0">📘 Business Summary for: <span><b>{{ fundamentals.shortName }}</b></span></h6>
   </div>
   <div class="card-body">
     <p class="text-muted" style="white-space: pre-line;">
