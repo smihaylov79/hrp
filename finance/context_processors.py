@@ -1,7 +1,21 @@
+import requests
 from django.conf import settings
 
 
+# def fastapi_url(request):
+#     result = {
+#         'fastapi_url': f"{settings.FAST_API_URL.rstrip('/')}/ping"
+#     }
+#     return result
+
 def fastapi_url(request):
-    return {
-        'fastapi_url': f"{settings.FAST_API_URL.rstrip('/')}/ping"
-    }
+    try:
+        response = requests.get(f"{settings.FAST_API_URL.rstrip('/')}/ping")
+        data = response.text.strip().lower().replace('"', '')
+        if data in ['invest', 'trade']:
+            status = data
+        else:
+            status = 'offline'
+    except Exception as e:
+        status = 'offline'
+    return {'server_status': status}

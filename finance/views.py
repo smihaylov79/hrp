@@ -2,6 +2,7 @@ from datetime import datetime, date
 import pytz
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import render, redirect
 
 import os
@@ -9,10 +10,9 @@ import requests
 from django.http import JsonResponse
 from django.utils import timezone
 
-from .models import DailyData, Market, DailyDataInvest, FundamentalsData
+from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping
 
-from finance.helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data
-from .helpers import symbol_fundamentals, generate_symbol_mapping
+from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, generate_symbol_mapping, backup_chart
 
 
 # Create your views here.
@@ -268,7 +268,6 @@ def screener_settings(request):
                 generate_symbol_mapping()
             elif action == 'fetch_fundamentals':
                 errors = fetch_fundamentals_data()
-
     is_superuser = request.user.is_authenticated and request.user.is_superuser
     context = {
         'is_superuser': is_superuser,
@@ -280,11 +279,18 @@ def screener_settings(request):
 def screener_view(request):
     is_superuser = request.user.is_authenticated and request.user.is_superuser
 
-    data = FundamentalsData.objects.all()
+    data = FundamentalsData.objects.filter(symbol_yahoo__isnull=False)
+    sectors = SymbolsMapping.objects.values_list('sector', flat=True).distinct()
+    industries = SymbolsMapping.objects.values_list('industry', flat=True).distinct()
+    countries = SymbolsMapping.objects.values_list('country', flat=True).distinct()
 
 
     context = {
         'is_superuser': is_superuser,
+        'data': data,
+        'sectors': sectors,
+        'industries': industries,
+        'countries': countries
     }
     return render(request, "finance/screener.html", context)
 
@@ -325,25 +331,17 @@ def invest_details(request):
     return render(request, 'finance/invest_details.html', context)
 
 
-# def invest_details(request):
-#     last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
-#     data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
-#     context = {
-#         'data': data,
-#     }
-#
-#     return render(request, 'finance/trade_details.html', context)
-
 def symbol_details(request):
     symbol = request.GET.get("symbol")
     timeframe = request.GET.get("timeframe", "TIMEFRAME_D1")
     data, history = {}, []
     ohlc_data = []
+    symbol = symbol.replace('%23', '#')
+    official_symbol = SymbolsMapping.objects.filter(Q(trade_symbol=symbol) | Q(invest_symbol=symbol)).first()
     if symbol:
-        symbol = symbol.replace('%23', '#')
         encoded_symbol = requests.utils.quote(symbol, safe='')
         symbol_url = f"{NGROK_URL}symbol-info/{encoded_symbol}"
-        history_url = f"{NGROK_URL}price-history/{encoded_symbol}?timeframe={timeframe}&count=100"
+        history_url = f"{NGROK_URL}price-history/{encoded_symbol}?timeframe={timeframe}&count=365"
         try:
             response = requests.get(symbol_url, timeout=5)
             response.raise_for_status()
@@ -361,10 +359,49 @@ def symbol_details(request):
                  ]
                 for item in history
             ]
-        except requests.RequestException as e:
-            data = {"error": str(e)}
+        except requests.RequestException:
+            if symbol.startswith("#"):
+                alt_symbol = symbol[1:]
+            else:
+                alt_symbol = "#" + symbol
 
-    fundamentals_data = symbol_fundamentals(symbol)
+            encoded_symbol = requests.utils.quote(alt_symbol, safe='')
+
+            alt_symbol_url = f"{NGROK_URL}symbol-info/{encoded_symbol}"
+            alt_history_url = f"{NGROK_URL}price-history/{encoded_symbol}?timeframe={timeframe}&count=365"
+
+            try:
+                response = requests.get(alt_symbol_url, timeout=5)
+                response.raise_for_status()
+                data = response.json()
+
+                hist_response = requests.get(alt_history_url, timeout=5)
+                hist_response.raise_for_status()
+                history = hist_response.json()
+
+                ohlc_data = [
+                    [convert_to_milliseconds(item['time']),
+                     item['open'],
+                     item['high'],
+                     item['low'],
+                     item['close']]
+                    for item in history
+                ]
+            except requests.RequestException:
+                try:
+                    yahoo_symbol = official_symbol.official_symbol if official_symbol else symbol.replace('#', '')
+                    history = backup_chart(yahoo_symbol, timeframe)[0]
+                    ohlc_data = [
+                        [item['time'] * 1000, item['open'], item['high'], item['low'], item['close']]
+                        for item in history
+                    ]
+                    data = backup_chart(yahoo_symbol, timeframe)[1]
+                except Exception:
+                    data = {"error": f"Данните не са налични! Опитай отново като добавиш или премахнеш '#' пред символа. \nВъзможно е сървърът да е в режим invest"}
+    if official_symbol:
+        fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=official_symbol.official_symbol).first()
+    else:
+        fundamentals_data = None
 
     context = {
         'data': data,

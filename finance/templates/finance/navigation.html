@@ -12,40 +12,23 @@
     <a class="nav-link" href="{% url 'screener' %}">🔍 Радар</a>
   </nav>
 
+
+
+
+
     <div class="text-center mb-3" id="server-status">
-  <span class="badge bg-secondary">🔄 Checking server status...</span>
+    {% if server_status == "invest" %}
+  <span class="badge bg-success">🟢 Server is online (🌱 Invest)</span>
+{% elif server_status == "trade" %}
+  <span class="badge bg-warning">🟢 Server is online (💱 Trade)</span>
+{% else %}
+  <span class="badge bg-danger">🔴 Server is offline</span>
+{% endif %}
 </div>
 
 
     {% block finance_navigation %}
 
         {% endblock %}
-
-    <script>console.log("Ping URL:", "{{ fastapi_url }}");</script>
-
-   <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    async function checkServerStatus() {
-  const fastapiUrl = "{{ fastapi_url }}";  // Injected via context processor
-
-  try {
-    const response = await fetch(fastapiUrl);
-
-    if (response.ok) {
-      document.getElementById("server-status").innerHTML =
-        '<span class="badge bg-success">🟢 Server is online</span>';
-    } else {
-      throw new Error("Unexpected status code: " + response.status);
-    }
-
-  } catch (error) {
-    console.error("Fetch error:", error);
-    document.getElementById("server-status").innerHTML =
-      '<span class="badge bg-danger">🔴 Server is offline</span>';
-  }
-}
-    checkServerStatus();
-  });
-</script>
 
 {% endblock %}
