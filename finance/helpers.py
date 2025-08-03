@@ -5,6 +5,8 @@ import time
 import numpy as np
 import pandas as pd
 import yfinance as yf
+import os
+import requests
 
 from finance.models import DailyDataInvest, DailyData, SymbolsMapping, FundamentalsData
 
@@ -58,6 +60,33 @@ def backup_chart(symbol, timeframe):
         return history, data
     except Exception as e:
         return []
+
+
+def get_news(symbol):
+    API_KEY_NEWS = os.environ.get("API_KEY_NEWS")
+    URL_NEWS = os.environ.get("URL_NEWS")
+    params = {
+        "api_token": API_KEY_NEWS,
+        "language": "en",
+        "limit": 5,
+        "symbols": symbol
+    }
+
+    response = requests.get(URL_NEWS, params=params)
+    news_data = response.json().get("data", [])
+
+    for article in news_data:
+        if article.get("published_at"):
+            article["published_at"] = datetime.strptime(
+                article["published_at"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            ).strftime("%B %d, %Y %H:%M %p")
+
+        sentiment_scores = [entity.get("sentiment_score") for entity in article.get("entities", []) if
+                            "sentiment_score" in entity]
+        article["sentiment_score"] = round(sum(sentiment_scores) / len(sentiment_scores),
+                                           2) if sentiment_scores else "N/A"
+
+    return news_data
 
 
 def get_official_symbol(invest_symbol, trade_symbol):

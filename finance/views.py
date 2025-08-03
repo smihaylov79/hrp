@@ -12,8 +12,10 @@ from django.utils import timezone
 
 from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping
 
-from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, generate_symbol_mapping, backup_chart
-
+from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
+    generate_symbol_mapping, backup_chart, get_news
+from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
+    calculate_rsi
 
 # Create your views here.
 
@@ -337,7 +339,7 @@ def symbol_details(request):
     data, history = {}, []
     ohlc_data = []
     symbol = symbol.replace('%23', '#')
-    official_symbol = SymbolsMapping.objects.filter(Q(trade_symbol=symbol) | Q(invest_symbol=symbol)).first()
+    official_symbol = SymbolsMapping.objects.filter(Q(trade_symbol=symbol) | Q(invest_symbol=symbol) | Q(official_symbol=symbol)).first()
     if symbol:
         encoded_symbol = requests.utils.quote(symbol, safe='')
         symbol_url = f"{NGROK_URL}symbol-info/{encoded_symbol}"
@@ -397,11 +399,28 @@ def symbol_details(request):
                     ]
                     data = backup_chart(yahoo_symbol, timeframe)[1]
                 except Exception:
-                    data = {"error": f"Данните не са налични! Опитай отново като добавиш или премахнеш '#' пред символа. \nВъзможно е сървърът да е в режим invest"}
+                    data = {"error": f"Данните не са налични! Опитай отново като добавиш или премахнеш '#' пред символа. Възможно е сървърът да е в режим invest"}
+
+    fundamentals_data = None
+    news_data = None
+    fair_price = None
+    debt_equity = None
+    ebit = None
+    amortization = None
+    cogs = None
+    gm_value = None
+    rsi = None
+
     if official_symbol:
         fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=official_symbol.official_symbol).first()
-    else:
-        fundamentals_data = None
+        news_data = get_news(official_symbol.official_symbol)
+        fair_price = calculate_fair_price_fast(fundamentals_data)
+        ebit = calculate_ebit(fundamentals_data)[0]
+        amortization = calculate_ebit(fundamentals_data)[1]
+        debt_equity = debt_to_equity(fundamentals_data)
+        cogs = calculate_cogs(fundamentals_data)[0]
+        gm_value = calculate_cogs(fundamentals_data)[1]
+        rsi = calculate_rsi(ohlc_data)
 
     context = {
         'data': data,
@@ -409,6 +428,14 @@ def symbol_details(request):
         'history': history,
         'ohlc_data': ohlc_data,
         'selected_timeframe': timeframe,
-        'fundamentals': fundamentals_data
+        'fundamentals': fundamentals_data,
+        'news': news_data,
+        'fair_price': fair_price,
+        'ebit': ebit,
+        'debt_equity': debt_equity,
+        'amortization': amortization,
+        'cogs': cogs,
+        'gm_value': gm_value,
+        'rsi': rsi,
     }
     return render(request, 'finance/symbol_details.html', context)

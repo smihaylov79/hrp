@@ -145,17 +145,21 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
                 shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
 
             if date_from and date_to:
-                shopping_data = shopping_data.filter(date__range=(date_from, date_to))
+                shopping_data = shopping_data.filter(shopping__date__range=(date_from, date_to))
 
             shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
+
 
             df = None
             shop_price_changes = None
             avg_price_changes = None
             spending_chart_data = None
+            total_for_selection = 0
 
             if shopping_data:
                 df = db_to_df(shopping_data, currency)
+
+                total_for_selection = df['total'].sum()
 
                 avg_price_changes = df.groupby('product__name')['total'].mean()
 
@@ -199,6 +203,7 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
                             'user_shops': user_shops,
                             'highlighted_table': highlighted_table if selected_shops else None,
                             "selected_shop_ids": [str(shop.id) for shop in selected_shop_ids],
+                            'total_for_selection': total_for_selection,
                             }
 
                            )

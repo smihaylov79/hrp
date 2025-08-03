@@ -8,47 +8,80 @@
   <input type="text" id="symbolInput" name="symbol" placeholder="Въведи символ" value="{{ symbol }}" />
   <button type="submit">Провери</button>
 </form>
-    <div>
-        <h2 class="mb-1">{{ fundamentals.name }}</h2>
+        <!-- Header Section with Name and Bid/Ask -->
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap">
+  <div>
+    <h2 class="mb-1">{{ fundamentals.name }}</h2>
     <p class="mb-4 small">{{ fundamentals.symbol_mapping.sector }} / {{ fundamentals.symbol_mapping.industry }}</p>
+  </div>
+
+  {% if data and not data.error %}
+    <div class="flex-grow-0" style="width: 20%;">
+      <div class="alert alert-info p-2 small">
+        <strong>{{ symbol }} ({{ data.currency_base }})</strong><br>
+        🟢 Bid: {{ data.bid }}<br>
+        🔵 Ask: {{ data.ask }}<br>
+      </div>
+    </div>
+  {% elif data and data.error %}
+    <div class="alert alert-danger">⚠️ {{ data.error }}</div>
+  {% endif %}
 </div>
 
+<!-- Fundamentals Cards Row -->
 <div class="d-flex justify-content-between gap-3 mb-3 flex-wrap">
-  {% if data %}
-    {% if data.error %}
-      <div class="alert alert-danger">⚠️ {{ data.error }}</div>
-    {% else %}
-      <!-- Bid/Ask Card - 20% -->
-      <div class="flex-grow-0" style="width: 15%;">
-        <div class="alert alert-info p-3">
-          <strong>{{ symbol }} ({{ data.currency_base }})</strong><br>
-          🟢 Bid: {{ data.bid }}<br>
-          🔵 Ask: {{ data.ask }}<br>
-        </div>
-      </div>
-        {% endif %}
-  {% endif %}
+  <!-- Card 1 -->
+  <div class="flex-grow-0" style="width: 32%;">
+    <div class="alert alert-success p-3">
+      <!-- Card 1 content -->
 
-      <!-- Fundamentals Card 1 - 40% -->
-      <div class="flex-grow-0" style="width: 40%;">
-        <div class="alert alert-success p-3">
-            <div class="d-flex justify-content-between"><span>Price Target:</span><b>{{ fundamentals.target_median_price }}</b></div>
-          <div class="d-flex justify-content-between"><span>52 week range:</span><b>{{ fundamentals.fifty_two_week_low }} - {{ fundamentals.fifty_two_week_high }}</b></div>
-          <div class="d-flex justify-content-between"><span>EV/EBITDA:</span><b>{{ fundamentals.enterprise_to_ebitda|floatformat:2 }}</b></div>
-          <div class="d-flex justify-content-between"><span>P/E:</span><b>{{ fundamentals.price_eps_current_year|floatformat:2 }}</b></div>
-        </div>
-      </div>
+      <div class="d-flex justify-content-between"><span>EV/EBITDA:</span><b>{{ fundamentals.enterprise_to_ebitda|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>P/E:</span><b>{{ fundamentals.price_eps_current_year|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>EPS Trailing:</span><b>{{ fundamentals.eps_ttm }}</b></div>
+      <div class="d-flex justify-content-between"><span>EPS Forward:</span><b>{{ fundamentals.eps_forward|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>PE Forward:</span><b>{{ fundamentals.forward_pe|floatformat:2 }}</b></div>
+        <div class="d-flex justify-content-between"><span>Revenue/Share:</span><b>{{ fundamentals.revenue_per_share|floatformat:2 }}</b></div>
+        <div class="d-flex justify-content-between"><span>Gross Profit:</span><b>{{ fundamentals.gross_profits|billions }} B</b></div>
+        <div class="d-flex justify-content-between"><span>Op. Cashflow:</span><b>{{ fundamentals.operating_cashflow|billions }} B</b></div>
+        <div class="d-flex justify-content-between"><span>PEG:</span><b>{{ fundamentals.trailing_peg_ratio|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>Shares Outstanding:</span><b>{{ fundamentals.shares_outstanding|billions }} B</b></div>
+    </div>
+  </div>
 
-      <!-- Fundamentals Card 2 - 40% -->
-      <div class="flex-grow-0" style="width: 40%;">
-        <div class="alert alert-warning p-3">
-          <div class="d-flex justify-content-between"><span>Market Cap:</span><b>{{ fundamentals.market_cap|billions }} B</b></div>
-          <div class="d-flex justify-content-between"><span>Debt/Equity:</span><b>{{ fundamentals.debtToEquity }}</b></div>
-          <div class="d-flex justify-content-between"><span>EPS Trailing:</span><b>{{ fundamentals.eps_ttm }}</b></div>
-            <div class="d-flex justify-content-between"><span>EPS Forward:</span><b>{{ fundamentals.eps_forward }}</b></div>
-        </div>
-      </div>
+  <!-- Card 2 -->
+  <div class="flex-grow-0" style="width: 32%;">
+    <div class="alert alert-warning p-3">
+      <!-- Card 2 content -->
+      <div class="d-flex justify-content-between"><span>Market Cap:</span><b>{{ fundamentals.market_cap|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>Enterprise Value:</span><b>{{ fundamentals.enterprise_value|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>Revenue:</span><b>{{ fundamentals.total_revenue|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>COGS:</span><b>{{ cogs|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>GM:</span><span><b>{{ gm_value|billions }} B</b><span> ({{ fundamentals.gross_margins|convert_percentage }} %)</span></span></div>
+      <div class="d-flex justify-content-between"><span>EBITDA:</span><span><b>{{ fundamentals.ebitda|billions }} B</b><span> ({{ fundamentals.ebitda_margins|convert_percentage }} %)</span></span></div>
+      <div class="d-flex justify-content-between"><span>EBIT:</span><span><b>{{ ebit|billions }} B</b><span> ({{ fundamentals.operating_margins|convert_percentage }} %)</span></span></div>
+      <div class="d-flex justify-content-between"><span>Amortization:</span><b>{{ amortization|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>Debt:</span><b>{{ fundamentals.total_debt|billions }} B</b></div>
+      <div class="d-flex justify-content-between"><span>Cash:</span><b>{{ fundamentals.total_cash|billions }} B</b></div>
+    </div>
+  </div>
 
+  <!-- Card 3 -->
+  <div class="flex-grow-0" style="width: 32%;">
+    <div class="alert alert-secondary p-3">
+      <!-- Add more metrics or visualizations here -->
+        <div class="d-flex justify-content-between"><span>Price Target:</span><b>{{ fundamentals.target_median_price }}</b></div>
+      <div class="d-flex justify-content-between"><span>Fair Price:</span><b>{{ fair_price|floatformat:2 }}</b></div>
+        <div class="d-flex justify-content-between"><span>Rating:</span><b>{{ fundamentals.average_analyst_rating }}</b></div>
+      <div class="d-flex justify-content-between"><span>52 week range:</span><b>{{ fundamentals.fifty_two_week_low }} - {{ fundamentals.fifty_two_week_high }}</b></div>
+        <div class="d-flex justify-content-between"><span>52 week change:</span><b>{{ fundamentals.fifty_two_week_change|convert_percentage }} %</b></div>
+        <div class="d-flex justify-content-between"><span>Beta:</span><b>{{ fundamentals.beta }}</b></div>
+      <div class="d-flex justify-content-between"><span>50 day average:</span><b>{{ fundamentals.fifty_day_average|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>200 day average:</span><b>{{ fundamentals.two_hundred_day_average|floatformat:2 }}</b></div>
+        <div class="d-flex justify-content-between"><span>RSI(14):</span><b>{{ rsi|floatformat:2 }}</b></div>
+      <div class="d-flex justify-content-between"><span>Divident Date:</span><b>{{ fundamentals.ex_dividend_date }}</b></div>
+      <!-- Add more if needed -->
+    </div>
+  </div>
 </div>
 
     </div>
@@ -107,6 +140,42 @@
     </p>
   </div>
 </div>
+
+<div class="card mb-4 shadow-sm">
+  <div class="card-header bg-light">
+  <h6 class="mb-0">📘 News related with: <span><b>{{ fundamentals.name }}</b></span></h6>
+  </div>
+{% if news %}
+    <div class="row row-cols-1 g-3">
+      {% for article in news %}
+        <div class="col">
+          <div class="card h-100 border-light shadow-sm">
+            <div class="row g-0">
+              <div class="col-md-4">
+                {% if article.image_url %}
+                  <img src="{{ article.image_url }}" class="img-fluid rounded-start w-50" alt="Новина">
+                {% endif %}
+              </div>
+              <div class="col-md-8">
+                <div class="card-body">
+                  <h5 class="card-title">{{ article.title }}</h5>
+                  <p class="card-text">{{ article.description }}</p>
+                  <p class="card-text">
+                    <small class="text-muted">🕒 {{ article.published_at }} | 📺 {{ article.source }}</small>
+                  </p>
+                  <a href="{{ article.url }}" target="_blank" class="btn btn-outline-primary btn-sm">Прочети</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info">Няма новини за този символ.</div>
+  {% endif %}
+</div>
+
 </div>
 
 <script>
