@@ -1,4 +1,5 @@
 Home Resource Planner
+
 Home Resource Planner is a comprehensive Django-based platform designed to help individuals and households manage their daily resources, finances, and routines with ease and intelligence.
 Features
 •	Inventory Management Create and manage products, track inventory, and automatically reduce stock when cooking or shopping.
