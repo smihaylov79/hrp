@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from .custom_managers import CustomUserManager
 
 
 class HouseHold(models.Model):
@@ -26,6 +27,8 @@ class CustomUser(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
+
+    objects = CustomUserManager()
 
 
 class HouseholdMembership(models.Model):

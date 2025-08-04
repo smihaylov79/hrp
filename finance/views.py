@@ -412,8 +412,9 @@ def symbol_details(request):
     rsi = None
 
     if official_symbol:
-        fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=official_symbol.official_symbol).first()
-        news_data = get_news(official_symbol.official_symbol)
+        symbol_from_official = official_symbol.official_symbol
+        fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=symbol_from_official).first()
+        news_data = get_news(symbol_from_official)
         fair_price = calculate_fair_price_fast(fundamentals_data)
         ebit = calculate_ebit(fundamentals_data)[0]
         amortization = calculate_ebit(fundamentals_data)[1]
