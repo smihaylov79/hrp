@@ -141,12 +141,15 @@ def fetch_cold_water():
     for td in td_blocks:
         if "Total (supply, sewerage, treatment)" in td.text:
 
-            td_with_price = td.find_next_sibling('td').find_next_sibling('td')
+            td_with_price = td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td')
             if td_with_price:
                 divs = td_with_price.find_all('div')
                 for div in divs:
                     try:
-                        price = round(float(div.text.strip()), 2)
+                        price = div.text.split('|')[0]
+                        match = re.search(r"\b(\d+\.\d+)\s*BGN\b", price)
+                        if match:
+                            price = round(float(match.group(1))*1.2, 2)
                         return price
                     except ValueError:
                         continue

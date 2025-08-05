@@ -2,12 +2,6 @@ import requests
 from django.conf import settings
 
 
-# def fastapi_url(request):
-#     result = {
-#         'fastapi_url': f"{settings.FAST_API_URL.rstrip('/')}/ping"
-#     }
-#     return result
-
 def fastapi_url(request):
     try:
         response = requests.get(f"{settings.FAST_API_URL.rstrip('/')}/ping")

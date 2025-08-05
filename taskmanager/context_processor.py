@@ -1,5 +1,6 @@
 from .models import Task
 
+
 def incomplete_tasks(request):
     count = 0
     if request.user.is_authenticated:

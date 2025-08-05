@@ -5,7 +5,6 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-
 from shopping.models import *
 from .models import *
 from taskmanager.models import Task

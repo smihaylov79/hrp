@@ -91,7 +91,7 @@
             message = interpolate(message, [timezoneOffset]);
 
             const warning = document.createElement('div');
-            warning.classList.add('help', warningClass);
+            warning.classList.add('help_pages', warningClass);
             warning.textContent = message;
             inp.parentNode.appendChild(warning);
         },

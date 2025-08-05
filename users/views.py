@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegistrationForm, ProfileUpdateForm, HouseholdCreationForm, JoinHouseholdForm
@@ -136,7 +137,7 @@ class PleaseLoginView(TemplateView):
     template_name = "users/please_login.html"
 
 
-class HouseholdView(DetailView):
+class HouseholdView(LoginRequiredMixin, DetailView):
     model = HouseHold
     template_name = "users/household.html"
     context_object_name = "household"

@@ -50,9 +50,23 @@ PROJECT_APPS = [
     'weather',
     'reports',
     'taskmanager',
+    # 'help_pages',
 ]
 
 INSTALLED_APPS = [
+    # 'wagtail.contrib.forms',
+    # 'wagtail.contrib.redirects',
+    # 'wagtail.embeds',
+    # 'wagtail.sites',
+    # 'wagtail.users',
+    # 'wagtail.snippets',
+    # 'wagtail.documents',
+    # 'wagtail.images',
+    # 'wagtail.search',
+    # 'wagtail.admin',
+    # 'wagtail',
+    # 'modelcluster',
+    # 'taggit',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -87,7 +101,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'shopping.context_processors.current_datetime',
                 'forum.views.get_categories',
-                'weather.views.weather_data_context_processor',
                 'taskmanager.context_processor.incomplete_tasks',
                 'finance.context_processors.fastapi_url'
             ],
@@ -194,3 +207,7 @@ LOGIN_URL = '/users/please-login/'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 
 FAST_API_URL = os.getenv('NGROK_URL')
+
+# WAGTAIL_ADMIN_BASE_URL = 'admin'
+#
+# WAGTAIL_SITE_NAME = "Hoseholdiq"

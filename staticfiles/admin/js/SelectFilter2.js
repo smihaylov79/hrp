@@ -21,8 +21,8 @@ Requires core.js and SelectBox.js.
                 if (p.classList.contains("info")) {
                     // Remove <p class="info">, because it just gets in the way.
                     from_box.parentNode.removeChild(p);
-                } else if (p.classList.contains("help")) {
-                    // Move help text up to the top so it isn't below the select
+                } else if (p.classList.contains("help_pages")) {
+                    // Move help_pages text up to the top so it isn't below the select
                     // boxes or wrapped off on the side to the right of the add
                     // button:
                     from_box.parentNode.insertBefore(p, from_box.parentNode.firstChild);
@@ -57,7 +57,7 @@ Requires core.js and SelectBox.js.
 
             quickElement(
                 'span', search_filter_label, '',
-                'class', 'help-tooltip search-label-icon',
+                'class', 'help_pages-tooltip search-label-icon',
                 'aria-label', interpolate(gettext("Type into this box to filter down the list of available %s."), [field_name])
             );
 
@@ -114,7 +114,7 @@ Requires core.js and SelectBox.js.
 
             quickElement(
                 'span', search_filter_selected_label, '',
-                'class', 'help-tooltip search-label-icon',
+                'class', 'help_pages-tooltip search-label-icon',
                 'aria-label', interpolate(gettext("Type into this box to filter down the list of selected %s."), [field_name])
             );
 

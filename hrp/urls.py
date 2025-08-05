@@ -20,10 +20,20 @@ from .views import *
 from django.conf import settings
 from django.conf.urls.static import static
 
+# from wagtail.admin import urls as wagtailadmin_urls
+# from wagtail.documents import urls as wagtaildocs_urls
+# from wagtail.images import urls as wagtailimages_urls
+# from wagtail import urls as wagtail_urls
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # path('wagtail-admin/', include(wagtailadmin_urls)),
+    # path('documents/', include(wagtaildocs_urls)),
+    # path('images/', include(wagtailimages_urls)),
+
     path('', HomeView.as_view(), name='home'),
-    # path('', home, name='home'),
+
     path('users/', include('users.urls')),
     path('shopping/', include('shopping.urls')),
     path('inventory/', include('inventory.urls')),
@@ -34,6 +44,8 @@ urlpatterns = [
     path('weather/', include('weather.urls')),
     path('reports/', include('reports.urls')),
     path('tasks/', include('taskmanager.urls')),
+
+    # path('', include(wagtail_urls)),
 
 ]
 

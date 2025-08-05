@@ -11,10 +11,12 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .forms import CreateProductForm, UtilityBillForm, RegularShoppingForm
 from users.models import CustomUser
-from .helpers import load_prefill_data, get_exchange_rate, save_shopping_products, fetch_electricity_price, \
-    fetch_cold_water, get_heating_price
+from .helpers import load_prefill_data, get_exchange_rate, save_shopping_products
 from .models import Shop, ProductCategory, MainCategory, CurrencyChoice, Shopping, Product, HouseholdShoppingList, \
     ShoppingList, ShoppingProduct
+from .helpers import fetch_electricity_price, fetch_cold_water, get_heating_price
+# from .fetching_utility_prices import fetch_electricity_price, fetch_cold_water, get_heating_price
+# from django.utils.decorators import sync_and_async_middleware
 
 
 @login_required
@@ -194,3 +196,64 @@ def add_product(request):
         else:
             error_msg = next(iter(form.errors.values()))[0]
             return JsonResponse({'error': error_msg}, status=400)
+
+# Async version for utility bill. To be updated. Impossible for now due to context processors
+# @sync_and_async_middleware
+# @login_required
+# async def utility_bills(request):
+#     selected_categories = ['Битови сметки', 'Наем']
+#     category_qs = ProductCategory.objects.filter(name__in=selected_categories)
+#     categories = []
+#     async for category in category_qs:
+#         categories.append(category)
+#
+#     bills_qs = Product.objects.filter(category__in=categories)
+#     bills = []
+#     async for bill in bills_qs:
+#         bills.append(bill)
+#
+#     electricity_price = await fetch_electricity_price()
+#     cold_water = await fetch_cold_water()
+#     heating_price = await get_heating_price()
+#
+#     if request.method == "POST":
+#         form = UtilityBillForm(request.POST)
+#         if form.is_valid():
+#             shopping = form.save(commit=False)
+#             shopping.user = request.user
+#             await shopping.asave()
+#
+#             base_currency = shopping.currency
+#             date = shopping.date
+#
+#             target_currencies = [c for c in CurrencyChoice.values]
+#             for target_currency in target_currencies:
+#                 try:
+#                     await get_exchange_rate(base_currency, target_currency, date)
+#                 except Exception:
+#                     messages.warning(request, f"Unable to fetch exchange rate for {base_currency} → {target_currency}")
+#
+#             selected_products = json.loads(request.POST.get("selected_products"))
+#             for product_data in selected_products:
+#                 product = await Product.objects.aget(id=product_data["product_id"])
+#                 quantity = Decimal(product_data["quantity"])
+#                 price = Decimal(product_data["price"])
+#                 amount = quantity * price
+#                 not_for_household = product_data.get("not_for_household", False)
+#
+#                 await ShoppingProduct.objects.acreate(
+#                     shopping=shopping, product=product, quantity=quantity, price=price,
+#                     discount=0, amount=amount, not_for_household=not_for_household
+#                 )
+#             return redirect("shopping")
+#     else:
+#         form = UtilityBillForm()
+#
+#     context = {
+#         "bills": bills,
+#         'form': form,
+#         'electricity_price': electricity_price,
+#         'cold_water': cold_water,
+#         'heating_price': heating_price,
+#     }
+#     return render(request, "shopping/utility_bills.html", context)
