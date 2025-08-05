@@ -1,4 +1,4 @@
-Home Resource Planner
+#Home Resource Planner
 
 Home Resource Planner is a comprehensive Django-based platform designed to help individuals and households manage their daily resources, finances, and routines with ease and intelligence.
 
