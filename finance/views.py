@@ -435,12 +435,12 @@ def symbol_details(request):
         symbol_from_official = official_symbol.official_symbol
         fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=symbol_from_official).first()
         news_data = get_news(symbol_from_official)
-        fair_price = calculate_fair_price_fast(fundamentals_data)
-        ebit = calculate_ebit(fundamentals_data)[0]
-        amortization = calculate_ebit(fundamentals_data)[1]
-        debt_equity = debt_to_equity(fundamentals_data)
-        cogs = calculate_cogs(fundamentals_data)[0]
-        gm_value = calculate_cogs(fundamentals_data)[1]
+        fair_price = calculate_fair_price_fast(fundamentals_data) if fundamentals_data else None
+        ebit = calculate_ebit(fundamentals_data)[0] if fundamentals_data else None
+        amortization = calculate_ebit(fundamentals_data)[1] if fundamentals_data else None
+        debt_equity = debt_to_equity(fundamentals_data) if fundamentals_data else None
+        cogs = calculate_cogs(fundamentals_data)[0] if fundamentals_data else None
+        gm_value = calculate_cogs(fundamentals_data)[1] if fundamentals_data else None
         rsi = calculate_rsi(ohlc_data)
 
     context = {

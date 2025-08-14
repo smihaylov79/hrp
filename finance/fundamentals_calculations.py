@@ -21,12 +21,16 @@ def calculate_rsi(prices, period=14):
 
 
 def calculate_fair_price_fast(fundamentals):
+    if fundamentals is None:
+        return None
     if fundamentals.eps_forward and fundamentals.forward_pe:
         return fundamentals.eps_forward * fundamentals.forward_pe
     return None
 
 
 def calculate_ebit(fundamentals):
+    if fundamentals is None:
+        return None
     ebit = fundamentals.total_revenue * fundamentals.operating_margins
     amortization = fundamentals.ebitda - ebit
     return ebit, amortization
@@ -38,6 +42,8 @@ def debt_to_equity(fundamentals):
 
 
 def calculate_cogs(fundamentals):
+    if fundamentals is None:
+        return None
     gm_percent = fundamentals.gross_margins
     revenue = fundamentals.total_revenue
     gm_value = revenue * gm_percent
