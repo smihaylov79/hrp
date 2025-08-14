@@ -36,21 +36,38 @@ class SymbolsData(models.Model):
     gap_open_percentage = models.FloatField()
     isin_number = models.CharField(max_length=50)
     details = models.CharField(max_length=100, blank=True, null=True)
+    instrument_type = models.CharField(max_length=50, blank=True, null=True)
+    exchange = models.CharField(max_length=50, blank=True, null=True)
+    base_currency = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         abstract = True
 
 
+class InstrumentTypesTrade(models.Model):
+    name = models.CharField(max_length=50)
+
+
+class InstrumentTypesInvest(models.Model):
+    name = models.CharField(max_length=50)
+
+
+class MarginGroups(models.Model):
+    name = models.CharField(max_length=50)
+    ratio = models.CharField(max_length=10, blank=True, null=True)
+
+
 class DailyData(SymbolsData):
-    pass
+    margin_group = models.CharField(max_length=50, blank=True, null=True)
 
 
 class DailyDataInvest(SymbolsData):
-    pass
+    part_from_index = models.CharField(max_length=50, blank=True, null=True)
 
 
 class Market(models.Model):
     name = models.CharField(max_length=50, unique=True)
+    long_name = models.CharField(max_length=50, blank=True, null=True)
     time_zone = models.CharField(max_length=50, choices=TIME_ZONE_CHOICES, default='UTC')
     open_time = models.TimeField()
     close_time = models.TimeField()

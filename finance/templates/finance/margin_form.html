@@ -1,0 +1,52 @@
+{% extends "finance/navigation.html" %}
+
+{% block finance_navigation %}
+
+<div class="container mt-5">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Margin Calculator</h4>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="symbol" class="form-label">Symbol</label>
+          <input type="text" name="symbol" class="form-control" value="{{ symbol }}" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="lot" class="form-label">Lot Size</label>
+          <input type="number" step="0.01" name="lot" class="form-control" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="action" class="form-label">Action</label>
+          <select name="action" class="form-select">
+            <option value="ORDER_TYPE_BUY">Buy</option>
+            <option value="ORDER_TYPE_SELL">Sell</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-success">Calculate Margin</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <h5>Margin Calculation for <span class="text-primary">{{ symbol }}</span></h5>
+    {% if margin %}
+      <div class="alert alert-info">
+        <p><strong>Required Margin for {{ lot }} lots/shares:</strong> {{ margin }} {{ currency }}</p>
+      </div>
+    {% else %}
+      <div class="alert alert-warning">
+        Could not calculate margin. Please try again.
+      </div>
+    {% endif %}
+    <a href="{% url 'check_margin' symbol %}" class="btn btn-outline-secondary mt-2">Back</a>
+  </div>
+</div>
+
+{% endblock %}
+

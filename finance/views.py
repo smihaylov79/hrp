@@ -10,7 +10,7 @@ import requests
 from django.http import JsonResponse
 from django.utils import timezone
 
-from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping
+from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping, InstrumentTypesTrade, InstrumentTypesInvest, MarginGroups
 
 from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
     generate_symbol_mapping, backup_chart, get_news
@@ -94,6 +94,10 @@ def trade(request):
                 gap_open_percentage=row['gap_open_percent'],
                 isin_number=row['isin'],
                 details=row['path'],
+                instrument_type=row['instrument_type'],
+                exchange=row['exchange'],
+                base_currency=row['base_currency'],
+                margin_group=row['margin_group'],
             ))
         extracted_data = DailyData.objects.bulk_create(records)
         number_of_symbols = len(records)
@@ -141,6 +145,10 @@ def invest(request):
                 gap_open_percentage=row['gap_open_percent'],
                 isin_number=row['isin'],
                 details=row['path'],
+                instrument_type=row['instrument_type'],
+                exchange=row['exchange'],
+                base_currency=row['base_currency'],
+                part_from_index=row['part_from_index'],
             ))
         extracted_data = DailyDataInvest.objects.bulk_create(records)
         number_of_symbols = len(records)
@@ -316,8 +324,14 @@ def delete_last_data_invest(request):
 def trade_details(request):
     last_date = DailyData.objects.order_by('-date').values_list('date', flat=True).first()
     data = DailyData.objects.filter(date=last_date).order_by('-gap_open_percentage')
+    markets = Market.objects.all()
+    types = InstrumentTypesTrade.objects.all()
+    margin = MarginGroups.objects.all()
     context = {
         'data': data,
+        'markets': markets,
+        'types': types,
+        'margin': margin
     }
 
     return render(request, 'finance/trade_details.html', context)
@@ -326,8 +340,14 @@ def trade_details(request):
 def invest_details(request):
     last_date = DailyDataInvest.objects.order_by('-date').values_list('date', flat=True).first()
     data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
+    indices = DailyDataInvest.objects.filter(part_from_index__isnull=False).values_list('part_from_index', flat=True).distinct()
+    markets = Market.objects.all()
+    types = InstrumentTypesInvest.objects.all()
     context = {
         'data': data,
+        'markets': markets,
+        'types': types,
+        'indices': indices
     }
 
     return render(request, 'finance/invest_details.html', context)
@@ -440,3 +460,25 @@ def symbol_details(request):
         'rsi': rsi,
     }
     return render(request, 'finance/symbol_details.html', context)
+
+
+def check_margin(request, symbol):
+    if request.method == 'POST':
+        symbol = request.POST.get('symbol')
+        lot = request.POST.get('lot')
+        action = request.POST.get('action', 'ORDER_TYPE_BUY')
+        url = f"{NGROK_URL}calculate-margin"
+        params = {'lot': lot, 'symbol': symbol, 'action': action}
+        try:
+            response = requests.get(url, params=params, timeout=15)
+            data = response.json()
+            margin = data.get('margin')
+            currency = data.get('currency')
+        except Exception as e:
+            margin = None
+            currency = None
+        context = {
+            'margin': margin, 'symbol': symbol, 'currency': currency, 'lot': lot, 'action': action
+        }
+        return render(request, 'finance/margin_form.html', context)
+    return render(request, 'finance/margin_form.html', {'symbol': symbol})

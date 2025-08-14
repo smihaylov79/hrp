@@ -8,6 +8,9 @@
   <input type="text" id="symbolInput" name="symbol" placeholder="Въведи символ" value="{{ symbol }}" />
   <button type="submit">Провери</button>
 </form>
+    <a href="{% url 'check_margin' symbol=symbol %}" class="btn btn-primary mx-2">
+    Check margin requirements
+  </a>
         <!-- Header Section with Name and Bid/Ask -->
 <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap">
   <div>

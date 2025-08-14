@@ -16,4 +16,5 @@ urlpatterns = [
     path('delete-latest-data-invest/', delete_last_data_invest, name='delete_last_data_invest'),
     path('invest-details/', invest_details, name='invest_details'),
     path('screener-settings/', screener_settings, name='screener_settings'),
+    path('check-margin/<str:symbol>', check_margin, name='check_margin'),
 ]

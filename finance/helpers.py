@@ -9,6 +9,7 @@ import os
 import requests
 
 from finance.models import DailyDataInvest, DailyData, SymbolsMapping, FundamentalsData
+from .data_from_correction import mapping_ids
 
 
 def deep_clean(obj):
@@ -22,14 +23,63 @@ def deep_clean(obj):
         return obj
 
 
+# def create_dataframe(data):
+#     df = pd.DataFrame(data)
+#     df = df.rename(columns={0: 'symbol', 1: 'company_name', 2: 'open', 3: 'previous_close', 4: 'isin', 5: 'path'})
+#     df['gap_open'] = df['open'] - df['previous_close']
+#     df['gap_open_percent'] = df['gap_open'] / df['previous_close'] * 100
+#     df.replace([np.inf, -np.inf], 0, inplace=True)
+#     df.fillna(0, inplace=True)
+#     df = df.sort_values('gap_open_percent', ascending=False)
+#     return df
+
+
+def extract_parts(path):
+    parts = path.split('\\')
+    if parts[0] == 'Stock CFDs' or parts[0] == 'ETF CFDs':
+        return pd.Series({
+            'instrument_type': parts[0] if len(parts) > 0 else None,
+            'exchange': parts[1] if len(parts) > 1 else None,
+            'part_from_index': None,
+            'margin_group': parts[2] if len(parts) > 2 else None
+        })
+    elif parts[0] == 'Stocks' or parts[0] == 'ETFs':
+        return pd.Series({
+            'instrument_type': parts[0] if len(parts) > 0 else None,
+            'exchange': parts[1] if len(parts) > 1 else None,
+            'part_from_index': parts[3] if len(parts) > 4 else None,
+            'margin_group': parts[2] if len(parts) > 2 else None
+        })
+    elif parts[0] == 'Forex':
+        return pd.Series({
+            'instrument_type': parts[0] if len(parts) > 0 else None,
+            'exchange': None,
+            'part_from_index': None,
+            'margin_group': parts[1] if len(parts) > 1 else None,
+        })
+    else:
+        return pd.Series({
+            'instrument_type': parts[0] if len(parts) > 0 else None,
+            'exchange': None,
+            'part_from_index': None,
+            'margin_group': None
+        })
+
+
 def create_dataframe(data):
     df = pd.DataFrame(data)
-    df = df.rename(columns={0: 'symbol', 1: 'company_name', 2: 'open', 3: 'previous_close', 4: 'isin', 5: 'path'})
+    print(df.head())
+    df = df.rename(columns={0: 'symbol', 1: 'company_name', 2: 'open', 3: 'previous_close', 4: 'isin', 5: 'path',
+                            6: 'base_currency'})
     df['gap_open'] = df['open'] - df['previous_close']
     df['gap_open_percent'] = df['gap_open'] / df['previous_close'] * 100
     df.replace([np.inf, -np.inf], 0, inplace=True)
     df.fillna(0, inplace=True)
     df = df.sort_values('gap_open_percent', ascending=False)
+
+    df[['instrument_type', 'exchange', 'part_from_index', 'margin_group']] = df['path'].apply(extract_parts)
+
+    print(df.head())
     return df
 
 
@@ -146,8 +196,8 @@ def parse_date(value):
 
 
 def fetch_fundamentals_data():
-    symbols_mapping = SymbolsMapping.objects.filter(id__in=[237,248,251,335,489,635,695,825,1300,1460,1594,1633,1644,1806,1967,2262,2449,2683,3052,3077,3353,3503,3688,]
-)
+    symbols_mapping = SymbolsMapping.objects.filter(id__in=mapping_ids)
+
     today = date.today()
     errors = []
     for mapping in symbols_mapping:
@@ -241,7 +291,7 @@ def fetch_fundamentals_data():
                     'fifty_two_week_low': info.get("fiftyTwoWeekLow"),
                     'fifty_two_week_high': info.get("fiftyTwoWeekHigh"),
                     'price_to_sales_ttm': info.get("priceToSalesTrailing12Months"),
-                    'fifty_day_averagev': info.get("fiftyDayAverage"),
+                    'fifty_day_average': info.get("fiftyDayAverage"),
                     'two_hundred_day_average': info.get("twoHundredDayAverage"),
                     'enterprise_value': info.get("enterpriseValue"),
                     'shares_outstanding': info.get("sharesOutstanding"),
@@ -283,7 +333,7 @@ def fetch_fundamentals_data():
                     'ceo_name': ceo.get("name"),
                     'ceo_age': ceo.get("age"), }
             )
-            time.sleep(1)
+            time.sleep(0.5)
         except Exception as e:
             errors.append(f'{symbol}: {e}')
     return errors

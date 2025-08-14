@@ -108,8 +108,6 @@ def edit_request_thread(request, request_id):
     return render(request, "forum/edit_request_thread.html", context)
 
 
-
-
 def thread_detail(request, thread_id):
     thread = get_object_or_404(Thread, id=thread_id)
     posts = Post.objects.filter(thread=thread).order_by("created_at")
