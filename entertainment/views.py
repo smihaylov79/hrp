@@ -10,8 +10,8 @@ def travel(request):
     return render(request, 'entertainment/travel.html')
 
 
-def reading(request):
-    return render(request, 'entertainment/reading.html')
+# def reading(request):
+#     return render(request, 'entertainment/reading_home.html')
 
 
 def movies(request):

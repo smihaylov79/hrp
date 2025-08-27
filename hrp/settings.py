@@ -50,6 +50,7 @@ PROJECT_APPS = [
     'weather',
     'reports',
     'taskmanager',
+    'reading'
     # 'help_pages',
 ]
 

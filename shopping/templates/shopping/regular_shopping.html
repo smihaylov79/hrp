@@ -24,7 +24,14 @@
   <form id="shopping-form" action="{% url 'regular_shopping' %}" method="POST">
     {% csrf_token %}
 
-  <div class="row g-3 mb-3">
+  <button class="btn btn-info mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterCard" aria-expanded="false" aria-controls="filterCard">
+  🔍 Покажи/Скрий бързи филтри
+</button>
+
+<div class="collapse" id="filterCard">
+  <div class="card card-body">
+
+      <div class="row g-3 mb-3">
   <div class="col-md-4">
     <h5>🗂️ Основна категория:</h5>
     <div class="btn-group flex-wrap" role="group" id="main-category-buttons">
@@ -47,6 +54,8 @@
       </button>
       {% endfor %}
     </div>
+  </div>
+</div>
   </div>
 </div>
 

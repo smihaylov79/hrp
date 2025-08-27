@@ -52,14 +52,14 @@
         </div>
     </div>
 
+
     <script>
 document.addEventListener("DOMContentLoaded", function () {
     let filteringIncomplete = true;
     const button = document.getElementById("filter-toggle-btn");
+    const rows = document.querySelectorAll(".list-row");
 
-    button.addEventListener("click", function () {
-        const rows = document.querySelectorAll(".list-row");
-
+    function applyFilter() {
         rows.forEach(row => {
             row.style.setProperty("display",
                 row.classList.contains("completed") && filteringIncomplete ? "none" : "block",
@@ -70,10 +70,17 @@ document.addEventListener("DOMContentLoaded", function () {
         button.textContent = filteringIncomplete
             ? "🔁 Покажи всички задачи"
             : "📝 Покажи неизпълнени";
+    }
 
+    // Initial filter on page load
+    applyFilter();
+
+    button.addEventListener("click", function () {
         filteringIncomplete = !filteringIncomplete;
+        applyFilter();
     });
 });
 </script>
+
 
 {% endblock %}

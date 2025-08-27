@@ -1,0 +1,164 @@
+{% extends 'reading/reading_home.html' %}
+{% load custom_filters_reading %}
+
+{% block reading_content %}
+<div class="container my-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">📘 Детайли за книгата</h5>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {% if source == 'user' %}
+              <label for="title" class="form-label fw-bold fs-5">Заглавие:</label>
+              <input type="text" name="title" class="form-control form-control-lg" placeholder="Въведи заглавие..." value="{{ book.title }}" required>
+            {% else %}
+              <label class="form-label fw-bold fs-5">Заглавие:</label>
+<p class="form-control-plaintext fs-4 text-dark fw-semibold">{{ book.title }}</p>
+
+            {% endif %}
+          </div>
+
+          {% if source == 'user' %}
+          <div class="col-md-6">
+            <label for="library" class="form-label">Библиотека</label>
+            <div class="d-flex">
+              <select name="library" class="form-select me-2">
+                <option value="" {% if not book.library %}selected{% endif %}>---</option>
+                {% for lib in libraries %}
+                  <option value="{{ lib.id }}" {% if book.library and book.library.id == lib.id %}selected{% endif %}>{{ lib.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addLibraryModal">
+                ➕
+              </button>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if source == 'user' %}
+        <div class="mt-3">
+          <label for="notes" class="form-label">Бележки</label>
+          <textarea name="notes" class="form-control" rows="3" placeholder="Вашите бележки...">{{ book.notes }}</textarea>
+        </div>
+
+        <div class="mt-3">
+          <label for="comments" class="form-label">Мои коментари</label>
+          <textarea name="comments" class="form-control" rows="3" placeholder="Вашите коментари...">{{ book.comments }}</textarea>
+        </div>
+
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" name="is_read" id="is_read" {% if book.is_read %}checked{% endif %}>
+          <label class="form-check-label" for="is_read">Прочетена</label>
+        </div>
+
+        {% if book.user == book.shared_from %}
+        <div class="form-check mt-2">
+          <input class="form-check-input" type="checkbox" name="shared" id="shared" {% if book.shared %}checked{% endif %}>
+          <label class="form-check-label" for="shared">Споделена</label>
+        </div>
+        {% else %}
+        <div class="mt-3">
+          <label class="form-label">Споделена от:</label>
+          <p class="form-control-plaintext">{{ book.shared_from.first_name }}</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-3 col-md-3">
+          <label for="rating" class="form-label">Рейтинг:</label>
+          <input type="text" name="rating" class="form-control" value="{{ book.rating }}">
+        </div>
+        {% else %}
+        <div class="mt-3">
+          <label class="form-label">Рейтинг:</label>
+          <p class="form-control-plaintext">{{ book.title|calculate_rating }}</p>
+        </div>
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
+          {% if source == 'user' %}
+            <button type="submit" class="btn btn-success">
+              💾 Запази промените
+            </button>
+          {% else %}
+            {% if book.title|check_book_in_user_books_name == book.title %}
+              {% if user_book_id %}
+  <a href="{% url 'book_detail' source='user' book_id=user_book_id %}" class="btn btn-success">
+    Лични детайли
+  </a>
+{% else %}
+  <button type="submit" class="btn btn-success">Добави в мои книги</button>
+{% endif %}
+            {% endif %}
+          {% endif %}
+
+          {% if library_id %}
+            <a href="{% url 'library_detail' library_id=library_id %}" class="btn btn-outline-danger">⛔ Отказ</a>
+          {% else %}
+            <a href="{% url 'reading_home' %}" class="btn btn-outline-danger">⛔ Отказ</a>
+          {% endif %}
+        </div>
+      </form>
+
+      <div class="mt-5">
+        <h6 class="text-muted">💬 Коментари от други потребители</h6>
+        <ul class="list-group">
+          {% for user, comment in comments.items %}
+            <li class="list-group-item">
+              <strong>{{ user }}:</strong> {{ comment }}
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted">Няма коментари.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Library Modal -->
+<div class="modal fade" id="addLibraryModal" tabindex="-1" aria-labelledby="addLibraryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_library_ajax' %}" id="libraryForm">
+        {% csrf_token %}
+        <div class="modal-header bg-light">
+          <h5 class="modal-title" id="addLibraryModalLabel">Нова библиотека</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          {{ library_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Запази</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('libraryForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    fetch(this.action, {
+      method: 'POST',
+      body: formData,
+      headers: {'X-CSRFToken': formData.get('csrfmiddlewaretoken')}
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.id) {
+        const select = document.querySelector('select[name="library"]');
+        const option = new Option(data.name, data.id, true, true);
+        select.add(option);
+        bootstrap.Modal.getInstance(document.getElementById('addLibraryModal')).hide();
+      }
+    });
+  });
+</script>
+{% endblock %}

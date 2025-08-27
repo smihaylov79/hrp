@@ -1,0 +1,255 @@
+{% extends 'reading/reading_home.html' %}
+{% load custom_filters_reading %}
+
+{% block reading_content %}
+<div class="container my-4">
+
+  <!-- Add Book Button -->
+  <div class="mb-4 text-end">
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createBookModal">
+      ➕ Добави нова книга
+    </button>
+  </div>
+
+  <!-- Create Book Modal -->
+  <div class="modal fade" id="createBookModal" tabindex="-1" aria-labelledby="createBookModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold text-primary" id="createBookModalLabel">📘 Нова книга</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                {{ form.title.label_tag }} {{ form.title }}
+              </div>
+              <div class="col-md-6">
+                {{ form.author.label_tag }}
+                <div class="d-flex">
+                  {{ form.author }}
+                  <button type="button" class="btn btn-outline-secondary ms-2" onclick="openNestedModal('addAuthorModal')">➕</button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                {{ form.genre.label_tag }}
+                <div class="d-flex">
+                  {{ form.genre }}
+                  <button type="button" class="btn btn-outline-secondary ms-2" onclick="openNestedModal('addGenreModal')">➕</button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                {{ form.published_date.label_tag }} {{ form.published_date }}
+              </div>
+              <div class="col-md-12">
+                {{ form.description.label_tag }} {{ form.description }}
+              </div>
+              <div class="col-md-6">
+                {{ form.cover_image.label_tag }} {{ form.cover_image }}
+              </div>
+              <div class="col-md-6">
+                {{ form.shared.label_tag }} {{ form.shared }}
+              </div>
+              <div class="col-md-6">
+                {{ form.library.label_tag }}
+                <div class="d-flex">
+                  {{ form.library }}
+                  <button type="button" class="btn btn-outline-secondary ms-2" onclick="openNestedModal('addLibraryModal')">➕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+            <button type="submit" class="btn btn-primary">Запази</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+ <!-- Add Author Modal -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1" aria-labelledby="addAuthorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_author_ajax' %}" id="authorForm">
+        {% csrf_token %}
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-secondary" id="addAuthorModalLabel">Нов автор</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          {{ author_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Запази</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Genre Modal -->
+<div class="modal fade" id="addGenreModal" tabindex="-1" aria-labelledby="addGenreModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_genre_ajax' %}" id="genreForm">
+        {% csrf_token %}
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-secondary" id="addGenreModalLabel">Нов жанр</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          {{ genre_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Запази</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Library Modal -->
+<div class="modal fade" id="addLibraryModal" tabindex="-1" aria-labelledby="addLibraryModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'add_library_ajax' %}" id="libraryForm">
+        {% csrf_token %}
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold text-secondary" id="addLibraryModalLabel">Нова библиотека</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          {{ library_form.as_p }}
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Запази</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Libraries Section -->
+  {% if libraries %}
+  <h2 class="mb-4 fw-bold text-primary">📚 Моите библиотеки</h2>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+    {% for library in libraries %}
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-center">
+          <a href="{% url 'library_detail' library_id=library.id %}" class="text-decoration-none">
+            <h5 class="card-title fw-bold text-dark">{{ library.name }}</h5>
+          </a>
+          <p class="card-text text-muted">📘 Книги: {{ library.books_count }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+<p></p>
+<form method="GET" class="row g-3 mb-4">
+  <div class="col-md-4">
+    <input type="text" name="title" class="form-control" placeholder="Търси по заглавие" value="{{ title_query }}">
+  </div>
+  <div class="col-md-4">
+    <input type="text" name="author" class="form-control" placeholder="Търси по автор" value="{{ author_query }}">
+  </div>
+  <div class="col-md-4">
+    <input type="text" name="genre" class="form-control" placeholder="Търси по жанр" value="{{ genre_query }}">
+  </div>
+  <div class="col-12 text-end">
+    <button type="submit" class="btn btn-primary">🔍 Филтрирай</button>
+    <a href="{% url 'user_library' %}" class="btn btn-outline-secondary">🔄 Изчисти</a>
+  </div>
+</form>
+
+
+  <!-- Books Outside Library -->
+  <h2 class="mt-5 mb-4 fw-bold text-secondary">📖 Книги извън библиотека</h2>
+  {% if user_books_without_library %}
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+    {% for book in user_books_without_library %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title fw-semibold">
+            <a href="{% url 'book_detail' source='user' book_id=book.id %}" class="text-decoration-none text-dark">
+              {{ book.title }}
+            </a>
+          </h5>
+          <p class="card-text text-muted small">{{ book.description|truncatewords:20 }}</p>
+          <div class="mt-auto">
+            <p class="mb-1"><strong>👤 Автор:</strong> {{ book.author.name }}</p>
+            <p class="mb-1"><strong>🎭 Жанр:</strong> {{ book.genre.name }}</p>
+            <p class="mb-0"><strong>⭐ Рейтинг:</strong> {{ book.rating }}</p>
+              <p class="mb-0"><strong>➕ Добавена на:</strong> {{ book.created_at|date:"d.m.Y" }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center">Всички книги са в библиотеки.</div>
+  {% endif %}
+</div>
+
+<!-- JavaScript -->
+<script>
+function openNestedModal(modalId) {
+  const modalEl = document.getElementById(modalId);
+  const modal = new bootstrap.Modal(modalEl, {
+    backdrop: 'static',
+    keyboard: false
+  });
+  modal.show();
+}
+
+function handleAjaxForm(formId, modalId, selectId, fieldName) {
+  const form = document.getElementById(formId);
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(form);
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.id && data.name) {
+        const select = document.getElementById(selectId);
+        const option = new Option(data.name, data.id, true, true);
+        select.add(option);
+        select.value = data.id;
+        bootstrap.Modal.getInstance(document.getElementById(modalId)).hide();
+        form.reset();
+        const bookModalEl = document.getElementById('createBookModal');
+        if (bookModalEl) {
+          setTimeout(() => {
+            bootstrap.Modal.getOrCreateInstance(bookModalEl)._element.focus();
+          }, 300);
+        }
+      }
+    })
+    .catch(error => {
+      console.error(`Error adding ${fieldName}:`, error);
+    });
+  });
+}
+
+handleAjaxForm('authorForm', 'addAuthorModal', 'id_author', 'author');
+handleAjaxForm('genreForm', 'addGenreModal', 'id_genre', 'genre');
+handleAjaxForm('libraryForm', 'addLibraryModal', 'id_library', 'library');
+</script>
+{% endblock %}

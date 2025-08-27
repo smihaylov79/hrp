@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load custom_filters_reading %}
+
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{% url 'reading_home' %}">📚 Четене</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'reading_home' %}">Всички книги</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'user_library' %}">Моите книги</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  {% block reading_content %}
+  <h2 class="mb-4 fw-bold text-primary">📖 Всички книги</h2>
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+    {% for book in books %}
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image }}" class="card-img-top" alt="{{ book.title }}">
+        {% else %}
+        <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+          <span class="fs-4">Без корица</span>
+        </div>
+        {% endif %}
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title fw-semibold">
+            <a href="{% url 'book_detail' source='shared' book_id=book.id %}" class="text-decoration-none text-dark">
+              {{ book.title }}
+            </a>
+          </h5>
+          <p class="card-text text-muted small">{{ book.description|truncatewords:20 }}</p>
+          <div class="mt-auto">
+            <p class="mb-1"><strong>⭐ Рейтинг:</strong> {{ book.title|calculate_rating }}</p>
+            <p class="mb-0"><strong>👤 Споделена от:</strong> {{ book.shared_from.first_name }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+      <div class="alert alert-warning text-center">Няма налични книги.</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endblock %}
+</div>
+{% endblock %}

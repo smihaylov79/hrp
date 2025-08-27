@@ -44,6 +44,7 @@ urlpatterns = [
     path('weather/', include('weather.urls')),
     path('reports/', include('reports.urls')),
     path('tasks/', include('taskmanager.urls')),
+    path('reading/', include('reading.urls')),
 
     # path('', include(wagtail_urls)),
 
