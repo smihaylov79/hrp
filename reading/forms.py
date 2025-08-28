@@ -44,3 +44,11 @@ class LibraryForm(forms.ModelForm):
     class Meta:
         model = UserLibrary
         fields = ['name', 'description']
+
+
+class UserBookOCRForm(forms.ModelForm):
+    image = forms.ImageField(required=True)
+
+    class Meta:
+        model = UserBook
+        fields = ['image']

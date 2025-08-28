@@ -30,7 +30,7 @@
     <div class="col">
       <div class="card h-100 shadow-sm">
         {% if book.cover_image %}
-        <img src="{{ book.cover_image }}" class="card-img-top" alt="{{ book.title }}">
+        <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
         {% else %}
         <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
           <span class="fs-4">Без корица</span>

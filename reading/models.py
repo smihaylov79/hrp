@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from users.models import CustomUser
 
+
 # Create your models here.
 
 
@@ -61,8 +62,7 @@ class UserBook(BaseBook):
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
-    comments = models.TextField(blank=True)
+    comments = models.TextField(blank=True, null=True)
     updated_at = models.DateTimeField(auto_now=True)
     rating = models.PositiveSmallIntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(10)], blank=True, null=True)
-
 

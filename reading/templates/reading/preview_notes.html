@@ -1,0 +1,15 @@
+{% extends 'reading/reading_home.html' %}
+
+{% block reading_content %}
+<div class="container my-4">
+  <h5 class="mb-3">🔍 Прегледай извлечения текст</h5>
+  <form method="POST" action="{% url 'save_extracted_comment' source=source book_id=book.id %}">
+    {% csrf_token %}
+    <textarea name="edited_text" class="form-control" rows="6">{{ extracted_text }}</textarea>
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-success">💾 Запази коментара</button>
+      <a href="{% url 'book_detail' source=source book_id=book.id %}" class="btn btn-outline-secondary">⛔ Отказ</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

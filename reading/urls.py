@@ -10,4 +10,7 @@ urlpatterns = [
     path('ajax/add-library/', add_library_ajax, name='add_library_ajax'),
     path('book-details/<str:source>/<int:book_id>', book_detail, name='book_detail'),
     path('library-detail/<int:library_id>', library_detail, name='library_detail'),
+    path('book/<str:source>/<int:book_id>/upload_note_image/', upload_note_image, name='upload_note_image'),
+    path('book/<str:source>/<int:book_id>/save_extracted_comment/', save_extracted_comment, name='save_extracted_comment'),
+
 ]

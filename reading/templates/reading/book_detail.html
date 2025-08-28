@@ -42,13 +42,20 @@
 
         {% if source == 'user' %}
         <div class="mt-3">
-          <label for="notes" class="form-label">Бележки</label>
-          <textarea name="notes" class="form-control" rows="3" placeholder="Вашите бележки...">{{ book.notes }}</textarea>
+          <label for="notes" class="form-label">Лични бележки (видими само от теб)</label>
+
+            <button type="button" class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadNoteModal">
+  📷 Качи изображение за бележки
+</button>
+
+
+
+          <textarea name="notes" class="form-control" rows="15" placeholder="Твоите бележки...">{{ book.notes }}</textarea>
         </div>
 
         <div class="mt-3">
-          <label for="comments" class="form-label">Мои коментари</label>
-          <textarea name="comments" class="form-control" rows="3" placeholder="Вашите коментари...">{{ book.comments }}</textarea>
+          <label for="comments" class="form-label">Мои коментари (видими от всички, ако книгата е споделена)</label>
+          <textarea name="comments" class="form-control" rows="3" placeholder="Коментари...">{{ book.comments }}</textarea>
         </div>
 
         <div class="form-check mt-3">
@@ -104,6 +111,7 @@
         </div>
       </form>
 
+
       <div class="mt-5">
         <h6 class="text-muted">💬 Коментари от други потребители</h6>
         <ul class="list-group">
@@ -140,6 +148,59 @@
     </div>
   </div>
 </div>
+
+    <!-- Modal -->
+<div class="modal fade" id="uploadNoteModal" tabindex="-1" aria-labelledby="uploadNoteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{% url 'upload_note_image' source=source book_id=book.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadNoteModalLabel">Извличане на текст от изображение</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="image" class="form-label">📷 Качи изображение</label>
+            <input type="file" name="image" accept="image/*" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="language" class="form-label">🌐 Избери език</label>
+            <select name="language" class="form-select" required>
+              <option value="bul">Български</option>
+              <option value="eng">Английски</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">🔍 Извлечи</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{##}
+{#    <!-- Modal -->#}
+{#<div class="modal fade" id="uploadNoteModal" tabindex="-1" aria-labelledby="uploadNoteModalLabel" aria-hidden="true">#}
+{#  <div class="modal-dialog">#}
+{#    <div class="modal-content">#}
+{#      <form method="POST" action="{% url 'upload_note_image' source=source book_id=book.id %}" enctype="multipart/form-data">#}
+{#        {% csrf_token %}#}
+{#        <div class="modal-header">#}
+{#          <h5 class="modal-title" id="uploadNoteModalLabel">Извличане на текст от изображение</h5>#}
+{#          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>#}
+{#        </div>#}
+{#        <div class="modal-body">#}
+{#          <input type="file" name="image" accept="image/*" class="form-control">#}
+{#        </div>#}
+{#        <div class="modal-footer">#}
+{#          <button type="submit" class="btn btn-primary">🔍 Извлечи</button>#}
+{#        </div>#}
+{#      </form>#}
+{#    </div>#}
+{#  </div>#}
+{#</div>#}
 
 <script>
   document.getElementById('libraryForm').addEventListener('submit', function (e) {

@@ -3,9 +3,14 @@ from django.db.models import Count
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+import os
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD")
+from PIL import Image
+
 
 from .models import Author, Genre, Book, UserLibrary, UserBook
-from .forms import AuthorForm, GenreForm, BookForm, UserBookForm, LibraryForm
+from .forms import AuthorForm, GenreForm, BookForm, UserBookForm, LibraryForm, UserBookOCRForm
 from users.models import CustomUser
 from .helpers import from_user_to_shared, from_shared_to_user
 
@@ -157,11 +162,11 @@ def book_detail(request, source, book_id):
     book_comments = UserBook.objects.filter(title=book.title)
     if book_comments:
         for b in book_comments:
-            comments[b.user.first_name] = b.comments
+            if b.comments:
+                comments[b.user.first_name] = b.comments
 
     user_book = UserBook.objects.filter(title=book.title, user=request.user).first()
     user_book_id = user_book.id if user_book else None
-
 
     context = {
         'book': book,
@@ -172,6 +177,43 @@ def book_detail(request, source, book_id):
         'source': source,
         'request': request,
         'comments': comments,
-        'user_book': user_book,
+        'user_book_id': user_book_id,
     }
     return render(request, 'reading/book_detail.html', context)
+
+
+def upload_note_image(request, source, book_id):
+    user = request.user
+
+    if source == 'user' and user.is_authenticated:
+        book = get_object_or_404(UserBook, pk=book_id, user=user)
+    else:
+        raise Http404("Invalid book source")
+
+    if request.method == 'POST' and request.FILES.get('image'):
+        image = Image.open(request.FILES['image'])
+        selected_lang = request.POST.get('language', 'eng')  # Default to English
+
+        extracted_text = pytesseract.image_to_string(image, lang=selected_lang)
+        book.notes = (book.notes or '') + f"\n\n[OCR-{selected_lang}]: {extracted_text.strip()}"
+        book.save()
+
+    return redirect('book_detail', source='user', book_id=book.id)
+
+
+def save_extracted_comment(request, source, book_id):
+    user = request.user
+
+    if source == 'user' and user.is_authenticated:
+        book = get_object_or_404(UserBook, pk=book_id, user=user)
+    else:
+        raise Http404("Invalid book source")
+
+    if request.method == 'POST':
+        edited_text = request.POST.get('edited_text', '').strip()
+        if edited_text:
+            book.notes = (book.notes or '') + f"\n\n[OCR]: {edited_text}"
+            book.save()
+
+    return redirect('book_detail', source='user', book_id=book.id)
+
