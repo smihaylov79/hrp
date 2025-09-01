@@ -30,7 +30,11 @@ def from_user_to_shared(request, book):
     book.shared = 'shared' in request.POST
     book.rating = request.POST.get('rating', None)
 
+    if 'cover_image' in request.FILES:
+        book.cover_image = request.FILES['cover_image']
+
     library_id = request.POST.get('library', None)
+
     if library_id:
         book.library = get_object_or_404(UserLibrary, pk=library_id)
     else:

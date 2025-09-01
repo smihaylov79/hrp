@@ -91,6 +91,7 @@ def user_library(request):
     return render(request, 'reading/user_library.html', context)
 
 
+@login_required
 def library_detail(request, library_id):
     user = request.user
     library = UserLibrary.objects.get(pk=library_id)

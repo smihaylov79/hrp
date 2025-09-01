@@ -44,7 +44,6 @@ class Book(BaseBook):
     pass
 
 
-
 class UserLibrary(models.Model):
     name = models.CharField(max_length=255)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='library_user')
