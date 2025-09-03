@@ -9,11 +9,12 @@ import os
 import requests
 from django.http import JsonResponse
 from django.utils import timezone
+import urllib.parse
 
 from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping, InstrumentTypesTrade, InstrumentTypesInvest, MarginGroups
 
 from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
-    generate_symbol_mapping, backup_chart, get_news
+    generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction
 from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
     calculate_rsi
 
@@ -342,7 +343,13 @@ def invest_details(request):
     data = DailyDataInvest.objects.filter(date=last_date).order_by('-gap_open_percentage')
     indices = DailyDataInvest.objects.filter(part_from_index__isnull=False).values_list('part_from_index', flat=True).distinct()
     markets = Market.objects.all()
+
     types = InstrumentTypesInvest.objects.all()
+    for s in data:
+        f_data = FundamentalsData.objects.filter(symbol_mapping__invest_symbol=s.symbol).first()
+        if f_data:
+            s.ev_ebitda = f_data.enterprise_to_ebitda
+
     context = {
         'data': data,
         'markets': markets,
@@ -482,3 +489,99 @@ def check_margin(request, symbol):
         }
         return render(request, 'finance/margin_form.html', context)
     return render(request, 'finance/margin_form.html', {'symbol': symbol})
+
+
+def predict_price_view(request):
+    symbol = request.GET.get("symbol", "EURUSD")
+    timeframe = request.GET.get("timeframe", "D1")
+    count = int(request.GET.get("count", 30))
+    window = int(request.GET.get("window", 5))
+
+    prediction = get_predicted_price(symbol, timeframe, count, window)
+    return JsonResponse(prediction)
+
+
+# def prediction_page(request):
+#     symbol = request.GET.get("symbol", "")
+#     timeframe = request.GET.get("timeframe", "D1")
+#     count = int(request.GET.get("count", 30))
+#     window = int(request.GET.get("window", 5))
+#
+#     prediction = None
+#     historical_data = []
+#
+#     if symbol:
+#         prediction = get_predicted_price(symbol, timeframe, count, window)
+#         # Fetch historical prices from FastAPI
+#         history_url = f"{NGROK_URL}price-history/{symbol}?timeframe={timeframe}&count={count}"
+#         try:
+#             response = requests.get(history_url)
+#             historical_data = response.json()
+#         except Exception as e:
+#             historical_data = []
+#
+#     context = {
+#         "symbol": symbol,
+#         "timeframe": timeframe,
+#         "prediction": prediction,
+#         "historical_data": historical_data,
+#     }
+#     return render(request, "finance/prediction_page.html", context)
+
+def prediction_page(request):
+    symbol = request.GET.get("symbol", "")
+    timeframe = request.GET.get("timeframe", "D1")
+    count = int(request.GET.get("count", 30))
+    window = int(request.GET.get("window", 5))
+    forecast_days = int(request.GET.get("forecast_days", 5))
+    timeframes = ["D1", "M1", "M5", "M15", "M30", "H1", "H4", "W1", "MN1"]
+    forecast_points = []
+    encoded_symbol = urllib.parse.quote(symbol)
+
+    sma_prediction = None
+    lstm_prediction = None
+    lstm_next_day = None
+
+    prediction = None
+    historical_data = []
+
+    if symbol:
+        sma_prediction = get_predicted_price(symbol, timeframe, count, window)
+        lstm_prediction = get_lstm_prediction(symbol, timeframe, count)
+        lstm_next_day = lstm_prediction['predicted_prices'][0]
+        prediction = get_predicted_price(symbol, timeframe, count, window)
+        history_url = f"{NGROK_URL}price-history/{encoded_symbol}?timeframe={timeframe}&count={count}"
+        try:
+            response = requests.get(history_url)
+            historical_data = response.json()
+            if isinstance(historical_data, str):
+                historical_data = []
+        except Exception as e:
+            historical_data = []
+
+        # Simulate multi-day forecast using SMA recursively
+        closes = [row["close"] for row in historical_data]
+
+        for i in range(forecast_days):
+            if len(closes) >= window:
+                next_price = sum(closes[-window:]) / window
+                closes.append(next_price)
+                forecast_points.append(next_price)
+
+
+
+    context = {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "count": count,
+        "window": window,
+        "forecast_days": forecast_days,
+        "prediction": prediction,
+        "forecast_points": forecast_points,
+        "historical_data": historical_data,
+        'timeframes': timeframes,
+        'sma_prediction': sma_prediction,
+        'lstm_prediction': lstm_prediction,
+        'lstm_next_day': lstm_next_day,
+    }
+    return render(request, "finance/prediction_page.html", context)

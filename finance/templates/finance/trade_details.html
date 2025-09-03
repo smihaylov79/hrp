@@ -93,15 +93,15 @@
   <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank"> {{ item.symbol }} </a>
 
 </td>
-                    <td>{{ item.company_name }}</td>
-                    <td>{{ item.open_price }}</td>
-                    <td>{{ item.previous_close_price }}</td>
-                    <td>{{ item.gap_open_price|floatformat:2 }}</td>
-                    <td>{{ item.gap_open_percentage|floatformat:2 }}</td>
-                    <td>{{ item.base_currency }}</td>
-                    <td>{{ item.margin_group|get_margin }}</td>
+                    <td class="text-nowrap">{{ item.company_name }}</td>
+                    <td class="text-nowrap">{{ item.open_price }}</td>
+                    <td class="text-nowrap">{{ item.previous_close_price }}</td>
+                    <td class="text-nowrap">{{ item.gap_open_price|floatformat:2 }}</td>
+                    <td class="text-nowrap">{{ item.gap_open_percentage|floatformat:2 }} %</td>
+                    <td class="text-nowrap">{{ item.base_currency }}</td>
+                    <td class="text-nowrap">{{ item.margin_group|get_margin }}</td>
                     {% with item.exchange|get_exchange as market %}
-  <td>
+  <td class="text-nowrap">
     {{ market.name }}
     <span style="display:inline-block; width:10px; height:10px; border-radius:50%;
                  background-color: {% if market.status == 'open' %}green{% elif market.status == 'closed' %}red{% else %}gray{% endif %};
@@ -109,7 +109,7 @@
     </span>
   </td>
 {% endwith %}
-                <td>{{ item.instrument_type }}</td>
+                <td class="text-nowrap">{{ item.instrument_type }}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -67,6 +67,12 @@
             <div class="col-md-3">
                 <input type="number" id="maxPercent" class="form-control" placeholder="Max Gap %">
             </div>
+            <div class="col-md-3">
+                <input type="number" id="minEvEBITDA" class="form-control" placeholder="Min EV/EBITDA">
+            </div>
+            <div class="col-md-3">
+                <input type="number" id="maxEvEBITDA" class="form-control" placeholder="Max EV/EBITDA">
+            </div>
         </div>
         <button id="resetFilters" class="btn btn-secondary mt-2">Reset Filters</button>
 
@@ -81,6 +87,7 @@
                 <th>Previous Close</th>
                 <th>Gap $</th>
                 <th>Gap %</th>
+                <th>EV/EBITDA</th>
                 <th>Currency</th>
                 <th>Index</th>
                 <th>Market</th>
@@ -94,16 +101,17 @@
   <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank"> {{ item.symbol }} </a>
 
 </td>
-                    <td>{{ item.company_name }}</td>
-                    <td>{{ item.open_price }}</td>
-                    <td>{{ item.previous_close_price }}</td>
-                    <td>{{ item.gap_open_price|floatformat:2 }}</td>
-                    <td>{{ item.gap_open_percentage|floatformat:2 }}</td>
-                    <td>{{ item.base_currency }}</td>
-                    <td>{% if item.part_from_index %}
+                    <td class="text-nowrap">{{ item.company_name }}</td>
+                    <td class="text-nowrap">{{ item.open_price }}</td>
+                    <td class="text-nowrap">{{ item.previous_close_price }}</td>
+                    <td class="text-nowrap">{{ item.gap_open_price|floatformat:2 }}</td>
+                    <td class="text-nowrap">{{ item.gap_open_percentage|floatformat:2 }} %</td>
+                <td class="text-nowrap">{{ item.ev_ebitda|floatformat:2 }}</td>
+                    <td class="text-nowrap">{{ item.base_currency }}</td>
+                    <td class="text-nowrap">{% if item.part_from_index %}
                         {{ item.part_from_index }}{% else %}-{% endif %}</td>
                     {% with item.exchange|get_exchange as market %}
-  <td>
+  <td class="text-nowrap">
     {{ market.name }}
     <span style="display:inline-block; width:10px; height:10px; border-radius:50%;
                  background-color: {% if market.status == 'open' %}green{% elif market.status == 'closed' %}red{% else %}gray{% endif %};
@@ -111,7 +119,7 @@
     </span>
   </td>
 {% endwith %}
-                <td>{{ item.instrument_type }}</td>
+                <td class="text-nowrap">{{ item.instrument_type }}</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -129,6 +137,8 @@
             const maxOpen = parseFloat(document.getElementById('maxOpen').value) || Infinity;
             const minPercent = parseFloat(document.getElementById('minPercent').value) || -Infinity;
             const maxPercent = parseFloat(document.getElementById('maxPercent').value) || Infinity;
+            const minEvEBITDA = parseFloat(document.getElementById('minEvEBITDA').value) || -Infinity;
+            const maxEvEBITDA = parseFloat(document.getElementById('maxEvEBITDA').value) || Infinity;
             const rows = document.querySelectorAll('#tradeTable tbody tr');
 
             let visibleCount = 0;
@@ -136,12 +146,13 @@
             rows.forEach(row => {
                 const symbol = row.cells[0].textContent.toLowerCase();
                 const company = row.cells[1].textContent.toLowerCase();
-                const instrtype = row.cells[9].textContent.toLowerCase();
-                const index = row.cells[7].textContent.toLowerCase();
+                const instrtype = row.cells[10].textContent.toLowerCase();
+                const index = row.cells[8].textContent.toLowerCase();
 
-                const market = row.cells[8].textContent.toLowerCase();
+                const market = row.cells[9].textContent.toLowerCase();
                 const openPrice = parseFloat(row.cells[2].textContent) || 0;
                 const gapPercent = parseFloat(row.cells[5].textContent) || 0;
+                const evEbida = parseFloat(row.cells[6].textContent) || 0;
 
                 const match = symbol.includes(symbolInput) &&
                     company.includes(companyInput) &&
@@ -152,7 +163,9 @@
                     openPrice >= minOpen &&
                     openPrice <= maxOpen &&
                     gapPercent >= minPercent &&
-                    gapPercent <= maxPercent;
+                    gapPercent <= maxPercent &&
+                    evEbida >= minEvEBITDA &&
+                    evEbida <= maxEvEBITDA;
 
                 row.style.display = match ? '' : 'none';
                 if (match) visibleCount++;
@@ -169,6 +182,8 @@
         document.getElementById('maxOpen').addEventListener('input', filterTable);
         document.getElementById('minPercent').addEventListener('input', filterTable);
         document.getElementById('maxPercent').addEventListener('input', filterTable);
+        document.getElementById('minEvEBITDA').addEventListener('input', filterTable);
+        document.getElementById('maxEvEBITDA').addEventListener('input', filterTable);
 
         document.getElementById('resetFilters').addEventListener('click', () => {
             document.getElementById('filterSymbol').value = '';
@@ -180,6 +195,8 @@
             document.getElementById('maxOpen').value = '';
             document.getElementById('minPercent').value = '';
             document.getElementById('maxPercent').value = '';
+            document.getElementById('minEvEBITDA').value = '';
+            document.getElementById('maxEvEBITDA').value = '';
             filterTable();
         });
 

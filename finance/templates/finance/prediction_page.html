@@ -1,0 +1,133 @@
+{% extends "finance/navigation.html" %}
+{% block finance_navigation %}
+
+<div class="container mt-5">
+  <div class="card shadow-sm p-4">
+    <h3>🔮 Price Prediction for {{ symbol }}</h3>
+
+  <form method="GET" class="mb-4">
+  <input type="hidden" name="symbol" value="{{ symbol }}">
+
+  <label>Timeframe:</label>
+  <select name="timeframe" class="form-select mb-2" style="max-width: 200px;">
+  {% for tf in timeframes %}
+    <option value="{{ tf }}" {% if timeframe == tf %}selected{% endif %}>{{ tf }}</option>
+  {% endfor %}
+</select>
+
+  <label>Bars to use:</label>
+  <input type="number" name="count" value="{{ count }}" class="form-control mb-2" style="max-width: 200px;" min="10" max="500">
+
+  <label>Window size:</label>
+  <input type="number" name="window" value="{{ window }}" class="form-control mb-2" style="max-width: 200px;" min="2" max="100">
+
+  <label>Forecast days:</label>
+  <input type="number" name="forecast_days" value="{{ forecast_days|default:5 }}" class="form-control mb-2" style="max-width: 200px;" min="1" max="30">
+
+  <button type="submit" class="btn btn-primary">🔮 Update Prediction</button>
+</form>
+
+    <p>Timeframe: <strong>{{ timeframe }}</strong></p>
+
+    {% if prediction %}
+      {% if prediction.predicted_price %}
+        <div class="alert alert-success">
+          📈 Predicted Price: <strong>{{ prediction.predicted_price }}</strong>
+
+        <div id="predictionChart" style="height: 500px; min-width: 600px;"></div>
+
+        </div>
+      {% else %}
+        <div class="alert alert-danger">
+          ⚠️ Prediction failed: {{ prediction.error }}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="alert alert-info">No prediction data yet.</div>
+    {% endif %}
+
+
+
+  <div class="row">
+  <div class="col-md-6">
+    <h5>📊 Simple Moving Average (SMA)</h5>
+    {% if sma_prediction.predicted_price %}
+      <div class="alert alert-info">Predicted Price: {{ sma_prediction.predicted_price }}</div>
+    {% else %}
+      <div class="alert alert-warning">SMA prediction not available.</div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6">
+    <h5>🧠 LSTM Neural Network</h5>
+    {% if lstm_prediction.predicted_prices %}
+      <div class="alert alert-success">Predicted Price: {{ lstm_next_day }}</div>
+    {% else %}
+      <div class="alert alert-warning">LSTM prediction not available.</div>
+    {% endif %}
+  </div>
+</div>
+
+
+
+    <a href="{% url 'symbol_details' %}?symbol={{ symbol|urlencode }}" class="btn btn-outline-primary">🔙 Back to Symbol</a>
+  </div>
+</div>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+
+    <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const historicalData = {{ historical_data|safe }};
+    const forecastPointsSMA = {{ forecast_points|safe }};
+    const lstmPrices = {{ lstm_prediction.predicted_prices|default:"[]" }};
+
+    const chartData = historicalData.map(item => [
+      item.time * 1000,
+      item.close
+    ]);
+
+    const forecastStartTime = chartData.length > 0
+      ? chartData[chartData.length - 1][0]
+      : Date.now();
+
+    const forecastDataSMA = forecastPointsSMA.map((price, i) => [
+      forecastStartTime + (i + 1) * 24 * 3600 * 1000,
+      price
+    ]);
+
+    const forecastDataLSTM = lstmPrices.map((price, i) => [
+      forecastStartTime + (i + 1) * 24 * 3600 * 1000,
+      price
+    ]);
+
+    Highcharts.chart("predictionChart", {
+      chart: { type: "line", zoomType: "x" },
+      title: { text: "📈 Price Forecast for {{ symbol }}" },
+      xAxis: { type: "datetime" },
+      yAxis: { title: { text: "Price" } },
+      tooltip: { shared: true, valueDecimals: 5 },
+      series: [
+        {
+          name: "Historical Price",
+          data: chartData,
+          color: "#007bff"
+        },
+        {
+          name: "SMA Forecast",
+          data: forecastDataSMA,
+          color: "#ffc107",
+          dashStyle: "ShortDash"
+        },
+        {
+          name: "LSTM Forecast",
+          data: forecastDataLSTM,
+          color: "#28a745",
+          dashStyle: "Dot"
+        }
+      ]
+    });
+  });
+</script>
+
+{% endblock %}

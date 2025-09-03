@@ -12,6 +12,8 @@ from finance.models import DailyDataInvest, DailyData, SymbolsMapping, Fundament
 from .data_from_correction import mapping_ids
 
 
+NGROK_URL = os.environ.get("NGROK_URL")
+
 def deep_clean(obj):
     if isinstance(obj, dict):
         return {unquote(k): deep_clean(v) for k, v in obj.items()}
@@ -337,3 +339,36 @@ def fetch_fundamentals_data():
         except Exception as e:
             errors.append(f'{symbol}: {e}')
     return errors
+
+
+def get_predicted_price(symbol, timeframe="D1", count=30, window=5):
+    url = f"{NGROK_URL}predict-sma"
+    payload = {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "count": count,
+        "window": window
+    }
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
+
+def get_lstm_prediction(symbol, timeframe="D1", count=60, forecast_days=5):
+    url = f"{NGROK_URL}predict-lstm"
+    payload = {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "count": count,
+        "forecast_days": forecast_days
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}

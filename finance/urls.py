@@ -17,4 +17,6 @@ urlpatterns = [
     path('invest-details/', invest_details, name='invest_details'),
     path('screener-settings/', screener_settings, name='screener_settings'),
     path('check-margin/<str:symbol>', check_margin, name='check_margin'),
+    path("predict-price/", predict_price_view, name="predict_price"),
+    path("predict/", prediction_page, name="prediction_page"),
 ]
