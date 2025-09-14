@@ -1,0 +1,310 @@
+{% extends "finance/navigation.html" %}
+{% load custom_filters_finance %}
+
+{% block finance_navigation %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>{{ portfolio.name }}</h2>
+  <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#editPortfolioModal">⚙️ Edit Portfolio</button>
+</div>
+
+    <!-- Edit Portfolio Modal -->
+<div class="modal fade" id="editPortfolioModal" tabindex="-1" aria-labelledby="editPortfolioLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="editPortfolioForm" method="post">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editPortfolioLabel">Edit Portfolio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="portfolio_id" value="{{ portfolio.id }}">
+          <div class="mb-3">
+            <label for="portfolioNameEdit" class="form-label">Portfolio Name</label>
+            <input type="text" class="form-control" id="portfolioNameEdit" name="name" value="{{ portfolio.name }}" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card mb-4 shadow-sm border-0">
+  <div class="card-body">
+    <h5 class="card-title mb-4">📊 Portfolio Summary</h5>
+    <div class="row text-center g-3">
+      <div class="col-6 col-md-3">
+        <div class="text-muted">Initial Value</div>
+        <div class="fs-5 fw-semibold text-primary">💰 {{ value_initial }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted">Current Value</div>
+        <div class="fs-5 fw-semibold text-success">📈 {{ value_current }}</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted">Profit / Loss</div>
+        <div class="fs-5 fw-semibold {% if profit_absolute >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {% if profit_absolute >= 0 %}🟢{% else %}🔴{% endif %} {{ profit_absolute }}
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="text-muted">Change (%)</div>
+        <div class="fs-5 fw-semibold {% if profit_percent >= 0 %}text-success{% else %}text-danger{% endif %}">
+          {% if profit_percent >= 0 %}🟢{% else %}🔴{% endif %} {{ profit_percent }}%
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div id="sectorPieChart" class="my-5"></div>
+
+
+
+  <h4 class="mt-4 mb-3">📈 Symbols in Portfolio</h4>
+<div class="table-responsive">
+  <table class="table table-bordered align-middle" id="symbolTable">
+    <thead class="table-light">
+      <tr>
+        <th>Symbol</th>
+          <th>Name</th>
+          <th>Sector</th>
+        <th>Shares</th>
+        <th>Price Bought</th>
+        <th>Initial Value</th>
+          <th>Current Price</th>
+          <th>Current Value</th>
+          <th>Date Added</th>
+          <th>Target at date added</th>
+          <th>Fair at date added</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in symbols %}
+          <tr data-symbol-id="{{ s.id }}">
+              <td>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#transactions-{{ s.id }}">
+        ➕
+      </button>
+  <a href="{% url 'symbol_details' %}?symbol={{ s.symbol.official_symbol|urlencode }}" target="_blank"> {{ s.symbol.official_symbol }} </a>
+
+</td>
+              <td>{{ s.symbol.official_name }}</td>
+              <td>{{ s.symbol.sector }}</td>
+
+  <td><input type="number" class="form-control form-control-sm" value="{{ s.shares }}" onchange="markEdited(this)"></td>
+  <td><input type="number" class="form-control form-control-sm" value="{{ s.price_bought }}" onchange="markEdited(this)"></td>
+  <td>{{ s.total_value }}</td>
+              <td>{{ s.current_price }}</td>
+              <td>{{ s.current_value }}</td>
+              <td>{{ s.date_added }}</td>
+              <td>{{ s.target_price_date_added|floatformat:2 }} ({{ s.from_target }})</td>
+              <td>{{ s.fair_price_date_added|floatformat:2 }} ({{ s.from_fair }})</td>
+
+  <td>
+    <button class="btn btn-sm btn-primary" onclick="submitEdit(this)">💾 Save</button>
+    <a href="{% url 'symbol_remove' s.id %}" class="btn btn-sm btn-danger">✖</a>
+  </td>
+</tr>
+          <!-- Hidden transaction details -->
+  <tr class="collapse" id="transactions-{{ s.id }}">
+    <td colspan="7">
+      <div class="card card-body bg-light">
+        <h6 class="mb-3">📜 Transactions for {{ s.symbol.official_name }} ({{ s.symbol.invest_symbol }})</h6>
+        {% if s.transactions %}
+        <table class="table table-sm table-bordered mb-0">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Shares</th>
+              <th>Price</th>
+                <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in s.transactions %}
+            <tr>
+              <td>{{ t.date|date:"Y-m-d H:i" }}</td>
+              <td>{{ t.transaction_type }}</td>
+              <td>{{ t.shares }}</td>
+              <td>{{ t.price }}</td>
+            <td>{{ t.profit }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No transactions recorded.</p>
+        {% endif %}
+      </div>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+  </table>
+</div>
+
+<div class="d-flex gap-2 mt-3">
+  <button type="button" id="addSymbolRow" class="btn btn-outline-primary">➕ Add Symbol/Transaction</button>
+</div>
+
+
+
+
+
+    <script>
+document.getElementById('editPortfolioForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+
+  fetch("{% url 'portfolio_edit_ajax' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      document.querySelector('h2').textContent = data.name;
+      bootstrap.Modal.getInstance(document.getElementById('editPortfolioModal')).hide();
+    } else {
+      alert("Error updating portfolio.");
+    }
+  });
+});
+</script>
+
+    <script>
+const symbolOptions = `
+  <option value="" disabled selected>Select symbol</option>
+  {% for symbol in all_symbols %}
+    <option value="{{ symbol.id }}">{{ symbol.invest_symbol }}</option>
+  {% endfor %}
+`;
+
+document.getElementById('addSymbolRow').addEventListener('click', () => {
+  const table = document.getElementById('symbolTable').querySelector('tbody');
+  const newRow = document.createElement('tr');
+
+  newRow.innerHTML = `
+    <td>
+      <select name="symbol_id" class="form-select form-select-sm">
+        ${symbolOptions}
+      </select>
+    </td>
+    <td><input type="number" name="shares" class="form-control form-control-sm" step="any" required></td>
+    <td><input type="number" name="price_bought" class="form-control form-control-sm" step="any" required></td>
+    <td><button type="button" class="btn btn-sm btn-success" onclick="submitSymbol(this)">💾 Save</button></td>
+  `;
+
+  table.appendChild(newRow);
+});
+
+function submitSymbol(button) {
+  const row = button.closest('tr');
+  const symbol = row.querySelector('[name="symbol_id"]').value;
+  const shares = row.querySelector('[name="shares"]').value;
+  const price = row.querySelector('[name="price_bought"]').value;
+
+  fetch("{% url 'symbol_add_ajax' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      symbol: symbol,
+      shares: shares,
+      price_bought: price,
+      portfolio_id: {{ portfolio.id }}
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert("Error adding symbol.");
+    }
+  });
+}
+</script>
+
+    <script>
+function markEdited(input) {
+  input.classList.add('edited');
+}
+
+function submitEdit(button) {
+  const row = button.closest('tr');
+  const symbolId = row.dataset.symbolId;
+  const shares = row.querySelectorAll('input')[0].value;
+  const price = row.querySelectorAll('input')[1].value;
+
+  fetch("{% url 'symbol_edit_ajax' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      symbol_id: symbolId,
+      shares: shares,
+      price_bought: price
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();
+    } else {
+      alert("Error updating symbol.");
+    }
+  });
+}
+</script>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script>
+  Highcharts.chart('sectorPieChart', {
+    chart: {
+      type: 'pie'
+    },
+    title: {
+      text: 'Portfolio Allocation by Sector'
+    },
+    tooltip: {
+      pointFormat: '<b>{point.percentage:.1f}%</b> of total value'
+    },
+    accessibility: {
+      point: {
+        valueSuffix: '%'
+      }
+    },
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: {
+          enabled: true,
+          format: '{point.name}: {point.y:.2f}'
+        }
+      }
+    },
+    series: [{
+      name: 'Sector',
+      colorByPoint: true,
+      data: {{ sector_chart_data|safe }}
+    }]
+  });
+</script>
+{% endblock %}

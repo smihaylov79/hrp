@@ -1,20 +1,27 @@
+from collections import defaultdict
 from datetime import datetime, date
 import pytz
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from django.shortcuts import render, redirect
+from django.db.models import Q, Sum, F
+from django.shortcuts import render, redirect, get_object_or_404
 
 import os
 import requests
 from django.http import JsonResponse
 from django.utils import timezone
 import urllib.parse
+import json
 
-from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping, InstrumentTypesTrade, InstrumentTypesInvest, MarginGroups
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+
+from .forms import PortfolioForm, SymbolAddForm
+from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping, InstrumentTypesTrade, \
+    InstrumentTypesInvest, MarginGroups, UserPortfolio, UserPortfolioData, PortfolioTransaction
 
 from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
-    generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction
+    generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction, current_price_yf
 from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
     calculate_rsi
 
@@ -261,8 +268,160 @@ def finance_news(request):
 
 
 @login_required
-def portfolio(request):
-    return render(request, 'finance/portfolio.html')
+def portfolio_home(request):
+    portfolios = UserPortfolio.objects.filter(user=request.user).prefetch_related('portfolio')
+
+    portfolio_data = []
+    for p in portfolios:
+        total_value = p.portfolio.aggregate(
+            total=Sum(F('shares') * F('price_bought'))
+        )['total'] or 0
+
+        portfolio_data.append({
+            'id': p.id,
+            'name': p.name,
+            'symbol_count': p.portfolio.count(),
+            'total_value': round(total_value, 2),
+        })
+
+    return render(request, 'finance/portfolio.html', {'portfolios': portfolio_data})
+
+
+def portfolio_create_ajax(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        if name:
+            UserPortfolio.objects.create(name=name, user=request.user)
+            return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+
+def portfolio_edit_ajax(request):
+    if request.method == 'POST':
+        portfolio_id = request.POST.get('portfolio_id')
+        name = request.POST.get('name')
+        portfolio = get_object_or_404(UserPortfolio, id=portfolio_id, user=request.user)
+        if name:
+            portfolio.name = name
+            portfolio.save()
+            return JsonResponse({'success': True, 'name': name})
+    return JsonResponse({'success': False})
+
+
+@csrf_exempt
+def symbol_add_ajax(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        symbol_id = data.get('symbol')
+        shares = float(data.get('shares'))
+        price_bought = float(data.get('price_bought'))
+        portfolio_id = data.get('portfolio_id')
+
+        portfolio = get_object_or_404(UserPortfolio, id=portfolio_id, user=request.user)
+        symbol = get_object_or_404(SymbolsMapping, id=symbol_id)
+
+        fundamentals = FundamentalsData.objects.filter(symbol_mapping=symbol).order_by('-extracted_date').first()
+        target_price = fundamentals.target_median_price if fundamentals else None
+        fair_price = calculate_fair_price_fast(fundamentals) if fundamentals else None
+
+        existing = UserPortfolioData.objects.filter(portfolio=portfolio, symbol=symbol).first()
+
+        if existing:
+
+            total_shares = existing.shares + shares
+            if shares > 0:
+                avg_price = ((existing.shares * existing.price_bought) + (shares * price_bought)) / total_shares
+                existing.price_bought = round(avg_price, 4)
+            existing.shares = total_shares
+            existing.target_price_date_added = target_price
+            existing.fair_price_date_added = fair_price
+            existing.save()
+        else:
+            UserPortfolioData.objects.create(
+                symbol=symbol,
+                portfolio=portfolio,
+                shares=shares,
+                price_bought=price_bought,
+                target_price_date_added=target_price,
+                fair_price_date_added=fair_price,
+            )
+        transaction_type = 'SELL' if shares < 0 else 'BUY'
+        profit = 0.0
+        if shares < 0 and existing:
+            profit = round((price_bought - existing.price_bought) * abs(shares), 2)
+        PortfolioTransaction.objects.create(
+            portfolio=portfolio,
+            symbol=symbol,
+            transaction_type=transaction_type,
+            shares=abs(shares),
+            price=price_bought,
+            profit=profit,
+        )
+
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+
+@csrf_exempt
+def symbol_edit_ajax(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            symbol_id = data.get('symbol_id')
+            shares = float(data.get('shares'))
+            price_bought = float(data.get('price_bought'))
+
+            symbol_entry = UserPortfolioData.objects.get(id=symbol_id, portfolio__user=request.user)
+            symbol_entry.shares = shares
+            symbol_entry.price_bought = price_bought
+            symbol_entry.save()
+
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+def symbol_remove(request, symbol_id):
+    symbol_data = get_object_or_404(UserPortfolioData, id=symbol_id, portfolio__user=request.user)
+    portfolio_id = symbol_data.portfolio.id
+    symbol_data.delete()
+    return redirect('portfolio_details', portfolio_id=portfolio_id)
+
+
+def portfolio_details(request, portfolio_id):
+    portfolio = get_object_or_404(UserPortfolio, id=portfolio_id, user=request.user)
+    symbols = UserPortfolioData.objects.filter(portfolio=portfolio).select_related('symbol').order_by('-shares')
+    all_symbols = SymbolsMapping.objects.all().values('id', 'invest_symbol')
+    sector_values = defaultdict(float)
+    for s in symbols:
+        s.total_value = round(s.shares * s.price_bought, 2)
+        s.current_price = current_price_yf(s.symbol.official_symbol)
+        s.current_value = round(s.shares * s.current_price, 2)
+        s.from_target = round(s.current_price - s.target_price_date_added, 2) if s.target_price_date_added else '-'
+        s.from_fair = round(s.current_price - s.fair_price_date_added, 2) if s.fair_price_date_added else '-'
+        s.transactions = PortfolioTransaction.objects.filter(portfolio=portfolio, symbol=s.symbol).order_by('-date')
+        sector = s.symbol.sector
+        sector_values[sector] += s.current_value
+    value_initial = sum(s.total_value for s in symbols)
+    value_current = sum(s.current_value for s in symbols)
+    profit_absolute = value_current - value_initial
+    profit_percent = (profit_absolute / value_initial) * 100 if value_initial else 0
+    transactions = PortfolioTransaction.objects.filter(portfolio=portfolio).order_by('-date')
+
+    sector_chart_data = [{'name': k, 'y': round(v, 2)} for k, v in sector_values.items()]
+
+    return render(request, 'finance/portfolio_details.html', {
+        'portfolio': portfolio,
+        'symbols': symbols,
+        'all_symbols': list(all_symbols),
+        'value_initial': round(value_initial, 2),
+        'value_current': round(value_current, 2),
+        'profit_absolute': round(profit_absolute, 2),
+        'profit_percent': round(profit_percent, 2),
+        'transactions': transactions,
+        'sector_chart_data': sector_chart_data,
+    })
 
 
 def markets(request):
@@ -450,6 +609,11 @@ def symbol_details(request):
         gm_value = calculate_cogs(fundamentals_data)[1] if fundamentals_data else None
         rsi = calculate_rsi(ohlc_data)
 
+    portfolios_with_symbol = UserPortfolioData.objects.filter(
+        symbol=official_symbol,
+        portfolio__user=request.user
+    ).select_related('portfolio')
+
     context = {
         'data': data,
         'symbol': symbol,
@@ -465,6 +629,8 @@ def symbol_details(request):
         'cogs': cogs,
         'gm_value': gm_value,
         'rsi': rsi,
+        'portfolios_with_symbol': portfolios_with_symbol,
+        'all_portfolios': UserPortfolio.objects.filter(user=request.user),
     }
     return render(request, 'finance/symbol_details.html', context)
 
@@ -500,33 +666,6 @@ def predict_price_view(request):
     prediction = get_predicted_price(symbol, timeframe, count, window)
     return JsonResponse(prediction)
 
-
-# def prediction_page(request):
-#     symbol = request.GET.get("symbol", "")
-#     timeframe = request.GET.get("timeframe", "D1")
-#     count = int(request.GET.get("count", 30))
-#     window = int(request.GET.get("window", 5))
-#
-#     prediction = None
-#     historical_data = []
-#
-#     if symbol:
-#         prediction = get_predicted_price(symbol, timeframe, count, window)
-#         # Fetch historical prices from FastAPI
-#         history_url = f"{NGROK_URL}price-history/{symbol}?timeframe={timeframe}&count={count}"
-#         try:
-#             response = requests.get(history_url)
-#             historical_data = response.json()
-#         except Exception as e:
-#             historical_data = []
-#
-#     context = {
-#         "symbol": symbol,
-#         "timeframe": timeframe,
-#         "prediction": prediction,
-#         "historical_data": historical_data,
-#     }
-#     return render(request, "finance/prediction_page.html", context)
 
 def prediction_page(request):
     symbol = request.GET.get("symbol", "")
@@ -585,3 +724,43 @@ def prediction_page(request):
         'lstm_next_day': lstm_next_day,
     }
     return render(request, "finance/prediction_page.html", context)
+
+
+@require_POST
+def add_symbol_to_portfolio(request):
+    symbol_id = request.POST.get('symbol_id')
+    portfolio_id = request.POST.get('portfolio_id')
+    shares = float(request.POST.get('shares'))
+    price_bought = float(request.POST.get('price_bought'))
+
+    symbol = get_object_or_404(SymbolsMapping, id=symbol_id)
+    portfolio = get_object_or_404(UserPortfolio, id=portfolio_id, user=request.user)
+
+    # Optional: check if already exists and merge
+    existing = UserPortfolioData.objects.filter(portfolio=portfolio, symbol=symbol).first()
+
+    fundamentals = FundamentalsData.objects.filter(symbol_mapping=symbol).order_by('-extracted_date').first()
+    target_price = fundamentals.target_median_price if fundamentals else None
+    fair_price = calculate_fair_price_fast(fundamentals) if fundamentals else None
+
+    if existing:
+
+        total_shares = existing.shares + shares
+        if shares > 0:
+            avg_price = ((existing.shares * existing.price_bought) + (shares * price_bought)) / total_shares
+            existing.price_bought = round(avg_price, 4)
+        existing.shares = total_shares
+        existing.target_price_date_added = target_price
+        existing.fair_price_date_added = fair_price
+        existing.save()
+    else:
+        UserPortfolioData.objects.create(
+            symbol=symbol,
+            portfolio=portfolio,
+            shares=shares,
+            price_bought=price_bought,
+            target_price_date_added=target_price,
+            fair_price_date_added=fair_price,
+        )
+
+    return redirect('portfolio_details', portfolio_id)  # Or redirect back with symbol query param

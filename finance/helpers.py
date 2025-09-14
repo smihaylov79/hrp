@@ -372,3 +372,15 @@ def get_lstm_prediction(symbol, timeframe="D1", count=60, forecast_days=5):
         return response.json()
     except requests.exceptions.RequestException as e:
         return {"error": str(e)}
+
+
+def current_price_yf(symbol):
+    try:
+        ticker = yf.Ticker(symbol)
+        price = ticker.fast_info.get("last_price")  # Fast and lightweight
+        if price is None:
+            price = ticker.info.get("currentPrice")  # Fallback
+        return round(price, 2) if price else 0.0
+    except Exception as e:
+        print(f"Error fetching price for {symbol}: {e}")
+        return 0.0

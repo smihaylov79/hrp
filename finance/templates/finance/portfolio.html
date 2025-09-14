@@ -2,11 +2,77 @@
 
 {% block finance_navigation %}
 
-<div class="container text-center mt-5">
-    <div class="card shadow-sm p-4">
-        <h2 class="mb-3">🚧 Страницата е в процес на разработка</h2>
-        <p class="lead mb-4">Работим усилено, за да я направим достъпна скоро. Благодарим ти за търпението!</p>
-        <a href="{% url 'finance_home' %}" class="btn btn-primary">⬅️ Върни се към началната страница</a>
+<div class="container my-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Your Portfolios</h2>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPortfolioModal">➕ New Portfolio</button>
+
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for p in portfolios %}
+    <div class="col">
+      <a href="{% url 'portfolio_details' portfolio_id=p.id %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ p.name }}</h5>
+            <p class="card-text">📈 {{ p.symbol_count }} symbols</p>
+            <p class="card-text">💰 Total Value: {{ p.total_value }}</p>
+          </div>
+        </div>
+      </a>
     </div>
+    {% endfor %}
+  </div>
 </div>
+
+    <!-- Create Portfolio Modal -->
+<div class="modal fade" id="createPortfolioModal" tabindex="-1" aria-labelledby="createPortfolioLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="createPortfolioForm" method="post">
+      {% csrf_token %}
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createPortfolioLabel">Create New Portfolio</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="portfolioName" class="form-label">Portfolio Name</label>
+            <input type="text" class="form-control" id="portfolioName" name="name" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+    <script>
+document.getElementById('createPortfolioForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const formData = new FormData(form);
+
+  fetch("{% url 'portfolio_create_ajax' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      location.reload();  // Refresh to show new portfolio
+    } else {
+      alert("Error creating portfolio.");
+    }
+  });
+});
+</script>
+
+
 {% endblock %}

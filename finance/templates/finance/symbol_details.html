@@ -26,6 +26,39 @@
     <p class="mb-4 small">{{ fundamentals.symbol_mapping.sector }} / {{ fundamentals.symbol_mapping.industry }}</p>
   </div>
 
+
+<div class="mb-4">
+  {% if portfolios_with_symbol %}
+    <div class="alert alert-info">
+      ✅ This symbol is already included in:
+      <ul class="mb-0">
+        {% for entry in portfolios_with_symbol %}
+          <li><strong>{{ entry.portfolio.name }}</strong> ({{ entry.shares }} shares @ {{ entry.price_bought }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% else %}
+    <form method="POST" action="{% url 'add_symbol_to_portfolio' %}">
+      {% csrf_token %}
+      <input type="hidden" name="symbol_id" value="{{ fundamentals.symbol_mapping.id }}">
+      <div class="d-flex gap-2 align-items-center">
+        <select name="portfolio_id" class="form-select w-auto" required>
+          <option value="" disabled selected>Select portfolio</option>
+          {% for p in all_portfolios %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" name="shares" class="form-control w-auto" placeholder="Shares" step="any" required>
+        <input type="number" name="price_bought" class="form-control w-auto" placeholder="Price" step="any" required>
+        <button type="submit" class="btn btn-success">➕ Add to Portfolio</button>
+      </div>
+    </form>
+  {% endif %}
+</div>
+
+
+
+
   {% if data and not data.error %}
     <div class="flex-grow-0" style="width: 20%;">
       <div class="alert alert-info p-2 small">

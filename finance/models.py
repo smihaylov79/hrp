@@ -5,6 +5,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from multiselectfield import MultiSelectField
 
+from users.models import CustomUser
 
 # Create your models here.
 DAYS_OF_WEEK = [
@@ -225,3 +226,30 @@ class FundamentalsData(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+
+class UserPortfolio(models.Model):
+    name = models.CharField(max_length=100)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='portfolios')
+
+
+class UserPortfolioData(models.Model):
+    symbol = models.ForeignKey(SymbolsMapping, on_delete=models.SET_NULL, null=True, blank=True, related_name='portfolio_symbol')
+    portfolio = models.ForeignKey(UserPortfolio, on_delete=models.CASCADE, related_name='portfolio')
+    shares = models.FloatField(null=True, blank=True)
+    price_bought = models.FloatField(null=True, blank=True)
+    date_added = models.DateField(auto_now_add=True)
+    target_price_date_added = models.FloatField(null=True, blank=True)
+    fair_price_date_added = models.FloatField(null=True, blank=True)
+
+
+class PortfolioTransaction(models.Model):
+    portfolio = models.ForeignKey(UserPortfolio, on_delete=models.CASCADE, related_name='transactions')
+    symbol = models.ForeignKey(SymbolsMapping, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=4, choices=[('BUY', 'Buy'), ('SELL', 'Sell')])
+    shares = models.FloatField()
+    price = models.FloatField()
+    date = models.DateTimeField(auto_now_add=True)
+    profit = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.transaction_type} {self.shares} of {self.symbol.invest_symbol} @ {self.price}"

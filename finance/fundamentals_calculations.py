@@ -31,8 +31,11 @@ def calculate_fair_price_fast(fundamentals):
 def calculate_ebit(fundamentals):
     if fundamentals is None:
         return None
-    ebit = fundamentals.total_revenue * fundamentals.operating_margins
-    amortization = fundamentals.ebitda - ebit
+    ebit = 0
+    amortization = 0
+    if fundamentals.total_revenue and fundamentals.operating_margins and fundamentals.ebitda:
+        ebit = fundamentals.total_revenue * fundamentals.operating_margins
+        amortization = fundamentals.ebitda - ebit
     return ebit, amortization
 
 
