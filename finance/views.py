@@ -392,7 +392,7 @@ def symbol_remove(request, symbol_id):
 def portfolio_details(request, portfolio_id):
     portfolio = get_object_or_404(UserPortfolio, id=portfolio_id, user=request.user)
     symbols = UserPortfolioData.objects.filter(portfolio=portfolio).select_related('symbol').order_by('-shares')
-    all_symbols = SymbolsMapping.objects.all().values('id', 'invest_symbol')
+    all_symbols = SymbolsMapping.objects.all().values('id', 'invest_symbol').order_by('official_symbol')
     sector_values = defaultdict(float)
     for s in symbols:
         s.total_value = round(s.shares * s.price_bought, 2)
@@ -448,8 +448,9 @@ def screener_settings(request):
 
 def screener_view(request):
     is_superuser = request.user.is_authenticated and request.user.is_superuser
+    date_to_show = FundamentalsData.objects.all().order_by('-extracted_date').first().extracted_date
 
-    data = FundamentalsData.objects.filter(symbol_yahoo__isnull=False)
+    data = FundamentalsData.objects.filter(symbol_yahoo__isnull=False, extracted_date=date_to_show).order_by('-extracted_date')
     sectors = SymbolsMapping.objects.values_list('sector', flat=True).distinct()
     industries = SymbolsMapping.objects.values_list('industry', flat=True).distinct()
     countries = SymbolsMapping.objects.values_list('country', flat=True).distinct()
@@ -588,6 +589,7 @@ def symbol_details(request):
                     data = {"error": f"Данните не са налични! Опитай отново като добавиш или премахнеш '#' пред символа. Възможно е сървърът да е в режим invest"}
 
     fundamentals_data = None
+    fundamentals_previous = None
     news_data = None
     fair_price = None
     debt_equity = None
@@ -596,17 +598,25 @@ def symbol_details(request):
     cogs = None
     gm_value = None
     rsi = None
+    fair_price_prev = None
 
     if official_symbol:
         symbol_from_official = official_symbol.official_symbol
-        fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=symbol_from_official).first()
+        full_data = FundamentalsData.objects.filter(symbol_yahoo=symbol_from_official).order_by('-extracted_date')[:2]
+        fundamentals_data = full_data[0] if len(full_data) > 0 else None
+        # fundamentals_data = FundamentalsData.objects.filter(symbol_yahoo=symbol_from_official).order_by('-extracted_date').first()
+        fundamentals_previous = full_data[1] if len(full_data) > 1 else None
         news_data = get_news(symbol_from_official)
         fair_price = calculate_fair_price_fast(fundamentals_data) if fundamentals_data else None
+        fair_price_prev = calculate_fair_price_fast(fundamentals_previous) if fundamentals_previous else None
+
         ebit = calculate_ebit(fundamentals_data)[0] if fundamentals_data else None
         amortization = calculate_ebit(fundamentals_data)[1] if fundamentals_data else None
         debt_equity = debt_to_equity(fundamentals_data) if fundamentals_data else None
-        cogs = calculate_cogs(fundamentals_data)[0] if fundamentals_data else None
-        gm_value = calculate_cogs(fundamentals_data)[1] if fundamentals_data else None
+        cogs_data = calculate_cogs(fundamentals_data) if fundamentals_data else None
+        if cogs_data:
+            cogs = cogs_data[0]
+            gm_value = cogs_data[1]
         rsi = calculate_rsi(ohlc_data)
 
     portfolios_with_symbol = UserPortfolioData.objects.filter(
@@ -621,8 +631,10 @@ def symbol_details(request):
         'ohlc_data': ohlc_data,
         'selected_timeframe': timeframe,
         'fundamentals': fundamentals_data,
+        'fundamentals_previous': fundamentals_previous,
         'news': news_data,
         'fair_price': fair_price,
+        'fair_price_prev': fair_price_prev,
         'ebit': ebit,
         'debt_equity': debt_equity,
         'amortization': amortization,

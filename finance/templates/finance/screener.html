@@ -95,6 +95,7 @@
                 <th>Target Price</th>
                 <th>Recommendation</th>
                 <th>Rating</th>
+                <th>Extraction date</th>
             </tr>
             </thead>
             <tbody>
@@ -114,6 +115,7 @@
                     <td>{{ item.target_median_price|floatformat:2 }}</td>
                     <td>{{ item.recommendation_key }}</td>
                 <td>{{ item.average_analyst_rating }}</td>
+                <td>{{ item.extracted_date }}</td>
                 </tr>
             {% endfor %}
             </tbody>

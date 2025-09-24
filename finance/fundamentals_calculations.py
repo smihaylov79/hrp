@@ -47,10 +47,13 @@ def debt_to_equity(fundamentals):
 def calculate_cogs(fundamentals):
     if fundamentals is None:
         return None
-    gm_percent = fundamentals.gross_margins
-    revenue = fundamentals.total_revenue
-    gm_value = revenue * gm_percent
-    cogs = revenue - gm_value
+    if fundamentals.gross_margins and fundamentals.total_revenue:
+        gm_percent = fundamentals.gross_margins
+        revenue = fundamentals.total_revenue
+        gm_value = revenue * gm_percent
 
-    return cogs, gm_value
+        cogs = revenue - gm_value
+
+        return cogs, gm_value
+    return None
 

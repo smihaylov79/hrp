@@ -113,8 +113,8 @@
   <div class="flex-grow-0" style="width: 32%;">
     <div class="alert alert-secondary p-3">
       <!-- Add more metrics or visualizations here -->
-        <div class="d-flex justify-content-between"><span>Price Target:</span><b>{{ fundamentals.target_median_price|floatformat:2 }}</b></div>
-      <div class="d-flex justify-content-between"><span>Fair Price:</span><b>{{ fair_price|floatformat:2 }}</b></div>
+        <div class="d-flex justify-content-between"><span>Price Target:</span><b>{{ fundamentals.target_median_price|floatformat:2 }} ({{ fundamentals_previous.target_median_price|floatformat:2 }})</b></div>
+      <div class="d-flex justify-content-between"><span>Fair Price:</span><b>{{ fair_price|floatformat:2 }} ({{ fair_price_prev|floatformat:2 }})</b></div>
         <div class="d-flex justify-content-between"><span>Rating:</span><b>{{ fundamentals.average_analyst_rating }}</b></div>
       <div class="d-flex justify-content-between"><span>52 week range:</span><b>{{ fundamentals.fifty_two_week_low }} - {{ fundamentals.fifty_two_week_high }}</b></div>
         <div class="d-flex justify-content-between"><span>52 week change:</span><b>{{ fundamentals.fifty_two_week_change|convert_percentage }} %</b></div>
