@@ -202,5 +202,18 @@ document.querySelectorAll(".removeRow").forEach(button => {
   }
 </script>
 
+    <script src="https://cdn.tiny.cloud/1/s00wte1d6jbk5uuz52v5jhecxudzh21farxe0hvjr10n1kas/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+  tinymce.init({
+    selector: 'textarea[name="instructions"]',
+    menubar: false,
+    plugins: 'lists link code textcolor',
+    toolbar: 'bold italic underline | forecolor backcolor | bullist numlist | undo redo',
+    branding: false,
+    height: 300
+  });
+</script>
+
+
 
 {% endblock %}

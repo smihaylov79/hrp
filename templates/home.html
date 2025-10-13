@@ -122,7 +122,11 @@
                 </a>
             </div>
             <div class="col">
+                {% if user.is_authenticated %}
+                <a href="{% url 'cooking_home' %}" class="text-decoration-none">
+                    {% else %}
                 <a href="{% url 'recipe_list' %}" class="text-decoration-none">
+                    {% endif %}
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
                             <h5 class="card-title">🥣 Сготви</h5>

@@ -36,7 +36,7 @@
 
     <h4 class="mt-4">📜 Инструкции:</h4>
     <div class="border rounded p-3 bg-light mb-4">
-        {{ recipe.instructions }}
+        {{ recipe.instructions|safe }}
     </div>
 
     {% if recipe.url_link %}

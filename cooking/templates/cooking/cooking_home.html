@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center mb-4">👨‍🍳 Добре дошъл в Кулинарния Център</h2>
+
+  <div class="text-center mb-4">
+    <p class="lead">Открий рецепти, които можеш да приготвиш с наличните си продукти.</p>
+    <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-lg">📖 Разгледай всички рецепти</a>
+  </div>
+
+  {% if ready_by_category %}
+    <h4 class="text-center mb-4">🍽️ Готови за приготвяне</h4>
+    {% for category, recipes in ready_by_category.items %}
+      <h5 class="text-muted mt-4">{{ category }}</h5>
+      {% for recipe in recipes %}
+        <div class="card h-100 border-success shadow-sm recipe-card mb-3"
+             data-category="{{ recipe.category.name|lower }}"
+             data-name="{{ recipe.name|lower }}">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-4 d-flex align-items-center" style="height: 180px;">
+              {% if recipe.image %}
+                <img src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
+              {% else %}
+                <img src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+              {% endif %}
+            </div>
+            <div class="col-md-5">
+              <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
+                <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
+                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} лв.</p>
+                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.calculate_calories }} kcal</p>
+                <p class="text-success small">✅ Всички продукти налични</p>
+              </div>
+            </div>
+            <div class="col-md-3 text-center px-3">
+              <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm w-100">🍳 Приготви</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+
+  {% if almost_ready %}
+    <h4 class="text-center mt-5 mb-4">🛒 Почти готови (липсват ≤ 3 продукта)</h4>
+    <div class="row">
+      {% for recipe, missing_count in almost_ready %}
+        <div class="col-md-6 mb-3">
+          <div class="card border-warning shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
+              <p class="card-text"><strong>📂:</strong> {{ recipe.category.name }}</p>
+              <p class="card-text text-danger">❌ Липсват {{ missing_count }} продукта</p>
+              <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning btn-sm">🛒 Списък</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+
+{#{% extends "base.html" %}#}
+{##}
+{#{% block content %}#}
+{#<div class="container mt-5">#}
+{#  <h2 class="text-center mb-4">👨‍🍳 Добре дошъл в Кулинарния Център</h2>#}
+{##}
+{#  <div class="text-center mb-4">#}
+{#    <p class="lead">Открий рецепти, които можеш да приготвиш с наличните си продукти.</p>#}
+{#    <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-lg">📖 Разгледай всички рецепти</a>#}
+{#  </div>#}
+{##}
+{#  {% if suggested_by_category %}#}
+{#    <h4 class="text-center mb-3">🍽️ Предложени рецепти</h4>#}
+{#    {% for category, suggested_recipes in suggested_by_category.items %}#}
+{#      <h5 class="text-muted mt-4">{{ category }}</h5>#}
+{#      <div class="row">#}
+{#        {% for recipe in suggested_recipes %}#}
+{#          <div class="col-md-6 mb-3">#}
+{#            <div class="card border-success shadow-sm h-100">#}
+{#              <div class="row g-0 align-items-center">#}
+{#                <div class="col-md-4">#}
+{#                  {% if recipe.image %}#}
+{#                    <img src="{{ recipe.image.url }}" class="img-fluid rounded-start" alt="{{ recipe.name }}">#}
+{#                  {% else %}#}
+{#                    <img src="/media/recipe_images/no_image.png" class="img-fluid rounded-start" alt="Default Image">#}
+{#                  {% endif %}#}
+{#                </div>#}
+{#                <div class="col-md-8">#}
+{#                  <div class="card-body">#}
+{#                    <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>#}
+{#                    <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>#}
+{#                    <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} лв.</p>#}
+{#                    <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.calculate_calories }} kcal</p>#}
+{#                    <p class="text-success small">✅ Всички продукти налични</p>#}
+{#                    <form action="{% url 'cook_recipe' recipe.id %}" method="POST" class="mt-2">#}
+{#                      {% csrf_token %}#}
+{#                      <button type="submit" class="btn btn-success btn-sm">🍳 Приготви</button>#}
+{#                    </form>#}
+{#                  </div>#}
+{#                </div>#}
+{#              </div>#}
+{#            </div>#}
+{#          </div>#}
+{#        {% endfor %}#}
+{#      </div>#}
+{#    {% endfor %}#}
+{#  {% else %}#}
+{#    <div class="alert alert-info text-center mt-5">#}
+{#      Няма предложени рецепти в момента. Опитай да добавиш продукти или разгледай всички рецепти.#}
+{#    </div>#}
+{#  {% endif %}#}
+{#</div>#}
+{#{% endblock %}#}

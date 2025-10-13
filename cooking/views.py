@@ -1,9 +1,13 @@
+from collections import defaultdict
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+
 from cooking.models import Recipe, RecipeCategory, RecipeIngredient, HouseholdRecipeTimesCooked, RecipeTimesCooked
 from inventory.models import InventoryProduct, HouseholdInventoryProduct
 from shopping.forms import CreateProductForm
@@ -244,3 +248,43 @@ def recipe_view(request, recipe_id):
     return render(request, "cooking/recipe_view.html", context)
 
 
+@login_required
+def cooking_home(request):
+    user = request.user
+    household = getattr(user, 'household', None)
+    recent_threshold = timezone.now() - timedelta(days=14)
+
+    # Get recent recipe IDs
+    if household:
+        recent_cooked_ids = HouseholdRecipeTimesCooked.objects.filter(
+            household=household, date__gte=recent_threshold
+        ).values_list('recipe_id', flat=True)
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+    else:
+        recent_cooked_ids = RecipeTimesCooked.objects.filter(
+            user=user, date__gte=recent_threshold
+        ).values_list('recipe_id', flat=True)
+        user_inventory = InventoryProduct.objects.filter(user=user)
+
+    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+
+    ready_by_category = defaultdict(list)
+    almost_ready = []
+
+    for recipe in Recipe.objects.exclude(id__in=recent_cooked_ids).prefetch_related('recipe_ingredients__product'):
+        missing_count = 0
+        for ri in recipe.recipe_ingredients.all():
+            if product_quantity_map.get(ri.product.id, 0) < ri.quantity:
+                missing_count += 1
+
+        if missing_count == 0:
+            if len(ready_by_category[recipe.category.name]) < 4:
+                ready_by_category[recipe.category.name].append(recipe)
+        elif 1 <= missing_count <= 3:
+            if len(almost_ready) < 3:
+                almost_ready.append((recipe, missing_count))
+
+    return render(request, "cooking/cooking_home.html", {
+        "ready_by_category": dict(ready_by_category),
+        "almost_ready": almost_ready
+    })
