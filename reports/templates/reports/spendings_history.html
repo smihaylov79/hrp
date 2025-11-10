@@ -80,6 +80,11 @@
     </div>
 </div>
 
+
+   <div id="main-category-over-time" style="width:100%; height: 400px;"></div>
+
+
+
     <div id="yearly-spending-chart"></div>
 
     <div id="monthly_spent" style="width:100%; height: 400px;"></div>
@@ -93,6 +98,49 @@
         <div id="subcategory-chart"></div>
 
     {% endif %}
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rawData = {{ main_category_monthly_data|safe }};
+
+    const months = [...new Set(rawData.map(item => item.month))].sort();
+    const categories = [...new Set(rawData.map(item => item["product__category__main_category__name"]))];
+
+    const series = categories.map(cat => {
+        const data = months.map(month => {
+            const match = rawData.find(item =>
+                item.month === month &&
+                item["product__category__main_category__name"] === cat
+            );
+            return match ? parseFloat(match.total) : 0;
+        });
+        return { name: cat, data: data };
+    });
+
+    Highcharts.chart('main-category-over-time', {
+        chart: { type: 'line' },
+        title: { text: 'Разходи по основни категории във времето' },
+        xAxis: {
+            categories: months,
+            title: { text: 'Месец' }
+        },
+
+        yAxis: {
+    type: 'logarithmic',
+    title: { text: '{{ request.GET.currency }}' }
+},
+
+        tooltip: {
+            shared: true,
+            valueSuffix: ' {{ request.GET.currency }}'
+        },
+        series: series
+    });
+});
+</script>
+
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {

@@ -1,0 +1,22 @@
+{% extends "finance/navigation.html" %}
+{% block finance_navigation %}
+
+<h2>📈 Predict Top Gainer & Loser</h2>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Predict</button>
+</form>
+
+{% if prediction_result %}
+  <hr>
+  <h4>🔮 Prediction Result:</h4>
+  {% if prediction_result == "No historical data available." or prediction_result == "No data for selected date." %}
+    <p>{{ prediction_result }}</p>
+  {% else %}
+    <p><strong>Top Gainer:</strong> {{ prediction_result.gainer }} ({{ prediction_result.gainer_gap|floatformat:2 }}%)</p>
+    <p><strong>Top Loser:</strong> {{ prediction_result.loser }} ({{ prediction_result.loser_gap|floatformat:2 }}%)</p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

@@ -16,7 +16,7 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .forms import PortfolioForm, SymbolAddForm
+from .forms import PortfolioForm, SymbolAddForm, PredictionForm
 from .models import DailyData, Market, DailyDataInvest, FundamentalsData, SymbolsMapping, InstrumentTypesTrade, \
     InstrumentTypesInvest, MarginGroups, UserPortfolio, UserPortfolioData, PortfolioTransaction
 
@@ -24,6 +24,7 @@ from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetc
     generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction, current_price_yf
 from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
     calculate_rsi
+from .predictor import run_prediction_model
 
 # Create your views here.
 
@@ -776,3 +777,20 @@ def add_symbol_to_portfolio(request):
         )
 
     return redirect('portfolio_details', portfolio_id)  # Or redirect back with symbol query param
+
+
+def gainers_loosers_prediction_view(request):
+    prediction_result = None
+
+    if request.method == 'POST':
+        form = PredictionForm(request.POST)
+        if form.is_valid():
+            date = form.cleaned_data['date']
+            prediction_result = run_prediction_model(date)
+    else:
+        form = PredictionForm()
+
+    return render(request, 'finance/predict_gainers_loosers.html', {
+        'form': form,
+        'prediction_result': prediction_result
+    })

@@ -11,3 +11,7 @@ class SymbolAddForm(forms.ModelForm):
     class Meta:
         model = UserPortfolioData
         fields = ['symbol', 'shares', 'price_bought', 'target_price_date_added', 'fair_price_date_added']
+
+
+class PredictionForm(forms.Form):
+    date = forms.DateField(widget=forms.SelectDateWidget)

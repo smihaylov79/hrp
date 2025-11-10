@@ -83,9 +83,47 @@ class SpendingsView(LoginRequiredMixin, FormView):
             else:
                 df_monthly_comparison = df
 
+# Newly added 10.11
+            # Rename for clarity (optional but helpful)
+            # df.rename(columns={'product__category__main_category__name': 'main_category'}, inplace=True)
+
+            # Group by month and main category
+            main_category_monthly = (
+                df.groupby(['month', 'product__category__main_category__name'])['total']
+                .sum()
+                .reset_index()
+            )
+
+            # Prepare Highcharts series
+            month_labels = sorted(main_category_monthly['month'].unique())
+            main_categories = main_category_monthly['product__category__main_category__name'].unique()
+
+            main_category_series = []
+            for category in main_categories:
+                data = []
+                for month in month_labels:
+                    value = main_category_monthly[
+                        (main_category_monthly['month'] == month) &
+                        (main_category_monthly['product__category__main_category__name'] == category)
+                        ]['total']
+                    data.append(round(value.values[0], 2) if not value.empty else 0)
+                main_category_series.append({'name': category, 'data': data})
+
+            # print(main_category_monthly)
+            #
+            # context.update({
+            #     'main_category_series': json.dumps(main_category_series),
+            #     'main_category_month_labels': json.dumps(month_labels),
+            # })
+            # context.update({
+            #     'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
+            # })
+            # end of added 10.11
+
             context = self.get_context_data(form=form, )
             if df is not None and not df.empty:
-                context.update({'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
+                context.update({'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
+                                'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
                                 'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
                                 'total_spent': round(df['total'].sum(), 2),
                                 'main_category_name': main_category.name if main_category else '',

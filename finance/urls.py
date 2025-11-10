@@ -29,6 +29,7 @@ urlpatterns = [
     path('symbol/add/ajax/', symbol_add_ajax, name='symbol_add_ajax'),
     path('symbol/edit/ajax/', symbol_edit_ajax, name='symbol_edit_ajax'),
     path('symbol/add-to-portfolio/', add_symbol_to_portfolio, name='add_symbol_to_portfolio'),
+    path('predict-gainers-loosers/', gainers_loosers_prediction_view, name='gainers_loosers_prediction_view'),
 
 
 
