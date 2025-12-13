@@ -9,6 +9,7 @@
 
     {% if user.is_authenticated %}
 <a href="{% url 'create_recipe' %}" class="btn btn-success mb-3">Добави рецепта</a>
+        <a href="{% url 'favourite_recipes' %}" class="btn btn-primary mb-3">📖 Запазени менюта</a>
 {% else %}
 <a href="{% url 'login' %}" class="btn btn-primary mb-3">Влез в профила си за повече възможности</a>
 {% endif %}
@@ -79,6 +80,17 @@
     </div>
 
     <div class="col-md-3 text-center px-3">
+
+    {% if user.is_authenticated %}
+  <button type="button" class="btn btn-info btn-sm w-100 mt-2"
+          data-bs-toggle="modal"
+          data-bs-target="#addToGroupModal"
+          data-recipe-id="{{ recipe.id }}"
+          data-recipe-name="{{ recipe.name }}">
+    ⭐ Добави в група
+  </button>
+{% endif %}
+
       {% if not recipe.user_availability %}
         <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST" class="mb-2">
           {% csrf_token %}
@@ -126,6 +138,41 @@
 
 
 </div>
+
+    <!-- Modal -->
+<div class="modal fade" id="addToGroupModal" tabindex="-1" aria-labelledby="addToGroupModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="addToGroupForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="addToGroupModalLabel">Добави рецепта в любима група</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="recipeIdInput" name="recipe_id">
+          <p id="recipeNameDisplay"></p>
+          <div class="mb-3">
+            <label for="groupSelect" class="form-label">Избери група</label>
+            <select id="groupSelect" name="group_id" class="form-select" required>
+              {% for group in user.favourite_groups.all %}
+                <option value="{{ group.id }}">{{ group.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="addGroupError" class="text-danger small"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+          <button type="submit" class="btn btn-success">Добави</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
     <script>
   let selectedCategory = "all";
 
@@ -161,6 +208,49 @@
     filterRecipes();
   });
 </script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const addToGroupModal = document.getElementById("addToGroupModal");
+  addToGroupModal.addEventListener("show.bs.modal", function (event) {
+    const button = event.relatedTarget;
+    const recipeId = button.getAttribute("data-recipe-id");
+    const recipeName = button.getAttribute("data-recipe-name");
+
+    document.getElementById("recipeIdInput").value = recipeId;
+    document.getElementById("recipeNameDisplay").textContent = "Рецепта: " + recipeName;
+  });
+
+  document.getElementById("addToGroupForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const recipeId = document.getElementById("recipeIdInput").value;
+    const groupId = document.getElementById("groupSelect").value;
+
+    fetch("{% url 'add_recipe_to_group_ajax' %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrftoken,
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "recipe_id=" + recipeId + "&group_id=" + groupId
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const modal = bootstrap.Modal.getInstance(addToGroupModal);
+        modal.hide();
+        alert("✅ " + data.recipe_name + " е добавена в група '" + data.group_name + "'");
+      } else {
+        document.getElementById("addGroupError").textContent = data.error;
+      }
+    });
+  });
+});
+</script>
+
 
 
 {% endblock %}

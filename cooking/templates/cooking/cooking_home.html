@@ -7,7 +7,9 @@
   <div class="text-center mb-4">
     <p class="lead">Открий рецепти, които можеш да приготвиш с наличните си продукти.</p>
     <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-lg">📖 Разгледай всички рецепти</a>
+      <a href="{% url 'favourite_recipes' %}" class="btn btn-primary btn-lg">📖 Менюта</a>
   </div>
+
 
   {% if ready_by_category %}
     <h4 class="text-center mb-4">🍽️ Готови за приготвяне</h4>

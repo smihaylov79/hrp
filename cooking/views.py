@@ -4,14 +4,18 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.db.models import Count
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 
-from cooking.models import Recipe, RecipeCategory, RecipeIngredient, HouseholdRecipeTimesCooked, RecipeTimesCooked
+from cooking.models import Recipe, RecipeCategory, RecipeIngredient, HouseholdRecipeTimesCooked, RecipeTimesCooked, \
+    UserFavouriteRecipe, UserFavoriteRecipeData
 from inventory.models import InventoryProduct, HouseholdInventoryProduct
 from shopping.forms import CreateProductForm
 from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingList, RecipeShoppingList
+
+from django.views.decorators.csrf import csrf_exempt
 
 
 # Create your views here.
@@ -173,6 +177,10 @@ def cook_recipe(request, recipe_id):
     else:
         RecipeTimesCooked.objects.create(user=request.user, recipe=recipe)
 
+    next_url = request.POST.get("next")
+    if next_url:
+        return redirect(next_url)
+
     return redirect("recipe_list")
 
 
@@ -288,3 +296,198 @@ def cooking_home(request):
         "ready_by_category": dict(ready_by_category),
         "almost_ready": almost_ready
     })
+
+
+@login_required
+def create_favourite_group(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        group = UserFavouriteRecipe.objects.create(user=request.user, name=name)
+        return redirect("favourite_group_detail", group_id=group.id)
+    return render(request, "cooking/create_favourite_group.html")
+
+
+@login_required
+def add_recipe_to_group(request, group_id, recipe_id):
+    group = get_object_or_404(UserFavouriteRecipe, id=group_id, user=request.user)
+    recipe = get_object_or_404(Recipe, id=recipe_id)
+    UserFavoriteRecipeData.objects.get_or_create(favourite_group=group, recipe=recipe)
+    return redirect("favourite_group_detail", group_id=group.id)
+
+
+@login_required
+def favourite_group_detail(request, group_id):
+    group = get_object_or_404(UserFavouriteRecipe, id=group_id, user=request.user)
+    recipes = group.recipes.all()
+
+    # добавяме динамични полета за cost
+    for r in recipes:
+        r.user_cost = r.calculate_cost(request.user)
+
+    categories = (
+        recipes.values('category__name')
+        .annotate(recipe_count=Count('id'))
+        .order_by('category__name')
+    )
+
+    context = {
+        "group": group,
+        "recipes": recipes,
+        "categories": categories,
+        "total_recipes": recipes.count(),
+    }
+    return render(request, "cooking/favourite_group_detail.html", context)
+
+
+
+
+@login_required
+def favourite_groups_list(request):
+    groups = UserFavouriteRecipe.objects.filter(user=request.user).prefetch_related(
+        'recipes',  # actual Recipe objects via through
+    )
+
+    favourite_groups = []
+    for g in groups:
+        recipes = g.recipes.all()
+        total_time = sum(r.time_to_prepare or 0 for r in recipes)
+        total_cost = sum(r.calculate_cost(request.user) for r in recipes)
+        total_calories = sum(r.calculate_calories() for r in recipes)
+
+        favourite_groups.append({
+            "id": g.id,
+            "name": g.name,
+            "recipes_count": recipes.count(),
+            "total_time": total_time,
+            "total_cost": total_cost,
+            "total_calories": total_calories,
+        })
+
+    return render(request, "cooking/favourites.html", {"favourite_groups": favourite_groups})
+
+
+@login_required
+@csrf_exempt
+def create_favourite_group_ajax(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        if not name:
+            return JsonResponse({"success": False, "error": "Името е задължително."})
+        group = UserFavouriteRecipe.objects.create(user=request.user, name=name)
+        return JsonResponse({
+            "success": True,
+            "id": group.id,
+            "name": group.name,
+            "recipes_count": group.recipes.count(),
+        })
+    return JsonResponse({"success": False, "error": "Невалиден метод."})
+
+
+@login_required
+@csrf_exempt
+def add_recipe_to_group_ajax(request):
+    if request.method == "POST":
+        recipe_id = request.POST.get("recipe_id")
+        group_id = request.POST.get("group_id")
+
+        try:
+            recipe = Recipe.objects.get(id=recipe_id)
+            group = UserFavouriteRecipe.objects.get(id=group_id, user=request.user)
+            UserFavoriteRecipeData.objects.get_or_create(favourite_group=group, recipe=recipe)
+            return JsonResponse({"success": True, "group_name": group.name, "recipe_name": recipe.name})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+@csrf_exempt
+def update_group_name_ajax(request, group_id):
+    if request.method == "POST":
+        new_name = request.POST.get("name")
+        try:
+            group = UserFavouriteRecipe.objects.get(id=group_id, user=request.user)
+            group.name = new_name
+            group.save()
+            return JsonResponse({"success": True, "new_name": group.name})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+@csrf_exempt
+def remove_recipe_from_group_ajax(request, group_id, recipe_id):
+    if request.method == "POST":
+        try:
+            group = UserFavouriteRecipe.objects.get(id=group_id, user=request.user)
+            UserFavoriteRecipeData.objects.filter(
+                favourite_group=group, recipe_id=recipe_id
+            ).delete()
+            return JsonResponse({"success": True, "recipe_id": recipe_id})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+@csrf_exempt
+def delete_group_ajax(request, group_id):
+    if request.method == "POST":
+        try:
+            group = UserFavouriteRecipe.objects.get(id=group_id, user=request.user)
+            group.delete()
+            return JsonResponse({"success": True})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid request"})
+
+
+@login_required
+def generate_group_shopping_list(request, group_id):
+    user = request.user
+    household = user.household
+    group = get_object_or_404(UserFavouriteRecipe, id=group_id, user=user)
+
+    # Взимаме всички рецепти в групата
+    recipes = group.recipes.all()
+
+    # Взимаме инвентара на потребителя/домакинството
+    if household:
+        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
+    else:
+        user_inventory = InventoryProduct.objects.filter(user=user)
+
+    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+
+    # Събираме липсващите продукти от всички рецепти
+    missing_products = {}
+    for recipe in recipes:
+        for ingredient in recipe.recipe_ingredients.all():
+            required_qty = ingredient.quantity
+            available_qty = product_quantity_map.get(ingredient.product.id, 0)
+            if available_qty < required_qty:
+                # добавяме към общия списък
+                if ingredient.product.name not in missing_products:
+                    missing_products[ingredient.product.name] = 0
+                missing_products[ingredient.product.name] += float(required_qty - available_qty)
+
+    if missing_products:
+        items_list = [f"{name} ({qty})" for name, qty in missing_products.items()]
+        if household:
+            HouseholdRecipeShoppingList.objects.create(
+                household=household,
+                recipe_name=f"Група: {group.name}",
+                items=items_list
+            )
+        else:
+            RecipeShoppingList.objects.create(
+                user=user,
+                recipe_name=f"Група: {group.name}",
+                items=items_list
+            )
+        messages.success(request, f"Списъкът с липсващи продукти за групата '{group.name}' е успешно генериран!")
+    else:
+        messages.info(request, f"Всички продукти за групата '{group.name}' са налични, няма нужда от пазаруване.")
+
+    return redirect("favourite_group_detail", group_id=group.id)

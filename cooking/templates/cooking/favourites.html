@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center mb-4">⭐ Моите менюта</h2>
+
+    </div>
+      <div class="text-center mb-3">
+  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+    ➕ Създай ново меню
+  </button>
+</div>
+
+  {% if favourite_groups %}
+    <div class="row">
+      {% for group in favourite_groups %}
+        <div class="col-md-6 mb-3">
+          <div class="card shadow-sm h-100 border-info">
+            <div class="card-body">
+              <h5 class="card-title">
+                <a href="{% url 'favourite_group_detail' group.id %}">{{ group.name }}</a>
+              </h5>
+              <p class="card-text">
+                📖 Рецепти: {{ group.recipes_count }}<br>
+                ⏱️ Общо време: {{ group.total_time }} мин<br>
+                💰 Обща цена: {{ group.total_cost }} лв.<br>
+                🔥 Калории: {{ group.total_calories }} kcal
+              </p>
+              <a href="{% url 'favourite_group_detail' group.id %}" class="btn btn-info btn-sm">➡️ Виж рецепти в менюто</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-info text-center">
+      Нямаш създадени менюта. <br>
+      <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-sm mt-2">📖 Разгледай рецепти</a>
+
+
+  {% endif %}
+</div>
+
+    <!-- Modal -->
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-labelledby="createGroupModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="createGroupForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="createGroupModalLabel">Ново меню</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="groupName" class="form-label">Име на менюто</label>
+            <input type="text" class="form-control" id="groupName" name="name" required>
+          </div>
+          <div id="createGroupError" class="text-danger small"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+          <button type="submit" class="btn btn-success">Създай</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+    <script>
+document.getElementById("createGroupForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const name = document.getElementById("groupName").value;
+
+    fetch("{% url 'create_favourite_group_ajax' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "name=" + encodeURIComponent(name)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // затваряме модала
+            const modal = bootstrap.Modal.getInstance(document.getElementById("createGroupModal"));
+            modal.hide();
+
+            // добавяме новата група в списъка
+            const container = document.querySelector(".row");
+            const newCard = document.createElement("div");
+            newCard.className = "col-md-6 mb-3";
+            newCard.innerHTML = `
+              <div class="card shadow-sm h-100 border-info">
+                <div class="card-body">
+                  <h5 class="card-title">
+                    <a href="/cooking/favourites/${data.id}/">${data.name}</a>
+                  </h5>
+                  <p class="card-text">📖 Рецепти: ${data.recipes_count}</p>
+                  <a href="/cooking/favourites/${data.id}/" class="btn btn-info btn-sm">➡️ Виж детайли</a>
+                </div>
+              </div>`;
+            container.appendChild(newCard);
+
+            document.getElementById("groupName").value = "";
+        } else {
+            document.getElementById("createGroupError").textContent = data.error;
+        }
+    });
+});
+</script>
+
+
+{% endblock %}
+
+
+

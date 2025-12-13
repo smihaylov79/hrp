@@ -6,9 +6,9 @@
     <h2 class="mb-4">{{ recipe.name }}</h2>
 
     {% if recipe.image %}
-    <div class="mb-3">
-        <img src="{{ recipe.image.url }}" class="img-fluid rounded" alt="{{ recipe.name }}">
-    </div>
+    <div class="mb-3 text-center" style="max-width: 400px; margin: auto;">
+    <img src="{{ recipe.image.url }}" class="img-fluid rounded" alt="{{ recipe.name }}">
+</div>
     {% endif %}
 
     <div class="mb-3">

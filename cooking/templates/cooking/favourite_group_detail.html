@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load custom_filters_cooking %}
+
+{% block content %}
+<div class="container mt-4">
+ <h2 class="text-center mb-4">
+  ⭐ Група: <span id="groupNameDisplay">{{ group.name }}</span>
+  <button type="button" class="btn btn-sm btn-outline-primary ms-2"
+          data-bs-toggle="modal" data-bs-target="#editGroupNameModal">✏️ Промени име</button>
+  <form id="deleteGroupForm" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-outline-danger ms-2">🗑️ Изтрий меню</button>
+  </form>
+     <a href="{% url 'recipe_list' %}" class="btn btn-primary mb-3">📖 Разгледай всички рецепти</a>
+</h2>
+
+<div class="text-center mb-3">
+  <form action="{% url 'generate_group_shopping_list' group.id %}" method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-warning">🛒 Генерирай списък за цялото меню</button>
+  </form>
+</div>
+
+
+  <div class="btn-group mb-4" role="group" aria-label="Категории">
+    <button type="button" class="btn btn-outline-secondary category-btn" data-category="all">
+      Всички ({{ total_recipes }})
+    </button>
+    {% for category in categories %}
+      <button type="button" class="btn btn-outline-secondary category-btn" data-category="{{ category.category__name }}">
+        {{ category.category__name }} ({{ category.recipe_count }})
+      </button>
+    {% endfor %}
+  </div>
+
+  <div class="flex-grow-1 mb-3">
+    <label for="recipe-search" class="form-label">🔍 Търси рецепта:</label>
+    <input type="text" id="recipe-search" class="form-control" placeholder="Име..." onkeyup="filterRecipeByName()">
+  </div>
+
+  <div class="products-scroll-wrapper" style="max-height: 70vh; overflow-y: auto;">
+    {% if recipes %}
+      {% for recipe in recipes %}
+        <div class="card h-100 border-light shadow-sm recipe-card"
+             data-category="{{ recipe.category.name|lower }}"
+             data-name="{{ recipe.name|lower }}">
+          <div class="row g-0 align-items-center">
+            <div class="col-md-4 d-flex align-items-center" style="height: 180px;">
+              {% if recipe.image %}
+                <img src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
+              {% else %}
+                <img src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+              {% endif %}
+            </div>
+            <div class="col-md-5">
+              <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
+                <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
+                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} лв.</p>
+                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.calculate_calories }} kcal</p>
+                <p class="card-text mb-1"><strong>📂:</strong> {{ recipe.category.name }}</p>
+              </div>
+            </div>
+            <div class="col-md-3 text-center px-3">
+              <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
+                {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'favourite_group_detail' group.id %}">
+                <button type="submit" class="btn btn-success btn-sm w-100">🍳 Приготви</button>
+              </form>
+
+                <div class="card-footer text-end">
+  <form class="removeRecipeForm d-inline" data-recipe-id="{{ recipe.id }}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Премахни</button>
+  </form>
+</div>
+
+
+
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-info text-center">Няма рецепти в това меню.</div>
+    {% endif %}
+  </div>
+</div>
+
+    <div class="modal fade" id="editGroupNameModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editGroupNameForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Промяна на име на менюто</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" class="form-control" id="newGroupName" value="{{ group.name }}" required>
+          <div id="editGroupError" class="text-danger small mt-2"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Запази</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script>
+let selectedCategory = "all";
+
+function filterRecipes() {
+  const searchInput = document.getElementById("recipe-search").value.toLowerCase();
+  const cards = document.querySelectorAll(".recipe-card");
+
+  cards.forEach(card => {
+    const cardCategory = card.dataset.category || "";
+    const cardName = card.dataset.name || "";
+
+    const categoryMatch = selectedCategory === "all" || cardCategory === selectedCategory;
+    const nameMatch = cardName.includes(searchInput);
+
+    const showCard = searchInput ? nameMatch : categoryMatch;
+    card.style.display = showCard ? "block" : "none";
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("recipe-search").addEventListener("input", filterRecipes);
+
+  document.querySelectorAll(".category-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll(".category-btn").forEach(btn => btn.classList.remove("active"));
+      button.classList.add("active");
+      selectedCategory = button.dataset.category.toLowerCase();
+      filterRecipes();
+    });
+  });
+
+  filterRecipes();
+});
+</script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  // Update group name
+  document.getElementById("editGroupNameForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const newName = document.getElementById("newGroupName").value;
+
+    fetch("{% url 'update_group_name_ajax' group.id %}", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrftoken,
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "name=" + encodeURIComponent(newName)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById("groupNameDisplay").textContent = data.new_name;
+        bootstrap.Modal.getInstance(document.getElementById("editGroupNameModal")).hide();
+      } else {
+        document.getElementById("editGroupError").textContent = data.error;
+      }
+    });
+  });
+
+  // Remove recipe from group
+  document.querySelectorAll(".removeRecipeForm").forEach(form => {
+    form.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const recipeId = form.dataset.recipeId;
+
+      fetch(`/cooking/favourites/{{ group.id }}/remove/${recipeId}/`, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrftoken }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          form.closest(".card").remove();
+        } else {
+          alert("Грешка: " + data.error);
+        }
+      });
+    });
+  });
+});
+</script>
+
+    <script>
+document.getElementById("deleteGroupForm").addEventListener("submit", function(e) {
+  e.preventDefault();
+  if (!confirm("Сигурен ли си, че искаш да изтриеш менюто?")) return;
+
+  fetch("{% url 'delete_group_ajax' group.id %}", {
+    method: "POST",
+    headers: { "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]').value }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      window.location.href = "{% url 'favourite_recipes' %}";
+    } else {
+      alert("Грешка: " + data.error);
+    }
+  });
+});
+</script>
+
+
+{% endblock %}

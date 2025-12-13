@@ -82,3 +82,21 @@ class HouseholdRecipeTimesCooked(models.Model):
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='household_recipe_times_cooked')
     household = models.ForeignKey(HouseHold, on_delete=models.CASCADE, related_name='household_recipe_times_cooked')
     date = models.DateTimeField(auto_now_add=True)
+
+
+class UserFavouriteRecipe(models.Model):
+    name = models.CharField(max_length=50)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='favourite_groups')
+    recipes = models.ManyToManyField(Recipe, through='UserFavoriteRecipeData', related_name='in_favourite_groups')
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class UserFavoriteRecipeData(models.Model):
+    favourite_group = models.ForeignKey(UserFavouriteRecipe, on_delete=models.CASCADE, related_name='entries')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='favourite_entries')
+
+    def __str__(self):
+        return f"{self.recipe.name} in {self.favourite_group.name}"
+
