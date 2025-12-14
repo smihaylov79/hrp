@@ -1,0 +1,60 @@
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">💶 Анализ на приходите</h2>
+
+  <!-- Форма за филтри -->
+  <form method="get" class="mb-4">
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Филтрирай</button>
+  </form>
+
+  {% if total_income %}
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body text-center">
+        <h5 class="card-title">Обща сума приходи</h5>
+        <p class="fs-3 text-success">{{ total_income }} {{ selected_currency }}</p>
+      </div>
+    </div>
+
+    <!-- Линеен график по месеци -->
+    <div id="income-monthly-chart" class="mb-4"></div>
+
+    <!-- Pie chart по типове приходи -->
+    <div id="income-type-chart" class="mb-4"></div>
+
+      <script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        Highcharts.chart("income-monthly-chart", {
+          chart: { type: "line" },
+          title: { text: "Приходи по месеци" },
+          xAxis: { categories: {{ month_labels|safe }} },
+          yAxis: { title: { text: "Сума ({{ selected_currency }})" } },
+          series: {{ monthly_series|safe }}
+        });
+
+        Highcharts.chart("income-type-chart", {
+          chart: { type: "pie" },
+          title: { text: "Приходи по типове" },
+          series: [{
+            name: "Сума ({{ selected_currency }})",
+            colorByPoint: true,
+            data: {{ type_series|safe }}
+          }]
+        });
+      });
+    </script>
+  {% else %}
+    <div class="alert alert-info text-center">
+      Няма данни за приходи в избрания период.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

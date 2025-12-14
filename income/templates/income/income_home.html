@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-center mb-4">💶 Всички приходи - test</h2>
+
+<div class="mb-3 text-end">
+      <a href="{% url 'create_income_type' %}" class="btn btn-primary">
+        ➕ Добави нов тип приход
+      </a>
+    </div>
+
+
+  <div class="mb-3 text-end">
+    <a href="{% url 'register_income' %}" class="btn btn-success">
+      ➕ Регистрирай нов приход
+    </a>
+  </div>
+
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      {% if incomes %}
+        <table class="table table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+                <th scope="col">Потребител</th>
+              <th scope="col">Тип</th>
+              <th scope="col">Сума</th>
+              <th scope="col">Валута</th>
+              <th scope="col">Дата</th>
+              <th scope="col">Описание</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for income in incomes %}
+              <tr>
+              <td>{{ income.user.first_name }}</td>
+                <td>{{ income.income_type.name }}</td>
+                <td>{{ income.amount }}</td>
+                <td>{{ income.currency }}</td>
+                <td>{{ income.date_received }}</td>
+                <td>{{ income.description|default:"-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="p-3 text-center text-muted">
+          Няма регистрирани приходи.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

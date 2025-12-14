@@ -42,6 +42,54 @@ def db_to_df(db_shopping, currency):
     return df
 
 
+def income_db_to_df(db_income, currency):
+    df = pd.DataFrame.from_records(db_income.values(
+        'amount',
+        'currency',
+        'date_received',
+        'income_type__name',
+        'user__first_name',
+    ))
+
+    # конверсия към избраната валута
+    df_converted = df.apply(lambda row: convert_income_amount(row, currency), axis=1, result_type='expand')
+    df['converted_amount'] = df_converted['converted_amount'].round(2)
+
+    # сортиране по дата
+    df = df.sort_values(by='date_received', ascending=True)
+
+    # обща сума
+    df['total'] = df['converted_amount'].astype(float)
+
+    # времеви полета
+    df['year'] = pd.to_datetime(df['date_received']).dt.year
+    df['month'] = pd.to_datetime(df['date_received']).dt.strftime('%m.%Y')
+    df['month_name'] = pd.to_datetime(df['date_received']).dt.month_name()
+    df['month_num'] = pd.to_datetime(df['date_received']).dt.month
+
+    return df
+
+
+def convert_income_amount(row, target_currency):
+    base_currency = row['currency']
+    amount = row['amount']
+
+    if base_currency == target_currency:
+        return {'converted_amount': amount}
+
+    # Тук използваш ExchangeRate модела
+    rate = ExchangeRate.objects.filter(
+        base_currency=base_currency,
+        target_currency=target_currency
+    ).order_by('-date_extracted').first()
+
+    if rate:
+        return {'converted_amount': float(amount) * float(rate.rate)}
+    else:
+        return {'converted_amount': amount}  # fallback
+
+
+
 def calculate_price_changes(df):
     df['shopping__date'] = pd.to_datetime(df['shopping__date'])
     df_sorted = df.sort_values(by=['product__name', 'shopping__date'])
@@ -166,3 +214,24 @@ def product_price_history(request):
 
     return products, selected_product_id, price_data_json, currency
 
+
+def income_vs_spendings(income_qs, spendings_qs, currency):
+    # конверсия към DataFrame
+    df_income = income_db_to_df(income_qs, currency)
+    df_spendings = db_to_df(spendings_qs, currency)
+
+    # групиране по месец
+    income_monthly = df_income.groupby("month")["total"].sum().reset_index()
+    spendings_monthly = df_spendings.groupby("month")["total"].sum().reset_index()
+
+    # merge
+    comparison = pd.merge(income_monthly, spendings_monthly, on="month", how="outer", suffixes=("_income", "_spendings")).fillna(0)
+
+    # нетен баланс
+    comparison["net_balance"] = comparison["total_income"] - comparison["total_spendings"]
+
+    # сортиране по месец
+    comparison = comparison.sort_values("month")
+    comparison["cumulative_net"] = comparison["net_balance"].cumsum()
+
+    return comparison

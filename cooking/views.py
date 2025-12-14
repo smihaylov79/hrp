@@ -462,9 +462,13 @@ def generate_group_shopping_list(request, group_id):
 
     # Събираме липсващите продукти от всички рецепти
     missing_products = {}
+    all_products = {}
     for recipe in recipes:
         for ingredient in recipe.recipe_ingredients.all():
             required_qty = ingredient.quantity
+            if ingredient.product.name not in all_products:
+                all_products[ingredient.product.name] = 0
+            all_products[ingredient.product.name] += required_qty
             available_qty = product_quantity_map.get(ingredient.product.id, 0)
             if available_qty < required_qty:
                 # добавяме към общия списък
@@ -477,17 +481,34 @@ def generate_group_shopping_list(request, group_id):
         if household:
             HouseholdRecipeShoppingList.objects.create(
                 household=household,
-                recipe_name=f"Група: {group.name}",
+                recipe_name=f"Меню: {group.name}  (за пазаруване)",
                 items=items_list
             )
         else:
             RecipeShoppingList.objects.create(
                 user=user,
-                recipe_name=f"Група: {group.name}",
+                recipe_name=f"Меню: {group.name} (за пазаруване)",
                 items=items_list
             )
-        messages.success(request, f"Списъкът с липсващи продукти за групата '{group.name}' е успешно генериран!")
+        messages.success(request, f"Списъкът с липсващи продукти за менюто '{group.name}' е успешно генериран!")
     else:
-        messages.info(request, f"Всички продукти за групата '{group.name}' са налични, няма нужда от пазаруване.")
+        messages.info(request, f"Всички продукти за меню '{group.name}' са налични, няма нужда от пазаруване.")
+
+    if all_products:
+        items_list = [f"{name} ({qty})" for name, qty in all_products.items()]
+        if household:
+            HouseholdRecipeShoppingList.objects.create(
+                household=household,
+                recipe_name=f"Меню: {group.name} (обща нужда)",
+                items=items_list
+            )
+        else:
+            RecipeShoppingList.objects.create(
+                user=user,
+                recipe_name=f"Меню: {group.name}  (обща нужда)",
+                items=items_list
+            )
+    else:
+        messages.info(request, f"Няма продукти")
 
     return redirect("favourite_group_detail", group_id=group.id)

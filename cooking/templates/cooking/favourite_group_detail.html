@@ -11,7 +11,8 @@
     {% csrf_token %}
     <button type="submit" class="btn btn-sm btn-outline-danger ms-2">🗑️ Изтрий меню</button>
   </form>
-     <a href="{% url 'recipe_list' %}" class="btn btn-primary mb-3">📖 Разгледай всички рецепти</a>
+     <a href="{% url 'recipe_list' %}" class="btn btn-sm btn-outline-primary ms-2">📖 Разгледай всички рецепти</a>
+     <a href="{% url 'all_shopping_lists' %}" class="btn btn-sm btn-outline-warning ms-2">📖 Списъци за пазаруване</a>
 </h2>
 
 <div class="text-center mb-3">

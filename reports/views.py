@@ -4,6 +4,8 @@ from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 import json
 from django.views.generic import FormView, TemplateView
+
+from income.models import Income
 from .forms import *
 from .utils import *
 
@@ -84,10 +86,6 @@ class SpendingsView(LoginRequiredMixin, FormView):
                 df_monthly_comparison = df
 
 # Newly added 10.11
-            # Rename for clarity (optional but helpful)
-            # df.rename(columns={'product__category__main_category__name': 'main_category'}, inplace=True)
-
-            # Group by month and main category
             main_category_monthly = (
                 df.groupby(['month', 'product__category__main_category__name'])['total']
                 .sum()
@@ -381,3 +379,192 @@ def edit_inflation_basket(request, basket_id):
         'selected_ids': selected_ids,
     }
     return render(request, 'reports/edit_inflation_basket.html', context)
+
+
+@login_required
+def income_analysis(request):
+    user = request.user
+
+    # ако има household → взимаме всички приходи на household-а
+    if user.household:
+        incomes_qs = Income.objects.filter(user__household=user.household)
+    else:
+        incomes_qs = Income.objects.filter(user=user)
+
+    # превръщаме в DataFrame
+    data = list(incomes_qs.values("income_type__name", "amount", "currency", "date_received"))
+    df = pd.DataFrame(data)
+
+    analysis = {}
+    if not df.empty:
+        # групиране по тип приход
+        by_type = df.groupby("income_type__name")["amount"].sum().sort_values(ascending=False)
+        analysis["by_type"] = by_type.to_dict()
+
+        # групиране по месец
+        df["month"] = pd.to_datetime(df["date_received"]).dt.to_period("M")
+        by_month = df.groupby("month")["amount"].sum()
+        analysis["by_month"] = by_month.to_dict()
+
+        # обща сума
+        analysis["total_income"] = df["amount"].sum()
+
+    return render(request, "reports/income_analysis.html", {"analysis": analysis})
+
+
+class IncomeView(LoginRequiredMixin, FormView):
+    template_name = 'reports/income_analysis.html'
+    form_class = IncomeReportFilterForm  # подобна на SpendingsReportFilterForm, но за приходи
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class(self.request.GET or None)
+        context = self.get_context_data(form=form)
+
+        if form.is_valid():
+            user = self.request.user
+            household = user.household
+
+            if household:
+                members = CustomUser.objects.filter(household=household)
+                income_data = Income.objects.filter(user__in=members)
+            else:
+                income_data = Income.objects.filter(user=user)
+
+            income_type = form.cleaned_data.get('income_type')
+            date_from = form.cleaned_data.get('date_from')
+            date_to = form.cleaned_data.get('date_to')
+            currency = form.cleaned_data.get('currency')
+
+            if income_type:
+                income_data = income_data.filter(income_type=income_type)
+
+            if date_from and date_to:
+                current_period = Q(date_received__range=(date_from, date_to))
+                previous_years_period = Q()
+                for offset in [1, 2]:
+                    prev_from = date_from.replace(year=date_from.year - offset)
+                    prev_to = date_to.replace(year=date_to.year - offset)
+                    previous_years_period |= Q(date_received__range=(prev_from, prev_to))
+                data_for_monthly_comparison = income_data.filter(current_period | previous_years_period)
+                income_data = income_data.filter(current_period)
+            else:
+                data_for_monthly_comparison = None
+
+            df = None
+            if income_data.exists():
+                df = income_db_to_df(income_data, currency)  # твоя utils функция за конверсия
+
+            if data_for_monthly_comparison:
+                df_monthly_comparison = income_db_to_df(data_for_monthly_comparison, currency)
+            else:
+                df_monthly_comparison = df
+
+            if df is not None and not df.empty:
+                # групиране по тип приход
+                by_type = df.groupby("income_type__name")["total"].sum().reset_index()
+
+                # групиране по месец
+                df["month"] = pd.to_datetime(df["date_received"]).dt.to_period("M")
+                by_month = df.groupby("month")["total"].sum().reset_index()
+
+                # Highcharts series
+                month_labels = sorted(by_month["month"].astype(str).unique())
+                monthly_series = [{"name": "Приходи", "data": by_month["total"].round(2).tolist()}]
+
+                type_series = [{"name": row["income_type__name"], "y": round(row["total"], 2)} for _, row in by_type.iterrows()]
+                selected_currency = form.cleaned_data.get("currency") or "BGN"
+                context.update({
+                    "total_income": round(df["total"].sum(), 2),
+                    "monthly_series": json.dumps(monthly_series),
+                    "month_labels": json.dumps(month_labels),
+                    "type_series": json.dumps(type_series),
+                    "selected_currency": selected_currency,
+                })
+
+        return self.render_to_response(context)
+
+
+# def income_spendings_comparison(request):
+#     user = request.user
+#     household = user.household
+#
+#     if household:
+#         members = CustomUser.objects.filter(household=household)
+#         income_qs = Income.objects.filter(user__in=members)
+#         spendings_qs = ShoppingProduct.objects.filter(shopping__user__in=members)
+#     else:
+#         income_qs = Income.objects.filter(user=user)
+#         spendings_qs = ShoppingProduct.objects.filter(shopping__user=user)
+#
+#     print("Income count:", income_qs.count())
+#     print("Spendings count:", spendings_qs.count())
+#
+#     currency = request.GET.get("currency", "BGN")
+#     comparison_df = income_vs_spendings(income_qs, spendings_qs, currency)
+#
+#     month_labels = comparison_df["month"].astype(str).tolist()
+#     income_series = comparison_df["total_income"].astype(float).round(2).tolist()
+#     spendings_series = comparison_df["total_spendings"].astype(float).round(2).tolist()
+#     net_series = comparison_df["net_balance"].astype(float).round(2).tolist()
+#
+#     context = {
+#         "month_labels": json.dumps(month_labels),
+#         "income_series": json.dumps([{"name": "Приходи", "data": income_series}]),
+#         "spendings_series": json.dumps([{"name": "Разходи", "data": spendings_series}]),
+#         "net_series": json.dumps([{"name": "Нетен баланс", "data": net_series}]),
+#         "selected_currency": currency,
+#     }
+#     return render(request, "reports/income_spendings_comparison.html", context)
+
+
+def income_spendings_comparison(request):
+    form = IncomeSpendingsComparisonForm(request.GET or None)
+
+    user = request.user
+    household = user.household
+
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        income_qs = Income.objects.filter(user__in=members)
+        spendings_qs = ShoppingProduct.objects.filter(shopping__user__in=members)
+    else:
+        income_qs = Income.objects.filter(user=user)
+        spendings_qs = ShoppingProduct.objects.filter(shopping__user=user)
+
+    # филтри по период
+    if form.is_valid():
+        date_from = form.cleaned_data.get("date_from")
+        date_to = form.cleaned_data.get("date_to")
+        currency = form.cleaned_data.get("currency") or "BGN"
+
+        if date_from and date_to:
+            income_qs = income_qs.filter(date_received__range=(date_from, date_to))
+            spendings_qs = spendings_qs.filter(shopping__date__range=(date_from, date_to))
+
+        comparison_df = income_vs_spendings(income_qs, spendings_qs, currency)
+
+        month_labels = comparison_df["month"].astype(str).tolist()
+        income_series = [{"name": "Приходи", "data": comparison_df["total_income"].astype(float).round(2).tolist()}]
+        spendings_series = [{"name": "Разходи", "data": comparison_df["total_spendings"].astype(float).round(2).tolist()}]
+        net_series = [{"name": "Нетен баланс", "data": comparison_df["net_balance"].astype(float).round(2).tolist()}]
+
+        cumulative_series = [{
+            "name": "Кумулативен баланс",
+            "type": "line",
+            "data": comparison_df["cumulative_net"].astype(float).round(2).tolist()
+        }]
+
+        context = {
+            "form": form,
+            "month_labels": json.dumps(month_labels),
+            "income_series": json.dumps(income_series),
+            "spendings_series": json.dumps(spendings_series),
+            "net_series": json.dumps(net_series),
+            "selected_currency": currency,
+            "cumulative_series": json.dumps(cumulative_series),
+        }
+
+    else:
+        context = {"form": form}
+
+    return render(request, "reports/income_spendings_comparison.html", context)

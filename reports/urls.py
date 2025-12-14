@@ -9,5 +9,8 @@ urlpatterns = [
     path('create-inflation-basket/', create_inflation_basket, name='create_inflation_basket'),
     path('save-inflation-basket/', save_inflation_basket, name='save_inflation_basket'),
     path('edit-inflation-basket/<int:basket_id>', edit_inflation_basket, name='edit_inflation_basket'),
+    path('income-analysis/', IncomeView.as_view(), name='income_analysis'),
+    path('income-vs-spendings/', income_spendings_comparison, name='income_spendings_comparison'),
+
 
 ]

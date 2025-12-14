@@ -1,0 +1,43 @@
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">⚖️ Сравнение приходи/разходи</h2>
+
+  <!-- Форма за филтри -->
+  <form method="get" class="mb-4">
+    <div class="row">
+      <div class="col-md-3">{{ form.date_from.label_tag }} {{ form.date_from }}</div>
+      <div class="col-md-3">{{ form.date_to.label_tag }} {{ form.date_to }}</div>
+      <div class="col-md-3">{{ form.currency.label_tag }} {{ form.currency }}</div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Филтрирай</button>
+      </div>
+    </div>
+  </form>
+
+  {% if month_labels %}
+    <div id="income-spendings-chart"></div>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script>
+      Highcharts.chart("income-spendings-chart", {
+        chart: { type: "column" },
+        title: { text: "Приходи и разходи ({{ selected_currency }})" },
+        xAxis: { categories: {{ month_labels|safe }} },
+        yAxis: { title: { text: "Сума ({{ selected_currency }})" } },
+        series: {{ income_series|safe }}
+            .concat({{ spendings_series|safe }})
+            .concat({{ net_series|safe }}
+            .concat({{ cumulative_series|safe }}))
+      });
+    </script>
+  {% else %}
+    <div class="alert alert-info text-center">
+      Няма данни за избрания период.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

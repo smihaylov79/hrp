@@ -45,6 +45,7 @@ urlpatterns = [
     path('reports/', include('reports.urls')),
     path('tasks/', include('taskmanager.urls')),
     path('reading/', include('reading.urls')),
+    path('income/', include('income.urls')),
 
     # path('', include(wagtail_urls)),
 

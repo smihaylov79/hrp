@@ -1,4 +1,6 @@
 from django import forms
+
+from income.models import IncomeType
 from shopping.models import *
 from django.utils.timezone import localdate
 from .models import *
@@ -48,3 +50,52 @@ class SpendingsReportFilterForm(forms.Form):
         if not cleaned_data.get('date_to'):
             cleaned_data['date_to'] = localdate()
         return cleaned_data
+
+
+class IncomeReportFilterForm(forms.Form):
+    income_type = forms.ModelChoiceField(
+        queryset=IncomeType.objects.all(),
+        required=False,
+        label="Тип приход",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+    date_from = forms.DateField(
+        required=False,
+        label="От дата",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+
+    date_to = forms.DateField(
+        required=False,
+        label="До дата",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+
+    currency = forms.ChoiceField(
+        choices=CurrencyChoice.choices,
+        required=False,
+        label="Валута",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+
+class IncomeSpendingsComparisonForm(forms.Form):
+    date_from = forms.DateField(
+        required=False,
+        label="От дата",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+
+    date_to = forms.DateField(
+        required=False,
+        label="До дата",
+        widget=forms.DateInput(attrs={"class": "form-control", "type": "date"})
+    )
+
+    currency = forms.ChoiceField(
+        choices=CurrencyChoice.choices,
+        required=False,
+        label="Валута",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
