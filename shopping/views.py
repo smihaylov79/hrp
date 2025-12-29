@@ -34,7 +34,7 @@ def shopping_list(request):
     if product_id:
         shoppings = shoppings.filter(shopping_products__product_id=product_id).distinct()
 
-    products = Product.objects.all()
+    products = Product.objects.all().order_by("name")
 
     context = {"shoppings": shoppings,
                'products': products,
@@ -96,7 +96,7 @@ def regular_shopping(request):
 
 @login_required
 def utility_bills(request):
-    selected_categories = ['Битови сметки', 'Наем']
+    selected_categories = ['Битови сметки', 'Наем', 'Финансиране', 'Инвестиции']
     category = ProductCategory.objects.filter(name__in=selected_categories)
     bills = Product.objects.filter(category__in=category)
     electricity_price = fetch_electricity_price()

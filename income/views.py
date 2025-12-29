@@ -1,9 +1,11 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Income, IncomeType
 from .forms import IncomeForm, IncomeTypeForm
 
 
+@login_required
 def income_home(request):
     user = request.user
     if user.household:
@@ -16,11 +18,13 @@ def income_home(request):
     return render(request, "income/income_home.html", {"incomes": incomes})
 
 
+@login_required
 def income_type_list(request):
     types = IncomeType.objects.all()
     return render(request, "income/income_type_list.html", {"types": types})
 
 
+@login_required
 def create_income_type(request):
     if request.method == "POST":
         form = IncomeTypeForm(request.POST)
@@ -33,7 +37,7 @@ def create_income_type(request):
     return render(request, "income/create_income_type.html", {"form": form})
 
 
-
+@login_required
 def register_income(request):
     if request.method == "POST":
         form = IncomeForm(request.POST)

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="alert alert-warning">
+  <strong>Внимание:</strong> Промяната на бюджета ще нулира всички одобрения.
+</div>
+
+<h3>Редакция на бюджет: {{ budget.name }}</h3>
+
+<form method="post">
+  {% csrf_token %}
+<h4 class="mt-4">Разходи</h4>
+  <table class="table table-sm table-bordered">
+    <thead>
+      <tr>
+        <th>Категория</th>
+        <th>Планирана сума ({{ currency }})</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in items %}
+        <tr>
+          <td>{{ item.category.name }}</td>
+          <td>
+            <input type="number" step="1"
+                   name="item_{{ item.id }}"
+                   value="{{ item.planned_amount }}"
+                   class="form-control form-control-sm">
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+<h4 class="mt-4">Приходи</h4>
+<table class="table table-sm table-bordered">
+    <thead>
+      <tr>
+        <th>Категория</th>
+        <th>Планирана сума ({{ currency }})</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for item in income_items %}
+        <tr>
+          <td>{{ item.income_type.name }}</td>
+          <td>
+            <input type="number" step="1"
+                   name="item_{{ item.id }}"
+                   value="{{ item.planned_amount }}"
+                   class="form-control form-control-sm">
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <button type="submit" class="btn btn-primary">Запази промените</button>
+  <a href="{% url 'budget_detail' budget.id %}" class="btn btn-secondary">Отказ</a>
+</form>
+
+{% endblock %}

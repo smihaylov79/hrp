@@ -26,6 +26,8 @@
         <option value="$MODULE_DIR$/reports/templates" />
         <option value="$MODULE_DIR$/taskmanager/templates" />
         <option value="$MODULE_DIR$/reading/templates" />
+        <option value="$MODULE_DIR$/income/templates" />
+        <option value="$MODULE_DIR$/budget/templates" />
       </list>
     </option>
   </component>

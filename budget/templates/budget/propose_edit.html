@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load custom_filters_budget %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="budget_id" value="{{ budget.id }}">
+
+  <table class="table table-sm table-bordered" id="budget-table">
+    <thead>
+      <tr>
+        <th>Категория</th>
+        {% for m in month_columns %}
+          <th>{{ m }}</th>
+        {% endfor %}
+        <th>Total ({{ currency }})</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in proposal_rows %}
+        <tr>
+          <td>{{ row.category }}</td>
+          {% for val in row.months %}
+            <td>
+              <input type="number" step="1"
+                     name="month_{{ row.category }}_{{ month_columns|index:forloop.counter0 }}"
+                     value="{{ val }}"
+                     class="form-control form-control-sm month-input"
+                     data-category="{{ row.category }}">
+            </td>
+          {% endfor %}
+          <td class="category-total"><strong>{{ row.total }}</strong></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+  <tr>
+    <th colspan="{{ month_columns|length|add:1 }}">Grand Total</th>
+    <th id="grand-total">{{ proposal_rows|grand_total }}</th>
+  </tr>
+</tfoot>
+  </table>
+
+<h3>Приходи</h3>
+<table class="table table-sm table-bordered" id="income-table">
+  <thead>
+    <tr>
+      <th>Категория</th>
+      {% for m in income_months %}
+        <th>{{ m }}</th>
+      {% endfor %}
+      <th>Total ({{ currency }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in income_rows %}
+      <tr>
+        <td>{{ row.category }}</td>
+        {% for val in row.months %}
+          <td>
+            <input type="number" step="1"
+                   name="income_{{ row.category }}_{{ income_months|index:forloop.counter0 }}"
+                   value="{{ val }}"
+                   class="form-control form-control-sm income-input">
+          </td>
+        {% endfor %}
+        <td class="income-total"><strong>{{ row.total }}</strong></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th colspan="{{ income_months|length|add:1 }}">Grand Total</th>
+      <th id="income-grand-total">{{ income_rows|grand_total }}</th>
+    </tr>
+  </tfoot>
+</table>
+
+
+  <button type="submit" name="action" value="finalize" class="btn btn-success">
+    Запиши бюджета
+  </button>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  function recalcTotals() {
+    let grandTotal = 0;
+    document.querySelectorAll("#budget-table tbody tr").forEach(function(row) {
+      let sum = 0;
+      row.querySelectorAll(".month-input").forEach(function(input) {
+        sum += parseFloat(input.value) || 0;
+      });
+      row.querySelector(".category-total").innerHTML = "<strong>" + sum.toFixed(0) + "</strong>";
+      grandTotal += sum;
+    });
+    document.getElementById("grand-total").innerText = grandTotal.toFixed(0);
+  }
+
+  // слушаме за промени във всички month-input
+  document.querySelectorAll(".month-input").forEach(function(input) {
+    input.addEventListener("input", recalcTotals);
+  });
+
+  // първоначално изчисление
+  recalcTotals();
+
+});
+
+function recalcIncomeTotals() {
+  let grandTotal = 0;
+  document.querySelectorAll("#income-table tbody tr").forEach(function(row) {
+    let sum = 0;
+    row.querySelectorAll(".income-input").forEach(function(input) {
+      sum += parseFloat(input.value) || 0;
+    });
+    row.querySelector(".income-total").innerHTML = "<strong>" + sum.toFixed(0) + "</strong>";
+    grandTotal += sum;
+  });
+  document.getElementById("income-grand-total").innerText = grandTotal.toFixed(0);
+}
+
+document.querySelectorAll(".income-input").forEach(function(input) {
+  input.addEventListener("input", recalcIncomeTotals);
+});
+recalcIncomeTotals();
+
+
+</script>
+
+
+
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Бюджет: <b>{{ budget.name }}</b></h2>
+    <h4>Период: <b>{{ budget.date_from }} - {{ budget.date_to }}</b></h4>
+<h5>Разходи: <b>{{ total_amount }} {{ budget.currency }}</b></h5>
+<h5>Приходи: <b>{{ total_income }} {{ budget.currency }}</b></h5>
+
+<h4 class="mt-4">Разходи</h4>
+<table class="table table-sm table-bordered">
+  <thead>
+    <tr>
+      <th>Категория</th>
+      <th>Планирана сума ({{ budget.currency }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in budget.items.all %}
+      <tr>
+        <td>{{ item.category.name }}</td>
+        <td>{{ item.planned_amount }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="2" class="text-center text-muted">Няма въведени разходи</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<h4 class="mt-4">Приходи</h4>
+<table class="table table-sm table-bordered">
+  <thead>
+    <tr>
+      <th>Категория</th>
+      <th>Планирана сума ({{ budget.currency }})</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for inc in budget.income_items.all %}
+      <tr>
+        <td>{{ inc.income_type.name }}</td>
+        <td>{{ inc.planned_amount }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="2" class="text-center text-muted">Няма въведени приходи</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<h4>Одобрения</h4>
+<ul>
+  {% for approval in approvals %}
+    <li>{{ approval.user.first_name }} –
+        {% if approval.approved %}
+          ✅ Одобрено
+        {% else %}
+          ⏳ Очаква се
+        {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+
+<div class="d-flex justify-content-center gap-3 mt-4">
+
+  {% if user_approval and not user_approval.approved %}
+  <form method="post" class="m-0">
+    {% csrf_token %}
+    <button type="submit" name="action" value="approve" class="btn btn-success px-4">
+      ✔ Одобри бюджета
+    </button>
+  </form>
+  {% endif %}
+
+  <a href="{% url 'edit_budget' budget.id %}" class="btn btn-warning px-4">
+    ✏️ Промени бюджета
+  </a>
+
+  <a href="{% url 'budget_home' %}" class="btn btn-secondary px-4">
+    📁 Всички бюджети
+  </a>
+
+</div>
+
+
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>💰 Бюджетиране</h2>
+  <p class="text-muted">Създавай, одобрявай и следи бюджети.</p>
+
+  <a href="{% url 'propose_budget' %}" class="btn btn-primary mb-3">➕ Създай нов бюджет</a>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+          <th>Име</th>
+        <th>Период</th>
+        <th>Валута</th>
+          <th>Сума</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for budget in budgets %}
+        <tr>
+        <td>{{ budget.name }}</td>
+          <td>{{ budget.planned_year }}</td>
+          <td>{{ budget.currency }}</td>
+        <td>{{ budget.amount }}</td>
+          <td>
+            {% if budget.approved %}
+              <span class="badge bg-success">Одобрен</span>
+            {% elif budget.submitted %}
+              <span class="badge bg-warning">Чака одобрение</span>
+            {% else %}
+              <span class="badge bg-secondary">Чернова</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-sm btn-outline-primary">Детайли</a>
+              {% if budget.can_be_tracked %}
+            <a href="{% url 'track_budget' budget.pk %}" class="btn btn-sm btn-outline-success">Проследяване</a>
+              {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="text-center text-muted">Няма създадени бюджети.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

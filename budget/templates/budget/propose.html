@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Създай нов бюджет</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <!-- бутон за генериране на предложение -->
+    <button type="submit" name="action" value="generate" class="btn btn-primary">
+      Генерирай предложение
+    </button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mt-4">
+
+    <div class="d-flex justify-content-center gap-3 mt-4">
+        <h2>Изпълнение на бюджет {{ budget.name }}: {{ budget.date_from }} - {{ budget.date_to }}</h2>
+    <a href="{% url 'budget_home' %}" class="btn btn-secondary px-4">
+    📁 Всички бюджети
+  </a>
+    </div>
+
+        <h4>Общо изпълнение:</h4>
+
+<div class="container">
+
+  <!-- Разходи -->
+  <div class="row align-items-center mb-3">
+    <div class="col-md-4">
+      <table class="table table-borderless table-sm mb-0">
+        <tr><th class="text-start">Планирани разходи общо:</th><td>{{ total_planned }} {{ budget.currency }}</td></tr>
+        <tr><th class="text-start">Планирани до днес:</th><td>{{ ytd_planned }} {{ budget.currency }}</td></tr>
+        <tr><th class="text-start">Реално:</th><td>{{ total_actual }} {{ budget.currency }}</td></tr>
+      </table>
+    </div>
+    <div class="col-md-8">
+      <div class="progress" style="height: 25px;">
+        <div class="progress-bar {% if time_is_behind %}bg-danger{% else %}bg-success{% endif %}"
+             role="progressbar"
+             style="width: {{ total_percent }}%;">
+          {{ total_percent }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Приходи -->
+  <div class="row align-items-center mb-3">
+    <div class="col-md-4">
+      <table class="table table-borderless table-sm mb-0">
+        <tr><th class="text-start">Планирани приходи общо:</th><td>{{ planned_income }} {{ budget.currency }}</td></tr>
+        <tr><th class="text-start">Планирани до днес:</th><td>{{ ytd_planned_income }} {{ budget.currency }}</td></tr>
+        <tr><th class="text-start">Реално:</th><td>{{ actual_income }} {{ budget.currency }}</td></tr>
+      </table>
+    </div>
+    <div class="col-md-8">
+      <div class="progress" style="height: 25px;">
+        <div class="progress-bar {% if income_issue %}bg-danger{% else %}bg-success{% endif %}"
+             role="progressbar"
+             style="width: {{ income_percent }}%;">
+          {{ income_percent }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Време -->
+  <div class="row align-items-center mb-3">
+    <div class="col-md-4">
+      <table class="table table-borderless table-sm mb-0">
+        <tr><th class="text-start">Изминало време:</th><td>{{ time_percent }}%</td></tr>
+      </table>
+    </div>
+    <div class="col-md-8">
+      <div class="progress" style="height: 25px;">
+        <div class="progress-bar bg-info"
+             role="progressbar"
+             style="width: {{ time_percent }}%;">
+          {{ time_percent }}%
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Категория</th>
+                <th>Планирано</th>
+                <th>Планирано YTD</th>
+                <th>Реално</th>
+                <th>% до днес</th>
+                <th>% цяла година</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in tracking %}
+                <tr>
+                    <td>{{ row.category }}</td>
+                    <td>{{ row.planned }}</td>
+                    <td>{{ row.ytd }}</td>
+                    <td>{{ row.actual }}</td>
+                    <td style="width: 250px;">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar
+                          {% if row.percent < 80 %}bg-success{% elif row.percent < 100 %}bg-warning{% else %}bg-danger{% endif %}"
+                                 role="progressbar"
+                                 style="width: {{ row.percent }}%;"
+                                 aria-valuenow="{{ row.percent }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                                {{ row.percent_ytd }}%
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 250px;">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar
+                          {% if row.percent < 80 %}bg-success{% elif row.percent < 100 %}bg-warning{% else %}bg-danger{% endif %}"
+                                 role="progressbar"
+                                 style="width: {{ row.percent }}%;"
+                                 aria-valuenow="{{ row.percent }}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                                {{ row.percent }}%
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Highcharts -->
+        <div id="budget-chart" style="height: 400px;"></div>
+        <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script>
+            Highcharts.chart("budget-chart", {
+                chart: {type: "column"},
+                title: {text: "Бюджет vs Реални разходи"},
+                xAxis: {categories: {{ categories|safe }}},
+                yAxis: {title: {text: "Сума ({{ budget.currency }})"}},
+                series: [
+                    {name: "Планирано", data: {{ planned_series|safe }}},
+                    {name: "Реално", data: {{ actual_series|safe }}}
+                ]
+            });
+        </script>
+    </div>
+{% endblock %}

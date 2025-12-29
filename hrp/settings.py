@@ -52,6 +52,7 @@ PROJECT_APPS = [
     'taskmanager',
     'reading',
     'income',
+    'budget',
     # 'help_pages',
 ]
 
