@@ -96,9 +96,9 @@ def regular_shopping(request):
 
 @login_required
 def utility_bills(request):
-    selected_categories = ['Битови сметки', 'Наем', 'Финансиране', 'Инвестиции']
+    selected_categories = ['Битови сметки', 'Наем', 'Финансиране', 'Инвестиции', 'Джобни']
     category = ProductCategory.objects.filter(name__in=selected_categories)
-    bills = Product.objects.filter(category__in=category)
+    bills = Product.objects.filter(category__in=category).order_by('name')
     electricity_price = fetch_electricity_price()
     cold_water = fetch_cold_water()
     heating_price = get_heating_price()

@@ -23,6 +23,8 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(Product, through='RecipeIngredient', related_name='recipes')
     image = models.ImageField(upload_to='recipe_images/', null=True, blank=True)
 
+    total_calories = models.IntegerField(default=0)
+
     def check_availability(self, user):
         household = None
         if user:
@@ -54,9 +56,17 @@ class Recipe(models.Model):
                          )
         return round(total_cost, 2)
 
-    def calculate_calories(self):
-        total_calories = sum(ingredient.product.calories * ingredient.quantity for ingredient in self.recipe_ingredients.all())
-        return round(total_calories, 0)
+    def update_total_calories(self):
+        ingredients = self.recipe_ingredients.select_related("product")
+        self.total_calories = sum(
+            ing.product.calories * ing.quantity
+            for ing in ingredients
+        )
+        self.save(update_fields=["total_calories"])
+
+    # def calculate_calories(self):
+    #     total_calories = sum(ingredient.product.calories * ingredient.quantity for ingredient in self.recipe_ingredients.all())
+    #     return round(total_calories, 0)
 
     def __str__(self):
         return self.name
