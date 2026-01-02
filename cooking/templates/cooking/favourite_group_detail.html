@@ -57,8 +57,8 @@
               <div class="card-body">
                 <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
                 <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
-                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} лв.</p>
-                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.calculate_calories }} kcal</p>
+                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} €</p>
+                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.total_calories }} kcal</p>
                 <p class="card-text mb-1"><strong>📂:</strong> {{ recipe.category.name }}</p>
               </div>
             </div>

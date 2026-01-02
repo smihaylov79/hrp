@@ -23,7 +23,7 @@
               <p class="card-text">
                 📖 Рецепти: {{ group.recipes_count }}<br>
                 ⏱️ Общо време: {{ group.total_time }} мин<br>
-                💰 Обща цена: {{ group.total_cost }} лв.<br>
+                💰 Обща цена: {{ group.total_cost }} €<br>
                 🔥 Калории: {{ group.total_calories }} kcal
               </p>
               <a href="{% url 'favourite_group_detail' group.id %}" class="btn btn-info btn-sm">➡️ Виж рецепти в менюто</a>

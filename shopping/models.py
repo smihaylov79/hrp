@@ -5,8 +5,8 @@ from users.models import *
 
 
 class CurrencyChoice(TextChoices):
-    BGN = 'BGN', 'лв.'
     EUR = 'EUR', 'Euro'
+    BGN = 'BGN', 'лв.'
     USD = 'USD', 'US Dollar'
     # GBP = 'GBP', 'Pound'
 

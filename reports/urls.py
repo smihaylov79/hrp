@@ -11,6 +11,7 @@ urlpatterns = [
     path('edit-inflation-basket/<int:basket_id>', edit_inflation_basket, name='edit_inflation_basket'),
     path('income-analysis/', IncomeView.as_view(), name='income_analysis'),
     path('income-vs-spendings/', income_spendings_comparison, name='income_spendings_comparison'),
+    path('consumption-summary/', ConsumptionSummaryView.as_view(), name='consumption_summary'),
 
 
 ]

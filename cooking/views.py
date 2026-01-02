@@ -17,92 +17,14 @@ from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingLis
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
-from django.core.cache import cache
-from django.test import RequestFactory
-from django.utils.cache import get_cache_key
+# from django.core.cache import cache
+# from django.test import RequestFactory
+# from django.utils.cache import get_cache_key
 
-
-# def invalidate_recipe_list_cache():
-#     factory = RequestFactory()
-#     fake_request = factory.get("/cooking/recipes/") # <-- your recipe_list URL
-#     cache_key = get_cache_key(fake_request)
-#     if cache_key:
-#         cache.delete(cache_key)
 
 
 
 # Create your views here.
-
-# def recipe_list(request):
-#     category_name = request.GET.get('category', 'all')
-#     recipes = Recipe.objects.all().order_by('category__name')
-#
-#
-#     categories = RecipeCategory.objects.annotate(recipe_count=Count('recipes'))
-#     total_recipes = recipes.count()
-#
-#     all_products = Product.objects.filter(suitable_for_cooking=True).order_by('name')
-#
-#     ingredient = request.GET.get('ingredient', 'all')
-#
-#     selected_product = None
-#
-#     if ingredient != 'all':
-#         recipes = recipes.filter(ingredients__id=ingredient)
-#         selected_product = Product.objects.filter(id=ingredient).first()
-#
-#     user = None
-#     household = None
-#
-#     times_cooked = 0
-#     if request.user.is_authenticated:
-#         user = request.user
-#         household = getattr(user, 'household', None)
-#     else:
-#         household = None
-#
-#     if category_name != 'all':
-#         recipes = recipes.filter(category__name=category_name)
-#
-#     if household is not None:
-#         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
-#
-#     else:
-#         user_inventory = InventoryProduct.objects.filter(user=user)
-#
-#     product_price_map = {item.product.id: item.average_price for item in user_inventory}
-#     product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
-#
-#     for recipe in recipes:
-#         recipe.user_cost = round(sum(product_price_map.get(ingredient.product.id, 0) * ingredient.quantity
-#                                for ingredient in recipe.recipe_ingredients.all()), 2)
-#         recipe.user_availability = all(product_quantity_map.get(ingredient.product.id, 0) >= ingredient.quantity
-#                                        for ingredient in recipe.recipe_ingredients.all())
-#         recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
-#         recipe.user_availability_status = recipe.check_availability(user)
-#         if household is not None:
-#             recipe.times_cooked = HouseholdRecipeTimesCooked.objects.filter(household=household, recipe=recipe).count()
-#         else:
-#             recipe.times_cooked = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).count()
-#
-#     top_ids = sorted(recipes, key=lambda x: x.times_cooked, reverse=True)[:6]
-#     top_ids_set = set(r.id for r in top_ids)
-#
-#     for recipe in recipes:
-#         recipe.is_top = recipe.id in top_ids_set
-#         recipe.category_name = recipe.category.name.lower()
-#
-#     context = {'recipes': recipes,
-#                'user_inventory': {item.product.id: item.quantity for item in user_inventory},
-#                'categories': categories,
-#                'selected_category': category_name,
-#                'times_cooked': times_cooked,
-#                'products': all_products,
-#                'ingredient': ingredient,
-#                'total_recipes': total_recipes,
-#                'product': selected_product,
-#                }
-#     return render(request, 'cooking/recipe_list.html', context)
 
 @cache_page(60 * 10)
 def recipe_list(request):
@@ -204,7 +126,7 @@ def recipe_list(request):
 def create_recipe(request):
     products = Product.objects.filter(suitable_for_cooking=True).order_by('name')
     categories = RecipeCategory.objects.all()
-    product_categories = ProductCategory.objects.all()
+    product_categories = ProductCategory.objects.all().order_by('name')
     create_product_form = CreateProductForm()
 
     context = {
@@ -464,7 +386,7 @@ def favourite_groups_list(request):
         recipes = g.recipes.all()
         total_time = sum(r.time_to_prepare or 0 for r in recipes)
         total_cost = sum(r.calculate_cost(request.user) for r in recipes)
-        total_calories = sum(r.calculate_calories() for r in recipes)
+        total_calories = sum(r.total_calories for r in recipes)
 
         favourite_groups.append({
             "id": g.id,

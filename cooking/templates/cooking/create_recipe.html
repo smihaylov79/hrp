@@ -141,6 +141,8 @@ document.querySelectorAll(".removeRow").forEach(button => {
 </script>
 
 <script>
+let activeSelect = null;
+
   document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("new-product-form");
     const modalEl = document.getElementById("product-modal");
@@ -163,20 +165,23 @@ document.querySelectorAll(".removeRow").forEach(button => {
         const data = await response.json();
 
         if (response.ok) {
-          // Update all product dropdowns
-          document.querySelectorAll("select[name='product_id[]']").forEach(dropdown => {
-            const option = document.createElement("option");
-            option.value = data.id;
-            option.textContent = data.name;
-            option.selected = true;
-            dropdown.appendChild(option);
-          });
 
-          // Reset form and close modal
-          form.reset();
-          const modal = bootstrap.Modal.getInstance(modalEl);
-          modal.hide();
-        } else {
+  // Update ONLY the dropdown that triggered the modal
+  if (activeSelect) {
+    const option = document.createElement("option");
+    option.value = data.id;
+    option.textContent = data.name;
+    option.selected = true;
+
+    activeSelect.appendChild(option);
+    activeSelect.value = data.id;  // auto-select new product
+  }
+
+  form.reset();
+  const modal = bootstrap.Modal.getInstance(modalEl);
+  modal.hide();
+}
+ else {
           // Show Django form error
           alert(data.error || "Грешка при добавянето на продукта.");
         }
@@ -187,13 +192,14 @@ document.querySelectorAll(".removeRow").forEach(button => {
     });
   });
 
-  // Show modal when "new" is selected
-  function checkNewProduct(selectElement) {
-    if (selectElement.value === "new") {
-      const modal = new bootstrap.Modal(document.getElementById("product-modal"));
-      modal.show();
-    }
+      function checkNewProduct(selectElement) {
+  if (selectElement.value === "new") {
+    activeSelect = selectElement;  // remember which select opened the modal
+    const modal = new bootstrap.Modal(document.getElementById("product-modal"));
+    modal.show();
   }
+}
+
 
   // Modal close logic
   function closeModal() {

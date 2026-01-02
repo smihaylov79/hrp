@@ -84,9 +84,9 @@ def regular_shopping(request):
     context = {
         'form': form,
         'create_product_form': create_product_form,
-        'shops': Shop.objects.all(),
+        'shops': Shop.objects.all().order_by("name"),
         'categories': ProductCategory.objects.all().order_by('name'),
-        'main_categories': MainCategory.objects.all(),
+        'main_categories': MainCategory.objects.all().order_by('name'),
         'products': Product.objects.all().order_by('name'),
         'shopping_lists': shopping_lists,
         'prefill_json': json.dumps(prefill_data, cls=DjangoJSONEncoder),

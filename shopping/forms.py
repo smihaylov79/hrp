@@ -1,7 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Shopping, Shop, Product
+
+from forum.models import Category
+from .models import Shopping, Shop, Product, ProductCategory, CurrencyChoice
 
 
 class BaseShoppingForm(forms.ModelForm):
@@ -23,20 +25,22 @@ class BaseShoppingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if not self.fields['date'].initial:
             self.fields['date'].initial = timezone.localdate()
+        if not self.instance.pk:
+            self.fields['currency'].initial = CurrencyChoice.EUR
 
 
 class UtilityBillForm(BaseShoppingForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['shop'].queryset = Shop.objects.filter(utility_supplier=True)
+        self.fields['shop'].queryset = Shop.objects.filter(utility_supplier=True).order_by('name')
 
 
 class RegularShoppingForm(BaseShoppingForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        shops = Shop.objects.all()
+        shops = Shop.objects.all().order_by('name')
         self.fields['shop'].queryset = shops
         if shops.exists():
             self.fields['shop'].initial = shops.first()
@@ -49,6 +53,10 @@ class CreateProductForm(forms.ModelForm):
         labels = {
             'category': 'Категория', 'name': 'Име', 'suitable_for_cooking': 'Става за готвене', 'calories': 'Калории', 'image': 'Снимка'
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = ProductCategory.objects.all().order_by('name')
 
     def clean(self):
         cleaned_data = super().clean()

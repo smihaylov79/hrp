@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum, F
 from django.shortcuts import render, redirect
 import json
 from django.views.generic import FormView, TemplateView
@@ -8,6 +8,8 @@ from django.views.generic import FormView, TemplateView
 from income.models import Income
 from .forms import *
 from .utils import *
+from django.utils import timezone
+from datetime import timedelta, datetime
 
 
 # Create your views here.
@@ -91,36 +93,30 @@ class SpendingsView(LoginRequiredMixin, FormView):
                 .sum()
                 .reset_index()
             )
+            subcategory_monthly = df.groupby(['month', 'product__category__name'])['total'].sum().reset_index()
 
             # Prepare Highcharts series
-            month_labels = sorted(main_category_monthly['month'].unique())
-            main_categories = main_category_monthly['product__category__main_category__name'].unique()
-
-            main_category_series = []
-            for category in main_categories:
-                data = []
-                for month in month_labels:
-                    value = main_category_monthly[
-                        (main_category_monthly['month'] == month) &
-                        (main_category_monthly['product__category__main_category__name'] == category)
-                        ]['total']
-                    data.append(round(value.values[0], 2) if not value.empty else 0)
-                main_category_series.append({'name': category, 'data': data})
-
-            # print(main_category_monthly)
+            # month_labels = sorted(main_category_monthly['month'].unique())
+            # main_categories = main_category_monthly['product__category__main_category__name'].unique()
             #
-            # context.update({
-            #     'main_category_series': json.dumps(main_category_series),
-            #     'main_category_month_labels': json.dumps(month_labels),
-            # })
-            # context.update({
-            #     'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
-            # })
+            # main_category_series = []
+            # for category in main_categories:
+            #     data = []
+            #     for month in month_labels:
+            #         value = main_category_monthly[
+            #             (main_category_monthly['month'] == month) &
+            #             (main_category_monthly['product__category__main_category__name'] == category)
+            #             ]['total']
+            #         data.append(round(value.values[0], 2) if not value.empty else 0)
+            #     main_category_series.append({'name': category, 'data': data})
+
             # end of added 10.11
 
             context = self.get_context_data(form=form, )
             if df is not None and not df.empty:
                 context.update({'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
+                                'subcategory_monthly_data': json.dumps(
+                                    subcategory_monthly.to_dict(orient='records')),
                                 'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
                                 'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
                                 'total_spent': round(df['total'].sum(), 2),
@@ -136,6 +132,7 @@ class SpendingsView(LoginRequiredMixin, FormView):
                                 'top_decrease': calculate_price_changes(df)[1],
                                 'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
                                 'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
+                                # 'main_category_series': json.dumps(main_category_series)
                                 })
         return self.render_to_response(context)
 
@@ -568,3 +565,105 @@ def income_spendings_comparison(request):
         context = {"form": form}
 
     return render(request, "reports/income_spendings_comparison.html", context)
+
+
+def get_consumption_queryset(user, date_from=None, date_to=None):
+    # Default: last 12 months
+    if not date_from or not date_to:
+        date_to = timezone.now().date()
+        date_from = date_to - timedelta(days=365)
+
+    household = user.household
+
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        qs = ShoppingProduct.objects.filter(shopping__user__in=members)
+    else:
+        qs = ShoppingProduct.objects.filter(shopping__user=user)
+
+    return qs.filter(shopping__date__range=(date_from, date_to))
+
+
+
+def summarize_by_product(qs):
+    return (
+        qs.values(
+            'product__name',
+            'product__category__name',
+            'product__category__main_category__name',
+        )
+        .annotate(
+            total_quantity=Sum('quantity'),
+            total_spent=Sum('amount'),
+            purchase_count=Count('id'),
+        )
+        .order_by('-total_quantity')
+    )
+
+
+
+def summarize_by_main_category(qs):
+    return (
+        qs.values('product__category__main_category__name')
+        .annotate(
+            total_quantity=Sum('quantity'),
+            total_spent=Sum('amount'),
+        )
+        .order_by('-total_spent')
+    )
+
+
+def summarize_by_category(qs):
+    return (
+        qs.values('product__category__name')
+        .annotate(
+            total_quantity=Sum('quantity'),
+            total_spent=Sum('amount'),
+        )
+        .order_by('-total_spent')
+    )
+
+
+
+class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
+    template_name = "reports/consumption_summary.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        user = self.request.user
+        date_from = self.request.GET.get("date_from")
+        date_to = self.request.GET.get("date_to")
+
+        # Convert to date objects if provided
+        if date_from:
+            date_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+        if date_to:
+            date_to = datetime.strptime(date_to, "%Y-%m-%d").date()
+
+        # Get queryset for the period
+        qs = get_consumption_queryset(user, date_from, date_to)
+
+        # --- AVERAGE DAILY SPENT ---
+        total_spent = qs.aggregate(total=Sum("amount"))["total"] or 0
+
+        # Determine actual date range used
+        if not date_from or not date_to:
+            # get_consumption_queryset already defaults to last 365 days
+            days = 365
+        else:
+            days = (date_to - date_from).days + 1  # inclusive
+
+        avg_daily_spent = total_spent / days if days > 0 else 0
+
+        # Update context
+        context.update({
+            "product_summary": summarize_by_product(qs),
+            "category_summary": summarize_by_category(qs),
+            "main_category_summary": summarize_by_main_category(qs),
+            "avg_daily_spent": avg_daily_spent,
+            "total_spent": total_spent,
+        })
+
+        return context
+

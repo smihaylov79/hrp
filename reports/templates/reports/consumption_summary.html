@@ -1,0 +1,149 @@
+{#<h2>Обобщение за периода</h2>#}
+{##}
+{#<h3>Най-консумирани продукти</h3>#}
+{#<ul>#}
+{#{% for p in product_summary %}#}
+{#    <li>#}
+{#        Ти купи <strong>{{ p.total_quantity }} {{ p.product__unit }}</strong>#}
+{#        от <strong>{{ p.product__name }}</strong>#}
+{#        ({{ p.total_spent }} {{ currency }})#}
+{#    </li>#}
+{#{% endfor %}#}
+{#</ul>#}
+{##}
+{#<h3>Разходи по основни категории</h3>#}
+{#<ul>#}
+{#{% for c in category_summary %}#}
+{#    <li>#}
+{#        {{ c.product__product_category__main_category__name }}:#}
+{#        {{ c.total_spent }} {{ currency }}#}
+{#    </li>#}
+{#{% endfor %}#}
+{#</ul>#}
+
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+
+<!-- FILTER FORM -->
+<form method="get" class="border rounded p-4 mb-4 bg-light">
+    <div class="row g-3 align-items-end">
+
+        <div class="col-md-3">
+            <label for="id_date_from" class="form-label">От</label>
+            <input type="date" name="date_from" id="id_date_from"
+                   class="form-control"
+                   value="{{ request.GET.date_from }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="id_date_to" class="form-label">До</label>
+            <input type="date" name="date_to" id="id_date_to"
+                   class="form-control"
+                   value="{{ request.GET.date_to }}">
+        </div>
+
+        <div class="col-md-3">
+            <label for="currency" class="form-label">Валута</label>
+            <select name="currency" class="form-select">
+                {% for code, label in form.fields.currency.choices %}
+                    <option value="{{ code }}"
+                        {% if request.GET.currency == code %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100">Филтрирай</button>
+        </div>
+
+    </div>
+</form>
+
+<!-- HERO SUMMARY -->
+<div class="p-4 mb-4 text-white rounded"
+     style="background: linear-gradient(135deg, #4e73df, #1cc88a);">
+    <h2 class="mb-1">Обобщение за периода</h2>
+    <p class="mb-0">Ето какво си консумирал и кои продукти са били твоите фаворити.</p>
+</div>
+
+<!-- TOP PRODUCTS -->
+<h4 class="mb-3">Най-консумирани продукти</h4>
+
+<div class="row g-3 mb-4">
+    {% for p in product_summary|slice:":5" %}
+    <div class="col-md-3">
+        <div class="border rounded p-3 text-center shadow-sm bg-white h-100">
+            <div class="fs-2 fw-bold text-primary">
+                {{ p.total_quantity|floatformat:0 }}
+            </div>
+            <div class="text-muted">{{ p.product__name }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- CATEGORY SUMMARY -->
+<h4 class="mb-3">Разходи по основни категории</h4>
+
+<div class="list-group mb-4">
+    {% for c in main_category_summary %}
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <strong>{{ c.product__category__main_category__name }}</strong>
+        <span class="badge bg-success rounded-pill">
+            {{ c.total_spent }} {{ request.GET.currency }}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- FUN FACTS -->
+<div class="p-3 rounded mb-4"
+     style="background: #fff3cd; border-left: 6px solid #f6c23e;">
+    <h5 class="mb-2">Интересни факти</h5>
+    <ul class="mb-0">
+        <li>Средно харчиш <strong>{{ avg_daily_spent|floatformat:2 }} {{ request.GET.currency }}</strong> на ден.</li>
+        <li>Най-често купуваният продукт е <strong>{{ product_summary.0.product__name }}</strong>.</li>
+        <li>Категорията с най-много разходи е <strong>{{ main_category_summary.0.product__category__main_category__name }}</strong>.</li>
+    </ul>
+</div>
+
+<!-- OPTIONAL CHART -->
+<h4 class="mb-3">Всички продукти за периода</h4>
+
+<div class="row g-3">
+    {% for p in product_summary %}
+    <div class="col-md-3 col-sm-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+
+                <!-- Product name (bigger) -->
+                <div class="fw-bold mb-2" style="font-size: 1.25rem;">
+                    {{ p.product__name }}
+                </div>
+
+                <!-- Quantity with label -->
+                <div class="text-primary fw-semibold mb-2" style="font-size: 1.1rem;">
+                    Количество:
+                    <span class="fs-4 fw-bold">
+                        {{ p.total_quantity|floatformat:0 }}
+                    </span>
+                    <span class="text-muted">{{ p.product__unit }}</span>
+                </div>
+
+                <!-- Total spent -->
+                <div class="badge bg-success mt-2">
+                    {{ p.total_spent }} {{ request.GET.currency }}
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+
+{% endblock %}
