@@ -99,3 +99,9 @@ class IncomeSpendingsComparisonForm(forms.Form):
         label="Валута",
         widget=forms.Select(attrs={"class": "form-select"})
     )
+
+
+class ConsumptionFilterForm(forms.Form):
+    date_from = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    date_to = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    currency = forms.ChoiceField(choices=CurrencyChoice.choices, required=False)

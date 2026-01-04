@@ -12,8 +12,8 @@ def convert_amount(row, target_currency):
     rate = ExchangeRate.objects.filter(base_currency=base, target_currency=target_currency).order_by('-date_extracted').values_list('rate', flat=True).first()
     rate = float(rate or 1.0)
     return {
-        'converted_amount': float(row['amount']) * rate,
-        'converted_price': float(row['price']) * rate
+        'converted_amount': round(float(row['amount']) * rate, 2),
+        'converted_price': round(float(row['price']) * rate, 2)
     }
 
 
@@ -28,6 +28,7 @@ def db_to_df(db_shopping, currency):
         'product__name',
         'product__category__name',
         'product__category__main_category__name',
+        'quantity',
     )
     )
     df_converted = df.apply(lambda row: convert_amount(row, currency), axis=1, result_type='expand')
@@ -185,10 +186,10 @@ def product_price_history(request):
     if household:
         members = CustomUser.objects.filter(household=household)
         products = Product.objects.filter(
-            shoppingproduct__shopping__user__in=members).distinct()
+            shoppingproduct__shopping__user__in=members).order_by('name').distinct()
     else:
         products = Product.objects.filter(
-            shoppingproduct__shopping__user=user).distinct()
+            shoppingproduct__shopping__user=user).distinct().order_by('name').distinct()
 
     selected_product_id = request.GET.get("product")
     currency = request.GET.get("currency")

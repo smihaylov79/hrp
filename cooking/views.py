@@ -17,6 +17,10 @@ from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingLis
 
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
+
+from users.models import HouseHold
+
+
 # from django.core.cache import cache
 # from django.test import RequestFactory
 # from django.utils.cache import get_cache_key
@@ -54,7 +58,8 @@ def recipe_list(request):
 
     # 4. Load user inventory once
     user = request.user if request.user.is_authenticated else None
-    household = getattr(user, 'household', None) if user else None
+    # household = getattr(user, 'household', None) if user else None
+    household = user.household if user else None
 
     if household:
         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)

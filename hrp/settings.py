@@ -87,6 +87,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'hrp.urls'
@@ -173,7 +174,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'bg'
 
 TIME_ZONE = 'Europe/Sofia'
 
@@ -214,3 +215,11 @@ FAST_API_URL = os.getenv('NGROK_URL')
 # WAGTAIL_ADMIN_BASE_URL = 'admin'
 #
 # WAGTAIL_SITE_NAME = "Hoseholdiq"
+LANGUAGES = [
+    ('bg', 'Bulgarian'),
+    ('en', 'English'),
+    ('ro', 'Romanian'),
+    ('el', 'Greek'),
+]
+
+LOCALE_PATHS = [ BASE_DIR / 'locale', ]

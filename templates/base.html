@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     {% load static %}
+    {% load i18n %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +17,8 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary px-4">
   <div class="container-fluid">
-    <a class="navbar-brand" href="/">🏠 Начало</a>
+    <a class="navbar-brand" href="/">🏠 {% trans "Начало" %}</a>
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
       aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
@@ -24,43 +26,72 @@
 
     <div class="collapse navbar-collapse" id="navbarMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="/reports/">Отчети/Анализи</a></li>
-        <li class="nav-item"><a class="nav-link" href="/shopping/">Пазаруване/Разходи</a></li>
-        <li class="nav-item"><a class="nav-link" href="/income/">Приходи</a></li>
-        <li class="nav-item"><a class="nav-link" href="/inventory/">Наличности</a></li>
 
-      {% if user.is_authenticated %}
-      <li class="nav-item"><a class="nav-link" href="/cooking/cooking-home/">Сготви</a></li>
-      {% else %}
-        <li class="nav-item"><a class="nav-link" href="/cooking/">Сготви</a></li>
-      {% endif %}
-        <li class="nav-item"><a class="nav-link" href="/finance/">Пари</a></li>
-        <li class="nav-item"><a class="nav-link" href="/entertainment/">Забавление</a></li>
-        <li class="nav-item"><a class="nav-link" href="/forum/">Форум</a></li>
-          <li class="nav-item"><a class="nav-link" href="/tasks/">
-              Задачи {% if incomplete_tasks > 0 %} ({{ incomplete_tasks }}) {% endif %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/reports/">{% trans "Отчети/Анализи" %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/shopping/">{% trans "Пазаруване/Разходи" %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/income/">{% trans "Приходи" %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/inventory/">{% trans "Наличности" %}</a></li>
+
+        {% if user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="/cooking/cooking-home/">{% trans "Сготви" %}</a></li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="/cooking/">{% trans "Сготви" %}</a></li>
+        {% endif %}
+
+        <li class="nav-item"><a class="nav-link" href="/finance/">{% trans "Пари" %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/entertainment/">{% trans "Забавление" %}</a></li>
+        <li class="nav-item"><a class="nav-link" href="/forum/">{% trans "Форум" %}</a></li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="/tasks/">
+            {% trans "Задачи" %} {% if incomplete_tasks > 0 %} ({{ incomplete_tasks }}) {% endif %}
+          </a>
+        </li>
+
       </ul>
 
       <ul class="navbar-nav mb-2 mb-lg-0">
+
+        <!-- 🌍 Language Selector -->
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="langDropdown" role="button"
+               data-bs-toggle="dropdown" aria-expanded="false">
+                🌐 {{ LANGUAGE_CODE|upper }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
+                <li>
+                    <form action="{% url 'set_language' %}" method="post" class="px-3 py-1">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button name="language" value="bg" class="dropdown-item">BG — Български</button>
+                        <button name="language" value="en" class="dropdown-item">EN — English</button>
+                        <button name="language" value="ro" class="dropdown-item">RO — Română</button>
+                        <button name="language" value="el" class="dropdown-item">GR — Ελληνικά</button>
+                    </form>
+                </li>
+            </ul>
+        </li>
+
         {% if user.is_authenticated %}
           <li class="nav-item">
             <strong><a class="nav-link" href="{% url 'profile' %}">👤 {{ user.first_name }}</a></strong>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'logout' %}">Изход</a>
+            <a class="nav-link" href="{% url 'logout' %}">{% trans "Изход" %}</a>
           </li>
         {% else %}
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}">Влез</a>
+            <a class="nav-link" href="{% url 'login' %}">{% trans "Влез" %}</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'register' %}">Регистрирай се</a>
+            <a class="nav-link" href="{% url 'register' %}">{% trans "Регистрирай се" %}</a>
           </li>
         {% endif %}
       </ul>
     </div>
   </div>
 </nav>
+
 
 
 

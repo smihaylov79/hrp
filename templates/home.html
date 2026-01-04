@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block content %}
 
     {% if weather_error %}
@@ -10,7 +11,6 @@
     {% if weather_data %}
         <div class="container mt-3">
 
-
             <div class="card shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -18,19 +18,24 @@
                             <form method="get" action="{% url 'set_location' %}" class="d-flex align-items-center mb-2"
                                   style="max-width: 300px;">
                                 <input type="text" name="location" class="form-control form-control-sm me-2"
-                                       placeholder="Въведи град..." required>
-                                <button type="submit" class="btn btn-outline-primary btn-sm">Промени</button>
+                                       placeholder="{% trans 'Въведи град...' %}" required>
+                                <button type="submit" class="btn btn-outline-primary btn-sm">
+                                    {% trans "Промени" %}
+                                </button>
                             </form>
+
                             <h6 class="card-title mb-1">
                                 {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }}
                                 ({{ weather_data.location.region }})
                             </h6>
+
                             <p class="mb-0">
-                                🌡️ {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
-                                <img src="{{ weather_data.current.condition.icon }}" alt="Weather icon">
+                                🌡️ {{ weather_data.current.temp_c }}°C,
+                                {{ weather_data.current.condition.text }}
+                                <img src="{{ weather_data.current.condition.icon }}" alt="{% trans 'Weather icon' %}">
                                 <div class="mb-0">
-                        {{ rate.base_currency }} / {{ rate.target_currency }}: {{ rate.rate }}
-                    </div>
+                                    {{ rate.base_currency }} / {{ rate.target_currency }}: {{ rate.rate }}
+                                </div>
                             </p>
                         </div>
 
@@ -40,157 +45,170 @@
                                     <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}"
                                        class="text-decoration-none text-dark">
                                         <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
-                                        <small>min {{ day.day.mintemp_c }}°C<br>
-                                            max {{ day.day.maxtemp_c }}°C</small><br>
+                                        <small>
+                                            {% trans "min" %} {{ day.day.mintemp_c }}°C<br>
+                                            {% trans "max" %} {{ day.day.maxtemp_c }}°C
+                                        </small><br>
                                         {{ day.day.condition.text }}<br>
-                                        <img src="{{ day.day.condition.icon }}" alt="Icon"><br>
+                                        <img src="{{ day.day.condition.icon }}" alt="{% trans 'Icon' %}"><br>
                                         🌧️{{ day.day.daily_chance_of_rain }}%
                                     </a>
                                 </div>
                             {% endfor %}
                         </div>
+
                     </div>
                 </div>
             </div>
         </div>
     {% endif %}
 
+    {% if user.is_authenticated %}
+        {% if task_total > 0 %}
+            <div class="alert alert-info mt-3">
 
+                {% if tasks_today %}
+                    📝 {% blocktrans %}Имаш {{ tasks_today }} задачи за днес{% endblocktrans %}
+                {% else %}
+                    ✅ {% trans "Няма задачи за днес!" %}
+                {% endif %}
 
-   {% if user.is_authenticated %}
-  {% if task_total > 0 %}
-    <div class="alert alert-info mt-3">
-      {% if tasks_today %}
-        📝 Имаш {{ tasks_today }} задачи за днес
-      {% else %}
-        ✅ Няма задачи за днес!
-      {% endif %}
+                {% if tasks_overdue %}
+                    {% blocktrans %}и {{ tasks_overdue }} просрочени!{% endblocktrans %}
+                {% endif %}
 
-      {% if tasks_overdue %}
-        и {{ tasks_overdue }} просрочени!
-      {% endif %}
+                <a href="{% url 'task_list' %}" class="btn btn-sm btn-primary ms-3">
+                    {% trans "Виж всички задачи" %}
+                </a>
+            </div>
+        {% else %}
+            <div class="alert alert-success mt-3">
+                ✅ {% trans "Няма задачи за днес!" %}
+            </div>
+        {% endif %}
 
-      <a href="{% url 'task_list' %}" class="btn btn-sm btn-primary ms-3">Виж всички задачи</a>
-    </div>
-  {% else %}
-    <div class="alert alert-success mt-3">
-      ✅ Няма задачи за днес!
-    </div>
-  {% endif %}
-
-  {% if events_today %}
-    <div class="alert alert-primary mt-3">
-      📅 Имаш {{ events_today|length }} събития за днес
-      <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary ms-3">Виж календар</a>
-    </div>
-  {% else %}
-    <div class="alert alert-success mt-3">
-      📅 Няма събития за деня!
-    </div>
-  {% endif %}
-{% endif %}
-
-
+        {% if events_today %}
+            <div class="alert alert-primary mt-3">
+                📅 {% blocktrans %}Имаш {{ events_today|length }} събития за днес{% endblocktrans %}
+                <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary ms-3">
+                    {% trans "Виж календар" %}
+                </a>
+            </div>
+        {% else %}
+            <div class="alert alert-success mt-3">
+                📅 {% trans "Няма събития за деня!" %}
+            </div>
+        {% endif %}
+    {% endif %}
 
     <div class="container my-4">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+
             <div class="col">
                 <a href="{% url 'reports_home' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">📊 Отчети и анализи</h5>
+                            <h5 class="card-title">📊 {% trans "Отчети и анализи" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'shopping' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">🛍️ Пазаруване/Разходи</h5>
+                            <h5 class="card-title">🛍️ {% trans "Пазаруване/Разходи" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
-        <div class="col">
-    <a href="{% url 'income_home' %}" class="text-decoration-none">
-        <div class="card text-center shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title">💶 Приходи</h5>
+
+            <div class="col">
+                <a href="{% url 'income_home' %}" class="text-decoration-none">
+                    <div class="card text-center shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">💶 {% trans "Приходи" %}</h5>
+                        </div>
+                    </div>
+                </a>
             </div>
-        </div>
-    </a>
-</div>
 
             <div class="col">
                 <a href="{% url 'inventory' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">🏬 Наличности</h5>
+                            <h5 class="card-title">🏬 {% trans "Наличности" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 {% if user.is_authenticated %}
-                <a href="{% url 'cooking_home' %}" class="text-decoration-none">
-                    {% else %}
-                <a href="{% url 'recipe_list' %}" class="text-decoration-none">
-                    {% endif %}
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🥣 Сготви</h5>
+                    <a href="{% url 'cooking_home' %}" class="text-decoration-none">
+                {% else %}
+                    <a href="{% url 'recipe_list' %}" class="text-decoration-none">
+                {% endif %}
+                        <div class="card text-center shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">🥣 {% trans "Сготви" %}</h5>
+                            </div>
                         </div>
-                    </div>
-                </a>
+                    </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'finance_home' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">💰 Пари</h5>
+                            <h5 class="card-title">💰 {% trans "Пари" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'entertainment_home' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">🏝️🍹⛱️🌞 🌊 Забавление</h5>
+                            <h5 class="card-title">🏝️🍹⛱️🌞 🌊 {% trans "Забавление" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'forum_home' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">🗪 Форум</h5>
+                            <h5 class="card-title">🗪 {% trans "Форум" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'task_list' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">📝 Задачи</h5>
+                            <h5 class="card-title">📝 {% trans "Задачи" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
             <div class="col">
                 <a href="{% url 'calendar' %}" class="text-decoration-none">
                     <div class="card text-center shadow-sm h-100">
                         <div class="card-body">
-                            <h5 class="card-title">🗓️ Календар</h5>
+                            <h5 class="card-title">🗓️ {% trans "Календар" %}</h5>
                         </div>
                     </div>
                 </a>
             </div>
+
         </div>
     </div>
-
 
 {% endblock %}

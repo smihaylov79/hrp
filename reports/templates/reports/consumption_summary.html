@@ -25,6 +25,31 @@
 
 {% block report_body %}
 
+   <div class="mb-3">
+
+    <a href="?fast=12&currency={{ selected_currency }}"
+       class="btn btn-sm {% if request.GET.fast == '12' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        12 месеца
+    </a>
+
+    <a href="?fast=6&currency={{ selected_currency }}"
+       class="btn btn-sm {% if request.GET.fast == '6' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        6 месеца
+    </a>
+
+    <a href="?fast=3&currency={{ selected_currency }}"
+       class="btn btn-sm {% if request.GET.fast == '3' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        3 месеца
+    </a>
+
+    <a href="?fast=1&currency={{ selected_currency }}"
+       class="btn btn-sm {% if request.GET.fast == '1' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+        1 месец
+    </a>
+
+</div>
+
+
 <!-- FILTER FORM -->
 <form method="get" class="border rounded p-4 mb-4 bg-light">
     <div class="row g-3 align-items-end">
@@ -54,6 +79,7 @@
                 {% endfor %}
             </select>
         </div>
+
 
         <div class="col-md-3">
             <button type="submit" class="btn btn-primary w-100">Филтрирай</button>

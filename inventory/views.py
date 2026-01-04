@@ -5,6 +5,8 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+
+from reports.utils import db_to_df
 from shopping.models import *
 from .models import *
 from taskmanager.models import Task
@@ -170,10 +172,25 @@ def generate_shopping_list(request):
                 break
     for category in user_indirect_categories:
         category_items = inventory_items.filter(category=category.product_category)
+
+        ## 04.01 adding average price in the shopping list
+        if household:
+            members = CustomUser.objects.filter(household=household)
+            shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+        else:
+            shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+        df = db_to_df(shopping_data, 'EUR')
+        avg_price = df.groupby('product__name')['converted_price'].mean()
+        # end of adding
+
         for product in category_items:
             total_consumption = product.daily_consumption * days_since_last
+
             if product.quantity - total_consumption < product.minimum_quantity and product.minimum_quantity > 0:
-                shopping_list.items.append(product.product.name)
+                avg_price_product = avg_price[product.product.name]
+                text_for_list = f'{product.product.name} ({avg_price_product:.2f} €)'
+                shopping_list.items.append(text_for_list)
 
             if product.quantity <= total_consumption:
                 product.quantity = 0
@@ -225,8 +242,24 @@ def update_shopping_list(request, list_id):
     if request.method == "POST":
         if "add_item" in request.POST:
             new_item = request.POST.get("new_item")
+            product = Product.objects.filter(name=new_item).first()
+
+            ## 04.01 adding average price in the shopping list
+            if household:
+                members = CustomUser.objects.filter(household=household)
+                shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members, product=product)
+            else:
+                shopping_data = ShoppingProduct.objects.filter(shopping__user=user, product=product)
+
+            df = db_to_df(shopping_data, 'EUR')
+            avg_price = df['total'].sum()/float(df['quantity'].sum())
+            # avg_price = df.groupby('product__name')['total'].mean()
+            # end of adding
+
             if new_item and new_item not in shopping_list.items:
-                shopping_list.items.append(new_item)
+                avg_price_product = avg_price
+                text_for_list = f'{product.name} ({avg_price_product:.2f} €)'
+                shopping_list.items.append(text_for_list)
 
         if "remove_item" in request.POST:
             remove_item = request.POST.get("remove_item")

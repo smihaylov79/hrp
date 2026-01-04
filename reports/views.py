@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q, Sum, F
+from django.db.models import Count, Q, Sum, F, Avg
 from django.shortcuts import render, redirect
 import json
 from django.views.generic import FormView, TemplateView
@@ -585,32 +585,52 @@ def get_consumption_queryset(user, date_from=None, date_to=None):
 
 
 
-def summarize_by_product(qs):
-    return (
+def summarize_by_product(qs, target_currency):
+    data = (
         qs.values(
-            'product__name',
-            'product__category__name',
-            'product__category__main_category__name',
+            "product__name",
+            "product__category__name",
+            "product__category__main_category__name",
+            "shopping__currency",
         )
         .annotate(
-            total_quantity=Sum('quantity'),
-            total_spent=Sum('amount'),
-            purchase_count=Count('id'),
+            total_quantity=Sum("quantity"),
+            amount=Sum("amount"),
+            price=Avg("price"),
         )
-        .order_by('-total_quantity')
     )
 
+    # Convert each row
+    for row in data:
+        converted = convert_amount(row, target_currency)
+        row["total_spent"] = converted["converted_amount"]
+        row["converted_price"] = converted["converted_price"]
+
+    # Sort by quantity
+    return sorted(data, key=lambda x: x["total_quantity"], reverse=True)
 
 
-def summarize_by_main_category(qs):
-    return (
-        qs.values('product__category__main_category__name')
+
+
+def summarize_by_main_category(qs, target_currency):
+    data = (
+        qs.values(
+            "product__category__main_category__name",
+            "shopping__currency",
+        )
         .annotate(
-            total_quantity=Sum('quantity'),
-            total_spent=Sum('amount'),
+            total_quantity=Sum("quantity"),
+            amount=Sum("amount"),
+            price=Avg("price"),
         )
-        .order_by('-total_spent')
     )
+
+    for row in data:
+        converted = convert_amount(row, target_currency)
+        row["total_spent"] = converted["converted_amount"]
+
+    return sorted(data, key=lambda x: x["total_spent"], reverse=True)
+
 
 
 def summarize_by_category(qs):
@@ -624,46 +644,72 @@ def summarize_by_category(qs):
     )
 
 
-
 class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
     template_name = "reports/consumption_summary.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        user = self.request.user
-        date_from = self.request.GET.get("date_from")
-        date_to = self.request.GET.get("date_to")
+        # -----------------------------
+        # 1) READ FILTERS
+        # -----------------------------
+        request = self.request
+        user = request.user
+
+        currency = request.GET.get("currency", "BGN")
+        date_from = request.GET.get("date_from")
+        date_to = request.GET.get("date_to")
+        fast = request.GET.get("fast")   # "1", "3", "6", "12"
+
+        # -----------------------------
+        # 2) HANDLE FAST FILTERS
+        # -----------------------------
+        if fast:
+            months = int(fast)
+            date_to = timezone.localdate()
+            date_from = date_to - timedelta(days=30 * months)
 
         # Convert to date objects if provided
-        if date_from:
+        if isinstance(date_from, str):
             date_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-        if date_to:
+        if isinstance(date_to, str):
             date_to = datetime.strptime(date_to, "%Y-%m-%d").date()
 
-        # Get queryset for the period
+        # -----------------------------
+        # 3) GET BASE QUERYSET
+        # -----------------------------
         qs = get_consumption_queryset(user, date_from, date_to)
 
-        # --- AVERAGE DAILY SPENT ---
-        total_spent = qs.aggregate(total=Sum("amount"))["total"] or 0
+        # -----------------------------
+        # 4) SUMMARIES (with conversion)
+        # -----------------------------
+        product_summary = summarize_by_product(qs, currency)
+        main_category_summary = summarize_by_main_category(qs, currency)
 
-        # Determine actual date range used
-        if not date_from or not date_to:
-            # get_consumption_queryset already defaults to last 365 days
-            days = 365
+        # -----------------------------
+        # 5) TOTAL + AVERAGE DAILY SPENT
+        # -----------------------------
+        total_spent = sum(p["total_spent"] for p in product_summary)
+
+        if date_from and date_to:
+            days = (date_to - date_from).days + 1
         else:
-            days = (date_to - date_from).days + 1  # inclusive
+            days = 365
 
         avg_daily_spent = total_spent / days if days > 0 else 0
 
-        # Update context
+        # -----------------------------
+        # 6) UPDATE CONTEXT
+        # -----------------------------
         context.update({
-            "product_summary": summarize_by_product(qs),
-            "category_summary": summarize_by_category(qs),
-            "main_category_summary": summarize_by_main_category(qs),
-            "avg_daily_spent": avg_daily_spent,
+            "form": ConsumptionFilterForm(request.GET or None),
+            "product_summary": product_summary,
+            "main_category_summary": main_category_summary,
             "total_spent": total_spent,
+            "avg_daily_spent": avg_daily_spent,
+            "selected_currency": currency,
+            "date_from": date_from,
+            "date_to": date_to,
         })
 
         return context
-

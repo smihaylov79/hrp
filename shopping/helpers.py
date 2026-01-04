@@ -22,6 +22,7 @@ def load_prefill_data(request, user, household):
             else:
                 shopping_list = ShoppingList.objects.get(id=selected_list_id, user=user)
             for item_name in shopping_list.items:
+                item_name = item_name.split('(')[0].strip()
                 product = Product.objects.filter(name=item_name).first()
                 if product:
                     last_price = 0.00

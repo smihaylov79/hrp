@@ -1,0 +1,173 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-04 19:43+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Всички покупки"
+msgstr "Όλες οι αγορές"
+
+msgid "Плати битови сметки/вътрешен разход"
+msgstr "Πληρωμή λογαριασμών / εσωτερικής δαπάνης"
+
+msgid "Регистрирай нова покупка/разход"
+msgstr "Καταχώρισε νέα αγορά / δαπάνη"
+
+msgid "Покупки с всички продукти"
+msgstr "Αγορές με όλα τα προϊόντα"
+
+msgid "Премахни филтъра"
+msgstr "Αφαίρεση φίλτρου"
+
+msgid "Потребител"
+msgstr "Χρήστης"
+
+msgid "Дата"
+msgstr "Ημερομηνία"
+
+msgid "Магазин"
+msgstr "Κατάστημα"
+
+msgid "Общо"
+msgstr "Σύνολο"
+
+msgid "Валута"
+msgstr "Νόμισμα"
+
+msgid "Действия"
+msgstr "Ενέργειες"
+
+msgid "Редактирай"
+msgstr "Επεξεργασία"
+
+msgid "Няма покупки към момента."
+msgstr "Δεν υπάρχουν αγορές προς το παρόν."
+
+#: .\templates\base.html:20
+msgid "Начало"
+msgstr "Αρχική"
+
+#: .\templates\base.html:30
+msgid "Отчети/Анализи"
+msgstr "Αναφορές / Αναλύσεις"
+
+#: .\templates\base.html:31 .\templates\home.html:121
+msgid "Пазаруване/Разходи"
+msgstr "Ψώνια / Έξοδα"
+
+#: .\templates\base.html:32 .\templates\home.html:131
+msgid "Приходи"
+msgstr "Έσοδα"
+
+#: .\templates\base.html:33 .\templates\home.html:141
+msgid "Наличности"
+msgstr "Αποθέματα"
+
+#: .\templates\base.html:36 .\templates\base.html:38 .\templates\home.html:155
+msgid "Сготви"
+msgstr "Μαγείρεψε"
+
+#: .\templates\base.html:41 .\templates\home.html:165
+msgid "Пари"
+msgstr "Οικονομικά"
+
+#: .\templates\base.html:42 .\templates\home.html:175
+msgid "Забавление"
+msgstr "Ψυχαγωγία"
+
+#: .\templates\base.html:43 .\templates\home.html:185
+msgid "Форум"
+msgstr "Φόρουμ"
+
+#: .\templates\base.html:47 .\templates\home.html:195
+msgid "Задачи"
+msgstr "Εργασίες"
+
+#: .\templates\base.html:80
+msgid "Изход"
+msgstr "Αποσύνδεση"
+
+#: .\templates\base.html:84
+msgid "Влез"
+msgstr "Σύνδεση"
+
+#: .\templates\base.html:87
+msgid "Регистрирай се"
+msgstr "Εγγραφή"
+
+#: .\templates\home.html:21
+msgid "Въведи град..."
+msgstr "Εισάγετε πόλη..."
+
+#: .\templates\home.html:23
+msgid "Промени"
+msgstr "Αλλαγή"
+
+#: .\templates\home.html:35
+msgid "Weather icon"
+msgstr "Εικονίδιο καιρού"
+
+#: .\templates\home.html:49
+msgid "min"
+msgstr "ελάχ"
+
+#: .\templates\home.html:50
+msgid "max"
+msgstr "μέγ"
+
+#: .\templates\home.html:53
+msgid "Icon"
+msgstr "Εικονίδιο"
+
+#: .\templates\home.html:71
+#, python-format
+msgid "Имаш %(tasks_today)s задачи за днес"
+msgstr "Έχετε %(tasks_today)s εργασίες για σήμερα"
+
+#: .\templates\home.html:73 .\templates\home.html:86
+msgid "Няма задачи за днес!"
+msgstr "Δεν υπάρχουν εργασίες για σήμερα!"
+
+#: .\templates\home.html:77
+#, python-format
+msgid "и %(tasks_overdue)s просрочени!"
+msgstr "και %(tasks_overdue)s καθυστερημένες!"
+
+#: .\templates\home.html:81
+msgid "Виж всички задачи"
+msgstr "Δείτε όλες τις εργασίες"
+
+#: .\templates\home.html:92
+#, python-format
+msgid "Имаш %(events_today|length)s събития за днес"
+msgstr "Έχετε %(events_today|length)s γεγονότα σήμερα"
+
+#: .\templates\home.html:94
+msgid "Виж календар"
+msgstr "Δείτε το ημερολόγιο"
+
+#: .\templates\home.html:99
+msgid "Няма събития за деня!"
+msgstr "Δεν υπάρχουν γεγονότα για σήμερα!"
+
+#: .\templates\home.html:111
+msgid "Отчети и анализи"
+msgstr "Αναφορές και αναλύσεις"
+
+#: .\templates\home.html:205
+msgid "Календар"
+msgstr "Ημερολόγιο"

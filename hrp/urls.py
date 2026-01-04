@@ -19,6 +19,7 @@ from django.urls import path, include
 from .views import *
 from django.conf import settings
 from django.conf.urls.static import static
+from django.conf.urls.i18n import i18n_patterns
 
 # from wagtail.admin import urls as wagtailadmin_urls
 # from wagtail.documents import urls as wagtaildocs_urls
@@ -47,6 +48,7 @@ urlpatterns = [
     path('reading/', include('reading.urls')),
     path('income/', include('income.urls')),
     path('budget/', include('budget.urls')),
+    path('i18n/', include('django.conf.urls.i18n')),
 
     # path('', include(wagtail_urls)),
 
