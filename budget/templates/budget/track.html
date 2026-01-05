@@ -10,7 +10,8 @@
     </div>
 
         <h4>Общо изпълнение:</h4>
-
+{% load l10n %}
+        {% localize off %}
 <div class="container">
 
   <!-- Разходи -->
@@ -95,10 +96,10 @@
                     <td style="width: 250px;">
                         <div class="progress" style="height: 25px;">
                             <div class="progress-bar
-                          {% if row.percent < 80 %}bg-success{% elif row.percent < 100 %}bg-warning{% else %}bg-danger{% endif %}"
+                          {% if row.percent_ytd < 80 %}bg-success{% elif row.percent_ytd < 100 %}bg-warning{% else %}bg-danger{% endif %}"
                                  role="progressbar"
-                                 style="width: {{ row.percent }}%;"
-                                 aria-valuenow="{{ row.percent }}"
+                                 style="width: {{ row.percent_ytd }}%;"
+                                 aria-valuenow="{{ row.percent_ytd }}"
                                  aria-valuemin="0"
                                  aria-valuemax="100">
                                 {{ row.percent_ytd }}%
@@ -139,4 +140,5 @@
             });
         </script>
     </div>
+    {% endlocalize %}
 {% endblock %}

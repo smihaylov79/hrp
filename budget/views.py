@@ -305,7 +305,7 @@ def track_budget(request, pk):
         "planned_series": json.dumps(planned_series),
         "actual_series": json.dumps(actual_series),
         "total_planned": total_planned,
-        "total_actual": total_actual,
+        "total_actual": round(total_actual, 2),
         "total_percent": total_percent,
         "time_percent": time_percent,
         "ytd_planned": round(ytd_total_planned, 2),

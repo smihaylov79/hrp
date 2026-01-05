@@ -251,15 +251,22 @@ def update_shopping_list(request, list_id):
             else:
                 shopping_data = ShoppingProduct.objects.filter(shopping__user=user, product=product)
 
-            df = db_to_df(shopping_data, 'EUR')
-            avg_price = df['total'].sum()/float(df['quantity'].sum())
-            # avg_price = df.groupby('product__name')['total'].mean()
+            avg_price = 'N/A'
+            prd_name = new_item
+            if shopping_data:
+                df = db_to_df(shopping_data, 'EUR')
+                avg_price = df['total'].sum()/float(df['quantity'].sum())
+                prd_name = product.name
             # end of adding
 
             if new_item and new_item not in shopping_list.items:
-                avg_price_product = avg_price
-                text_for_list = f'{product.name} ({avg_price_product:.2f} €)'
-                shopping_list.items.append(text_for_list)
+                if avg_price == "N/A":
+                    text_for_list = f'{prd_name} (няма данни)'
+                    shopping_list.items.append(text_for_list)
+                else:
+                    avg_price_product = avg_price
+                    text_for_list = f'{prd_name} ({avg_price_product:.2f} €)'
+                    shopping_list.items.append(text_for_list)
 
         if "remove_item" in request.POST:
             remove_item = request.POST.get("remove_item")
