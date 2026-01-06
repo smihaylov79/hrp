@@ -42,6 +42,20 @@
         <li class="nav-item"><a class="nav-link" href="/entertainment/">{% trans "Забавление" %}</a></li>
         <li class="nav-item"><a class="nav-link" href="/forum/">{% trans "Форум" %}</a></li>
 
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="fastappsDropdown" role="button"
+       data-bs-toggle="dropdown" aria-expanded="false">
+        {% trans "Приложения" %}
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="fastappsDropdown">
+        {% for app_name, url_name in fastapps_list %}
+            <li><a class="dropdown-item" href="{% url url_name %}">{{ app_name }}</a></li>
+        {% endfor %}
+    </ul>
+</li>
+
+
+
         <li class="nav-item">
           <a class="nav-link" href="/tasks/">
             {% trans "Задачи" %} {% if incomplete_tasks > 0 %} ({{ incomplete_tasks }}) {% endif %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white text-center py-2">
+                    <h5 class="mb-0">Калкулатор за ресто</h5>
+                </div>
+
+                <div class="card-body p-3">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="mb-2">
+                            <label class="form-label small">Платена сума</label>
+                            {{ form.paid_amount }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">Валута на плащане</label>
+                            {{ form.paid_currency }}
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small">Сума по сметка</label>
+                            {{ form.bill_amount }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small">Валута на сметката</label>
+                            {{ form.bill_currency }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2">
+                            Изчисли ресто
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {% if result %}
+<div class="alert alert-success mt-3 py-2">
+    <h6 class="alert-heading mb-2">Резултат</h6>
+
+    <p class="mb-1">
+        <strong>Ресто в лева:</strong>
+        <span class="text-dark">{{ result.change_bgn }}</span>
+    </p>
+
+    <p class="mb-0">
+        <strong>Ресто в евро:</strong>
+        <span class="text-primary fw-bold">{{ result.change_eur }}</span>
+    </p>
+</div>
+{% endif %}
+
+
+        </div>
+    </div>
+</div>
+{% endblock %}

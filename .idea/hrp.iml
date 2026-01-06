@@ -28,6 +28,7 @@
         <option value="$MODULE_DIR$/reading/templates" />
         <option value="$MODULE_DIR$/income/templates" />
         <option value="$MODULE_DIR$/budget/templates" />
+        <option value="$MODULE_DIR$/fastapps/change_calculator/templates" />
       </list>
     </option>
   </component>

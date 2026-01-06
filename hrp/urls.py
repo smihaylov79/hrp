@@ -49,6 +49,9 @@ urlpatterns = [
     path('income/', include('income.urls')),
     path('budget/', include('budget.urls')),
     path('i18n/', include('django.conf.urls.i18n')),
+    path("fastapps/", include("fastapps.urls")),
+
+
 
     # path('', include(wagtail_urls)),
 

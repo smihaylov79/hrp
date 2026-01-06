@@ -108,8 +108,17 @@ def fetch_rate_from_api(base_currency, target_currency, date):
 def get_exchange_rate(base_currency, target_currency, date):
     rate = ExchangeRate.objects.filter(base_currency=base_currency, target_currency=target_currency, date_extracted=date).first()
     if rate:
-
         return rate.rate
+    if base_currency == 'BGN' and target_currency == 'EUR':
+        rate = Decimal(0.51129)
+        ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate,
+                                    date_extracted=date)
+        return rate
+    elif base_currency == 'EUR' and target_currency == 'BGN':
+        rate = Decimal(1.95583)
+        ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate,
+                                    date_extracted=date)
+        return rate
 
     rate = fetch_rate_from_api(base_currency, target_currency, date)
     ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate, date_extracted=date)
