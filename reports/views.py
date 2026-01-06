@@ -539,6 +539,11 @@ def income_spendings_comparison(request):
             spendings_qs = spendings_qs.filter(shopping__date__range=(date_from, date_to))
 
         comparison_df = income_vs_spendings(income_qs, spendings_qs, currency)
+        # Convert "MM.YYYY" → datetime for proper sorting
+        comparison_df["month_dt"] = pd.to_datetime(comparison_df["month"], format="%m.%Y")
+
+        # Sort by the new datetime column
+        comparison_df = comparison_df.sort_values("month_dt")
 
         month_labels = comparison_df["month"].astype(str).tolist()
         income_series = [{"name": "Приходи", "data": comparison_df["total_income"].astype(float).round(2).tolist()}]

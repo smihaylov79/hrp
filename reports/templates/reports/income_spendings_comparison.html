@@ -24,8 +24,9 @@
 
 
       <script>
-
-      const rawMonths = {{ month_labels|safe }};
+document.addEventListener("DOMContentLoaded", function () {
+    // Parse month labels from Django
+    const rawMonths = {{ month_labels|safe }};
 
     // Sort months chronologically (MM.YYYY)
     const months = rawMonths.sort((a, b) => {
@@ -34,17 +35,19 @@
         return new Date(ya, ma - 1) - new Date(yb, mb - 1);
     });
 
-      Highcharts.chart("income-spendings-chart", {
+    Highcharts.chart("income-spendings-chart", {
         chart: { type: "column" },
         title: { text: "Приходи и разходи ({{ selected_currency }})" },
         xAxis: { categories: months },
         yAxis: { title: { text: "Сума ({{ selected_currency }})" } },
         series: {{ income_series|safe }}
             .concat({{ spendings_series|safe }})
-            .concat({{ net_series|safe }}
-            .concat({{ cumulative_series|safe }}))
-      });
-    </script>
+            .concat({{ net_series|safe }})
+            .concat({{ cumulative_series|safe }})
+    });
+});
+</script>
+
   {% else %}
     <div class="alert alert-info text-center">
       Няма данни за избрания период.
