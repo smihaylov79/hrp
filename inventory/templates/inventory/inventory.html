@@ -48,7 +48,8 @@
   </div>
 </div>
 
-
+{% load l10n %}
+        {% localize off %}
             <div class="table-scroll-wrapper" style="max-height: 800px; overflow-y: auto;">
                 <table class="table table-bordered table-striped align-middle">
                     <thead class="table-light">
@@ -93,7 +94,7 @@
             </div>
         </form>
     </div>
-
+{% endlocalize %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const checkbox = document.getElementById("inventoryOnlyToggle");

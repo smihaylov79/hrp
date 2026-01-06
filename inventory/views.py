@@ -170,19 +170,18 @@ def generate_shopping_list(request):
                 product.save()
                 total_consumption = 0
                 break
+        ## 04.01 adding average price in the shopping list
+    if household:
+        members = CustomUser.objects.filter(household=household)
+        shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
+    else:
+        shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+
+    df = db_to_df(shopping_data, 'EUR')
+    avg_price = df.groupby('product__name')['converted_price'].mean()
+        # end of adding
     for category in user_indirect_categories:
         category_items = inventory_items.filter(category=category.product_category)
-
-        ## 04.01 adding average price in the shopping list
-        if household:
-            members = CustomUser.objects.filter(household=household)
-            shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
-        else:
-            shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
-
-        df = db_to_df(shopping_data, 'EUR')
-        avg_price = df.groupby('product__name')['converted_price'].mean()
-        # end of adding
 
         for product in category_items:
             total_consumption = product.daily_consumption * days_since_last

@@ -21,11 +21,23 @@
     <div id="income-spendings-chart"></div>
 
     <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script>
+
+
+      <script>
+
+      const rawMonths = {{ month_labels|safe }};
+
+    // Sort months chronologically (MM.YYYY)
+    const months = rawMonths.sort((a, b) => {
+        const [ma, ya] = a.split('.');
+        const [mb, yb] = b.split('.');
+        return new Date(ya, ma - 1) - new Date(yb, mb - 1);
+    });
+
       Highcharts.chart("income-spendings-chart", {
         chart: { type: "column" },
         title: { text: "Приходи и разходи ({{ selected_currency }})" },
-        xAxis: { categories: {{ month_labels|safe }} },
+        xAxis: { categories: months },
         yAxis: { title: { text: "Сума ({{ selected_currency }})" } },
         series: {{ income_series|safe }}
             .concat({{ spendings_series|safe }})
