@@ -232,7 +232,7 @@ def income_vs_spendings(income_qs, spendings_qs, currency):
     comparison["net_balance"] = comparison["total_income"] - comparison["total_spendings"]
 
     # сортиране по месец
-    comparison = comparison.sort_values("month")
-    comparison["cumulative_net"] = comparison["net_balance"].cumsum()
+    # comparison = comparison.sort_values("month")
+    # comparison["cumulative_net"] = comparison["net_balance"].cumsum()
 
     return comparison

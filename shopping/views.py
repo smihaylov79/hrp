@@ -15,8 +15,6 @@ from .helpers import load_prefill_data, get_exchange_rate, save_shopping_product
 from .models import Shop, ProductCategory, MainCategory, CurrencyChoice, Shopping, Product, HouseholdShoppingList, \
     ShoppingList, ShoppingProduct
 from .helpers import fetch_electricity_price, fetch_cold_water, get_heating_price
-# from .fetching_utility_prices import fetch_electricity_price, fetch_cold_water, get_heating_price
-# from django.utils.decorators import sync_and_async_middleware
 
 
 @login_required
@@ -99,9 +97,9 @@ def utility_bills(request):
     selected_categories = ['Битови сметки', 'Наем', 'Финансиране', 'Инвестиции', 'Джобни']
     category = ProductCategory.objects.filter(name__in=selected_categories)
     bills = Product.objects.filter(category__in=category).order_by('name')
-    electricity_price = fetch_electricity_price()
-    cold_water = fetch_cold_water()
-    heating_price = get_heating_price()
+    electricity_price = fetch_electricity_price() or None
+    cold_water = fetch_cold_water() or None
+    heating_price = get_heating_price() or None
 
     if request.method == "POST":
         form = UtilityBillForm(request.POST)

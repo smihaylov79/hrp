@@ -31,7 +31,8 @@
     </form>
   </div>
 </div>
-
+{% load l10n %}
+        {% localize off %}
 <div class="card mb-4 shadow-sm border-0">
   <div class="card-body">
     <h5 class="card-title mb-4">📊 Portfolio Summary</h5>
@@ -307,4 +308,5 @@ function submitEdit(button) {
     }]
   });
 </script>
+    {% endlocalize %}
 {% endblock %}

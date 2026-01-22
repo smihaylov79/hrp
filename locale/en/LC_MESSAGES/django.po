@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-04 19:43+0200\n"
+"POT-Creation-Date: 2026-01-07 19:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,42 +18,55 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#: .\shopping\templates\shopping\shopping.html:7
 msgid "Всички покупки"
 msgstr "All purchases"
 
+#: .\shopping\templates\shopping\shopping.html:13
 msgid "Плати битови сметки/вътрешен разход"
 msgstr "Pay utility bills / internal expense"
 
+#: .\shopping\templates\shopping\shopping.html:19
 msgid "Регистрирай нова покупка/разход"
 msgstr "Register a new purchase / expense"
 
+#: .\shopping\templates\shopping\shopping.html:27
 msgid "Покупки с всички продукти"
 msgstr "Purchases with all products"
 
+#: .\shopping\templates\shopping\shopping.html:38
 msgid "Премахни филтъра"
 msgstr "Remove filter"
 
+#: .\shopping\templates\shopping\shopping.html:47
 msgid "Потребител"
 msgstr "User"
 
+#: .\shopping\templates\shopping\shopping.html:48
 msgid "Дата"
 msgstr "Date"
 
+#: .\shopping\templates\shopping\shopping.html:49
 msgid "Магазин"
 msgstr "Store"
 
+#: .\shopping\templates\shopping\shopping.html:50
 msgid "Общо"
 msgstr "Total"
 
+#: .\shopping\templates\shopping\shopping.html:51
 msgid "Валута"
 msgstr "Currency"
 
+#: .\shopping\templates\shopping\shopping.html:52
 msgid "Действия"
 msgstr "Actions"
 
+#: .\shopping\templates\shopping\shopping.html:67
 msgid "Редактирай"
 msgstr "Edit"
 
+#: .\shopping\templates\shopping\shopping.html:75
 msgid "Няма покупки към момента."
 msgstr "No purchases at the moment."
 
@@ -93,19 +106,23 @@ msgstr "Entertainment"
 msgid "Форум"
 msgstr "Forum"
 
-#: .\templates\base.html:47 .\templates\home.html:195
+#: .\templates\base.html:48
+msgid "Приложения"
+msgstr "Apps"
+
+#: .\templates\base.html:61 .\templates\home.html:195
 msgid "Задачи"
 msgstr "Tasks"
 
-#: .\templates\base.html:80
+#: .\templates\base.html:94
 msgid "Изход"
 msgstr "Logout"
 
-#: .\templates\base.html:84
+#: .\templates\base.html:98
 msgid "Влез"
 msgstr "Login"
 
-#: .\templates\base.html:87
+#: .\templates\base.html:101
 msgid "Регистрирай се"
 msgstr "Register"
 

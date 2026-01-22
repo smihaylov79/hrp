@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 import os
 import requests
@@ -127,43 +128,49 @@ def get_exchange_rate(base_currency, target_currency, date):
 
 
 def fetch_electricity_price():
-    url = "https://euenergy.live/electricity-prices/bulgaria/sofia"
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
+    url = "https://api.energy-charts.info/price?country=bg&year=2026"
 
-    subline_paragraphs = soup.find_all('p', class_='subline')
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()  # catches 4xx/5xx errors
+        data = response.json()
 
-    if subline_paragraphs:
-        spans = subline_paragraphs[0].find_all('span')
-        if len(spans) >= 2:
-            price_kwh = spans[1].text.strip()
-            price_kwh = price_kwh.replace('€ ', '')
-            return round(float(price_kwh) * 1.95583, 2)
+        if data and "price" in data and data["price"]:
+            price = data["price"][-1] / 1000
+            return round(price, 2)
+
+        return "no data"
+
+    except (requests.exceptions.Timeout,
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+            ValueError, KeyError):
+        return "no data"
+
 
 
 
 def fetch_cold_water():
     url = "https://www.sofiyskavoda.bg/en/water-tariff"
-    response = requests.get(url)
+    # response = requests.get(url)
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except Exception:
+        return "no data"
     soup = BeautifulSoup(response.text, 'html.parser')
 
     td_blocks = soup.find_all('td', class_='table-header-block')
     for td in td_blocks:
         if "Total (supply, sewerage, treatment)" in td.text:
 
-            td_with_price = td.find_next_sibling('td').find_next_sibling('td').find_next_sibling('td')
+            td_with_price = td.find_next_sibling('td').find_next_sibling('td')
             if td_with_price:
-                divs = td_with_price.find_all('div')
-                for div in divs:
-                    try:
-                        price = div.text.split('|')[0]
-                        match = re.search(r"\b(\d+\.\d+)\s*BGN\b", price)
-                        if match:
-                            price = round(float(match.group(1))*1.2, 2)
-                        return price
-                    except ValueError:
-                        continue
-    return None
+                text = td_with_price.get_text(" ", strip=True)
+                match = re.search(r"(\d+\.\d+)\s*€", text)
+                if match:
+                    return float(match.group(1))
+    return "no data"
 
 
 def get_heating_price():
@@ -174,7 +181,7 @@ def get_heating_price():
     price_tags = soup.find_all('p', class_='red-text red-text-price')
 
     for tag in price_tags:
-        match = re.search(r'(\d{2,3}[.,]\d{2})\s*лева', tag.text)
+        match = re.search(r'(\d{2,3}[.,]\d{2})\s*€', tag.text)
         if match:
             return float(match.group(1).replace(',', '.'))
 

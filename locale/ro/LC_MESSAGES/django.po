@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-04 19:43+0200\n"
+"POT-Creation-Date: 2026-01-07 19:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,45 +18,58 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
 "2:1));\n"
+
+#: .\shopping\templates\shopping\shopping.html:7
 msgid "Всички покупки"
 msgstr "Toate cumpărăturile"
 
+#: .\shopping\templates\shopping\shopping.html:13
 msgid "Плати битови сметки/вътрешен разход"
 msgstr "Plătește facturi / cheltuială internă"
 
+#: .\shopping\templates\shopping\shopping.html:19
 msgid "Регистрирай нова покупка/разход"
 msgstr "Înregistrează o nouă achiziție / cheltuială"
 
+#: .\shopping\templates\shopping\shopping.html:27
 msgid "Покупки с всички продукти"
 msgstr "Cumpărături cu toate produsele"
 
+#: .\shopping\templates\shopping\shopping.html:38
 msgid "Премахни филтъра"
 msgstr "Elimină filtrul"
 
+#: .\shopping\templates\shopping\shopping.html:47
 msgid "Потребител"
 msgstr "Utilizator"
 
+#: .\shopping\templates\shopping\shopping.html:48
 msgid "Дата"
 msgstr "Dată"
 
+#: .\shopping\templates\shopping\shopping.html:49
 msgid "Магазин"
 msgstr "Magazin"
 
+#: .\shopping\templates\shopping\shopping.html:50
 msgid "Общо"
 msgstr "Total"
 
+#: .\shopping\templates\shopping\shopping.html:51
 msgid "Валута"
 msgstr "Monedă"
 
+#: .\shopping\templates\shopping\shopping.html:52
 msgid "Действия"
 msgstr "Acțiuni"
 
+#: .\shopping\templates\shopping\shopping.html:67
 msgid "Редактирай"
 msgstr "Editează"
 
+#: .\shopping\templates\shopping\shopping.html:75
 msgid "Няма покупки към момента."
 msgstr "Nu există cumpărături momentan."
-
 
 #: .\templates\base.html:20
 msgid "Начало"
@@ -94,19 +107,23 @@ msgstr "Divertisment"
 msgid "Форум"
 msgstr "Forum"
 
-#: .\templates\base.html:47 .\templates\home.html:195
+#: .\templates\base.html:48
+msgid "Приложения"
+msgstr ""
+
+#: .\templates\base.html:61 .\templates\home.html:195
 msgid "Задачи"
 msgstr "Sarcini"
 
-#: .\templates\base.html:80
+#: .\templates\base.html:94
 msgid "Изход"
 msgstr "Ieșire"
 
-#: .\templates\base.html:84
+#: .\templates\base.html:98
 msgid "Влез"
 msgstr "Autentificare"
 
-#: .\templates\base.html:87
+#: .\templates\base.html:101
 msgid "Регистрирай се"
 msgstr "Înregistrare"
 

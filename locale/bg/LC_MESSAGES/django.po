@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-04 19:43+0200\n"
+"POT-Creation-Date: 2026-01-07 19:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -106,19 +106,23 @@ msgstr ""
 msgid "Форум"
 msgstr ""
 
-#: .\templates\base.html:47 .\templates\home.html:195
+#: .\templates\base.html:48
+msgid "Приложения"
+msgstr ""
+
+#: .\templates\base.html:61 .\templates\home.html:195
 msgid "Задачи"
 msgstr ""
 
-#: .\templates\base.html:80
+#: .\templates\base.html:94
 msgid "Изход"
 msgstr ""
 
-#: .\templates\base.html:84
+#: .\templates\base.html:98
 msgid "Влез"
 msgstr ""
 
-#: .\templates\base.html:87
+#: .\templates\base.html:101
 msgid "Регистрирай се"
 msgstr ""
 

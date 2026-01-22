@@ -545,6 +545,8 @@ def income_spendings_comparison(request):
         # Sort by the new datetime column
         comparison_df = comparison_df.sort_values("month_dt")
 
+        comparison_df["cumulative_net"] = comparison_df["net_balance"].cumsum()
+
         month_labels = comparison_df["month"].astype(str).tolist()
         income_series = [{"name": "Приходи", "data": comparison_df["total_income"].astype(float).round(2).tolist()}]
         spendings_series = [{"name": "Разходи", "data": comparison_df["total_spendings"].astype(float).round(2).tolist()}]

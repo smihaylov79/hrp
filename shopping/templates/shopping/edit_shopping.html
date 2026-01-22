@@ -31,7 +31,8 @@
       </div>
 
     </div>
-
+{% load l10n %}
+        {% localize off %}
     <h4 class="mb-3">📦 Продукти в покупката</h4>
     <div class="table-responsive">
       <table class="table table-bordered align-middle">
@@ -82,6 +83,7 @@
       </table>
     </div>
 <input type="hidden" name="product_id" value="{{ selected_product_id }}">
+{% endlocalize %}
 
     <div class="d-flex justify-content-between mt-4">
       <button type="submit" class="btn btn-success">💾 Запази промените</button>
