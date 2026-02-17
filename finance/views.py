@@ -21,7 +21,8 @@ from .models import DailyData, Market, DailyDataInvest, FundamentalsData, Symbol
     InstrumentTypesInvest, MarginGroups, UserPortfolio, UserPortfolioData, PortfolioTransaction
 
 from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
-    generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction, current_price_yf
+    generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction, current_price_yf, \
+    time_to_angle, arc_path
 from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
     calculate_rsi
 from .predictor import run_prediction_model
@@ -44,6 +45,35 @@ def format_market_cap(value):
     return f"{float(value) / 1_000_000_000:.2f}B"
 
 
+# def finance_home(request):
+#     markets = Market.objects.all()
+#
+#     for market in markets:
+#         # Determine open/close status
+#         market.current_status = "open" if market.is_open_now() else "closed"
+#
+#         # Convert open/close to angles
+#         market.open_angle = time_to_angle(market.open_time)
+#         market.close_angle = time_to_angle(market.close_time)
+#
+#         # SVG arc path
+#         market.arc_path = arc_path(market.open_angle, market.close_angle)
+#
+#         # Color
+#         market.color = "#28a745" if market.current_status == "open" else "#6c757d"
+#
+#     # Current time angle (for the clock hand)
+#     now = datetime.utcnow()
+#     current_angle = time_to_angle(now.time())
+#
+#     context = {
+#         "markets": markets,
+#         "current_angle": current_angle,
+#     }
+#
+#     return render(request, "finance/finance_home.html", context)
+
+
 def finance_home(request):
     markets = Market.objects.all()
     local_tz = timezone.get_current_timezone()
@@ -62,6 +92,12 @@ def finance_home(request):
         market.utc_open = open_dt.astimezone(pytz.UTC).isoformat()
         market.utc_close = close_dt.astimezone(pytz.UTC).isoformat()
 
+        market.open_angle = time_to_angle(market.open_time)
+        market.close_angle = time_to_angle(market.close_time)
+
+        market.arc_path = arc_path(market.open_angle, market.close_angle)
+        market.color = "#28a745" if market.current_status == "open" else "#999"
+
         # Countdown label
         delta = market.time_until_event()
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
@@ -69,7 +105,8 @@ def finance_home(request):
         label = "Closes in" if market.current_status == "open" else "Opens in"
         market.countdown_text = f"{label} {hours}h {minutes}m"
 
-    context = {'markets': markets}
+    context = {'markets': markets,
+               }
 
     return render(request, "finance/finance_home.html", context)
 

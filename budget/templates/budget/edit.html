@@ -24,9 +24,10 @@
           <td>{{ item.category.name }}</td>
           <td>
             <input type="number" step="1"
-                   name="item_{{ item.id }}"
-                   value="{{ item.planned_amount }}"
-                   class="form-control form-control-sm">
+       name="expense_{{ item.id }}"
+       value="{{ item.planned_amount }}"
+       class="form-control form-control-sm">
+
           </td>
         </tr>
       {% endfor %}
@@ -47,9 +48,10 @@
           <td>{{ item.income_type.name }}</td>
           <td>
             <input type="number" step="1"
-                   name="item_{{ item.id }}"
-                   value="{{ item.planned_amount }}"
-                   class="form-control form-control-sm">
+       name="income_{{ item.id }}"
+       value="{{ item.planned_amount }}"
+       class="form-control form-control-sm">
+
           </td>
         </tr>
       {% endfor %}

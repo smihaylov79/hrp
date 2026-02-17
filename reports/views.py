@@ -481,39 +481,6 @@ class IncomeView(LoginRequiredMixin, FormView):
         return self.render_to_response(context)
 
 
-# def income_spendings_comparison(request):
-#     user = request.user
-#     household = user.household
-#
-#     if household:
-#         members = CustomUser.objects.filter(household=household)
-#         income_qs = Income.objects.filter(user__in=members)
-#         spendings_qs = ShoppingProduct.objects.filter(shopping__user__in=members)
-#     else:
-#         income_qs = Income.objects.filter(user=user)
-#         spendings_qs = ShoppingProduct.objects.filter(shopping__user=user)
-#
-#     print("Income count:", income_qs.count())
-#     print("Spendings count:", spendings_qs.count())
-#
-#     currency = request.GET.get("currency", "BGN")
-#     comparison_df = income_vs_spendings(income_qs, spendings_qs, currency)
-#
-#     month_labels = comparison_df["month"].astype(str).tolist()
-#     income_series = comparison_df["total_income"].astype(float).round(2).tolist()
-#     spendings_series = comparison_df["total_spendings"].astype(float).round(2).tolist()
-#     net_series = comparison_df["net_balance"].astype(float).round(2).tolist()
-#
-#     context = {
-#         "month_labels": json.dumps(month_labels),
-#         "income_series": json.dumps([{"name": "Приходи", "data": income_series}]),
-#         "spendings_series": json.dumps([{"name": "Разходи", "data": spendings_series}]),
-#         "net_series": json.dumps([{"name": "Нетен баланс", "data": net_series}]),
-#         "selected_currency": currency,
-#     }
-#     return render(request, "reports/income_spendings_comparison.html", context)
-
-
 def income_spendings_comparison(request):
     form = IncomeSpendingsComparisonForm(request.GET or None)
 

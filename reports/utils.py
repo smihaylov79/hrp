@@ -224,15 +224,9 @@ def income_vs_spendings(income_qs, spendings_qs, currency):
     # групиране по месец
     income_monthly = df_income.groupby("month")["total"].sum().reset_index()
     spendings_monthly = df_spendings.groupby("month")["total"].sum().reset_index()
-
     # merge
     comparison = pd.merge(income_monthly, spendings_monthly, on="month", how="outer", suffixes=("_income", "_spendings")).fillna(0)
 
     # нетен баланс
     comparison["net_balance"] = comparison["total_income"] - comparison["total_spendings"]
-
-    # сортиране по месец
-    # comparison = comparison.sort_values("month")
-    # comparison["cumulative_net"] = comparison["net_balance"].cumsum()
-
     return comparison

@@ -327,23 +327,24 @@ def edit_budget(request, pk):
     income_items = budget.income_items.select_related("income_type").all()
 
     if request.method == "POST":
-        # Update each item
+        # Update expenses
         for item in items:
-            field_name = f"item_{item.id}"
-            value = request.POST.get(field_name, "0")
-            item.planned_amount = Decimal(value)
-            item.save()
+            key = f"expense_{item.id}"
+            if key in request.POST:
+                item.planned_amount = request.POST[key]
+                item.save()
 
+        # Update incomes
         for item in income_items:
-            field_name = f"item_{item.id}"
-            value = request.POST.get(field_name, "0")
-            item.planned_amount = Decimal(value)
-            item.save()
+            key = f"income_{item.id}"
+            if key in request.POST:
+                item.planned_amount = request.POST[key]
+                item.save()
 
         # Reset approvals
         budget.reset_approvals()
 
-        return redirect("budget_detail", pk=budget.pk)
+        return redirect("budget_detail", budget.id)
 
     return render(request, "budget/edit.html", {
         "budget": budget,

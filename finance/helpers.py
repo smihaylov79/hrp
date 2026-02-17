@@ -1,3 +1,4 @@
+import math
 from datetime import date, datetime
 from urllib.parse import unquote
 import time
@@ -11,8 +12,8 @@ import requests
 from finance.models import DailyDataInvest, DailyData, SymbolsMapping, FundamentalsData
 from .data_from_correction import mapping_ids
 
-
 NGROK_URL = os.environ.get("NGROK_URL")
+
 
 def deep_clean(obj):
     if isinstance(obj, dict):
@@ -385,3 +386,19 @@ def current_price_yf(symbol):
     except Exception as e:
         print(f"Error fetching price for {symbol}: {e}")
         return 0.0
+
+
+def time_to_angle(t):
+    return (t.hour + t.minute / 60) * 15  # 360° / 24h
+
+
+def polar_to_cartesian(cx, cy, r, angle_deg):
+    angle_rad = math.radians(angle_deg - 90)
+    return cx + r * math.cos(angle_rad), cy + r * math.sin(angle_rad)
+
+
+def arc_path(start_angle, end_angle, r=45, cx=50, cy=50):
+    start = polar_to_cartesian(cx, cy, r, start_angle)
+    end = polar_to_cartesian(cx, cy, r, end_angle)
+    large_arc = 1 if (end_angle - start_angle) % 360 > 180 else 0
+    return f"M {start[0]} {start[1]} A {r} {r} 0 {large_arc} 1 {end[0]} {end[1]}"
