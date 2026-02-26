@@ -87,7 +87,7 @@ class SpendingsView(LoginRequiredMixin, FormView):
             else:
                 df_monthly_comparison = df
 
-# Newly added 10.11
+            # Newly added 10.11
             main_category_monthly = (
                 df.groupby(['month', 'product__category__main_category__name'])['total']
                 .sum()
@@ -114,26 +114,27 @@ class SpendingsView(LoginRequiredMixin, FormView):
 
             context = self.get_context_data(form=form, )
             if df is not None and not df.empty:
-                context.update({'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
-                                'subcategory_monthly_data': json.dumps(
-                                    subcategory_monthly.to_dict(orient='records')),
-                                'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
-                                'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
-                                'total_spent': round(df['total'].sum(), 2),
-                                'main_category_name': main_category.name if main_category else '',
-                                'main_chart_data': json.dumps(by_category_spending(df)[0]),
-                                'sub_chart_data': json.dumps(by_category_spending(df)[1]),
-                                'shoppings_count': shoppings_count,
-                                'most_purchased_names': most_purchased_names,
-                                'biggest_spent': by_product_statistics(df)[0],
-                                'lowest_price': by_product_statistics(df)[1],
-                                'highest_price': by_product_statistics(df)[2],
-                                'top_increase': calculate_price_changes(df)[0],
-                                'top_decrease': calculate_price_changes(df)[1],
-                                'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
-                                'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
-                                # 'main_category_series': json.dumps(main_category_series)
-                                })
+                context.update(
+                    {'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
+                     'subcategory_monthly_data': json.dumps(
+                         subcategory_monthly.to_dict(orient='records')),
+                     'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
+                     'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
+                     'total_spent': round(df['total'].sum(), 2),
+                     'main_category_name': main_category.name if main_category else '',
+                     'main_chart_data': json.dumps(by_category_spending(df)[0]),
+                     'sub_chart_data': json.dumps(by_category_spending(df)[1]),
+                     'shoppings_count': shoppings_count,
+                     'most_purchased_names': most_purchased_names,
+                     'biggest_spent': by_product_statistics(df)[0],
+                     'lowest_price': by_product_statistics(df)[1],
+                     'highest_price': by_product_statistics(df)[2],
+                     'top_increase': calculate_price_changes(df)[0],
+                     'top_decrease': calculate_price_changes(df)[1],
+                     'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
+                     'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
+                     # 'main_category_series': json.dumps(main_category_series)
+                     })
         return self.render_to_response(context)
 
 
@@ -182,7 +183,6 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
 
             shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
 
-
             df = None
             shop_price_changes = None
             avg_price_changes = None
@@ -199,12 +199,13 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
                 shop_spending_totals = df.groupby('shopping__shop__name')['total'].sum()
 
                 spending_chart_data = [{
-                "name": shop,
-                "y": total
-            } for shop, total in shop_spending_totals.items()]
+                    "name": shop,
+                    "y": total
+                } for shop, total in shop_spending_totals.items()]
 
-                shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])['converted_price'].mean().round(
-                2).unstack().fillna('-')
+                shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])[
+                    'converted_price'].mean().round(
+                    2).unstack().fillna('-')
                 shop_price_changes['Обща средна цена'] = df.groupby('product__name')['converted_price'].mean().round(2)
 
             highlighted_table = []
@@ -468,7 +469,8 @@ class IncomeView(LoginRequiredMixin, FormView):
                 month_labels = sorted(by_month["month"].astype(str).unique())
                 monthly_series = [{"name": "Приходи", "data": by_month["total"].round(2).tolist()}]
 
-                type_series = [{"name": row["income_type__name"], "y": round(row["total"], 2)} for _, row in by_type.iterrows()]
+                type_series = [{"name": row["income_type__name"], "y": round(row["total"], 2)} for _, row in
+                               by_type.iterrows()]
                 selected_currency = form.cleaned_data.get("currency") or "BGN"
                 context.update({
                     "total_income": round(df["total"].sum(), 2),
@@ -516,7 +518,8 @@ def income_spendings_comparison(request):
 
         month_labels = comparison_df["month"].astype(str).tolist()
         income_series = [{"name": "Приходи", "data": comparison_df["total_income"].astype(float).round(2).tolist()}]
-        spendings_series = [{"name": "Разходи", "data": comparison_df["total_spendings"].astype(float).round(2).tolist()}]
+        spendings_series = [
+            {"name": "Разходи", "data": comparison_df["total_spendings"].astype(float).round(2).tolist()}]
         net_series = [{"name": "Нетен баланс", "data": comparison_df["net_balance"].astype(float).round(2).tolist()}]
 
         cumulative_series = [{
@@ -558,7 +561,6 @@ def get_consumption_queryset(user, date_from=None, date_to=None):
     return qs.filter(shopping__date__range=(date_from, date_to))
 
 
-
 def summarize_by_product(qs, target_currency):
     data = (
         qs.values(
@@ -584,8 +586,6 @@ def summarize_by_product(qs, target_currency):
     return sorted(data, key=lambda x: x["total_quantity"], reverse=True)
 
 
-
-
 def summarize_by_main_category(qs, target_currency):
     data = (
         qs.values(
@@ -604,7 +604,6 @@ def summarize_by_main_category(qs, target_currency):
         row["total_spent"] = converted["converted_amount"]
 
     return sorted(data, key=lambda x: x["total_spent"], reverse=True)
-
 
 
 def summarize_by_category(qs):
@@ -630,10 +629,10 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
         request = self.request
         user = request.user
 
-        currency = request.GET.get("currency", "BGN")
+        currency = request.GET.get("currency", "EUR")
         date_from = request.GET.get("date_from")
         date_to = request.GET.get("date_to")
-        fast = request.GET.get("fast")   # "1", "3", "6", "12"
+        fast = request.GET.get("fast")  # "1", "3", "6", "12"
 
         # -----------------------------
         # 2) HANDLE FAST FILTERS
@@ -654,16 +653,44 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
         # -----------------------------
         qs = get_consumption_queryset(user, date_from, date_to)
 
+        qs = db_to_df(qs, currency)
+
         # -----------------------------
         # 4) SUMMARIES (with conversion)
         # -----------------------------
-        product_summary = summarize_by_product(qs, currency)
-        main_category_summary = summarize_by_main_category(qs, currency)
+        # product_summary = summarize_by_product(qs, currency)
+        # main_category_summary = summarize_by_main_category(qs, currency)
+        # subcategory_summary = summarize_by_category(qs)
+        product_summary = (
+            qs.groupby("product__name")
+            .agg(quantity=("quantity", "sum"),
+                 total_spent=("converted_amount", "sum"))
+            .reset_index()
+            .sort_values("quantity", ascending=False)
+            .to_dict("records")
+        )
+
+        main_category_summary = (
+            qs.groupby("product__category__main_category__name")
+            .agg(quantity=("quantity", "sum"),
+                total_spent=("converted_amount", "sum"))
+            .reset_index()
+            .to_dict("records")
+        )
+
+        subcategory_summary = (
+            qs.groupby("product__category__name")
+            .agg(quantity=("quantity", "sum"),
+                 total_spent=("converted_amount", "sum"))
+            .reset_index()
+            .to_dict("records")
+        )
 
         # -----------------------------
         # 5) TOTAL + AVERAGE DAILY SPENT
         # -----------------------------
-        total_spent = sum(p["total_spent"] for p in product_summary)
+        # total_spent = sum(p["total_spent"] for p in product_summary)
+        total_spent = qs["converted_amount"].sum()
 
         if date_from and date_to:
             days = (date_to - date_from).days + 1
@@ -679,11 +706,13 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
             "form": ConsumptionFilterForm(request.GET or None),
             "product_summary": product_summary,
             "main_category_summary": main_category_summary,
+            'subcategory_summary': subcategory_summary,
             "total_spent": total_spent,
             "avg_daily_spent": avg_daily_spent,
             "selected_currency": currency,
             "date_from": date_from,
             "date_to": date_to,
+            "currency": currency,
         })
 
         return context

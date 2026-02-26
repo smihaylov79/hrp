@@ -103,7 +103,7 @@
     <div class="col-md-3">
         <div class="border rounded p-3 text-center shadow-sm bg-white h-100">
             <div class="fs-2 fw-bold text-primary">
-                {{ p.total_quantity|floatformat:0 }}
+                {{ p.quantity|floatformat:0 }}
             </div>
             <div class="text-muted">{{ p.product__name }}</div>
         </div>
@@ -115,11 +115,11 @@
 <h4 class="mb-3">Разходи по основни категории</h4>
 
 <div class="list-group mb-4">
-    {% for c in main_category_summary %}
+    {% for c in subcategory_summary %}
     <div class="list-group-item d-flex justify-content-between align-items-center">
-        <strong>{{ c.product__category__main_category__name }}</strong>
+        <strong>{{ c.product__category__name }}</strong>
         <span class="badge bg-success rounded-pill">
-            {{ c.total_spent }} {{ request.GET.currency }}
+            {{ c.quantity|floatformat:0 }} / {{ c.total_spent }} {{ currency }}
         </span>
     </div>
     {% endfor %}
@@ -130,7 +130,7 @@
      style="background: #fff3cd; border-left: 6px solid #f6c23e;">
     <h5 class="mb-2">Интересни факти</h5>
     <ul class="mb-0">
-        <li>Средно харчиш <strong>{{ avg_daily_spent|floatformat:2 }} {{ request.GET.currency }}</strong> на ден.</li>
+        <li>Средно харчиш <strong>{{ avg_daily_spent|floatformat:2 }} {{ currency }}</strong> на ден.</li>
         <li>Най-често купуваният продукт е <strong>{{ product_summary.0.product__name }}</strong>.</li>
         <li>Категорията с най-много разходи е <strong>{{ main_category_summary.0.product__category__main_category__name }}</strong>.</li>
     </ul>
@@ -154,14 +154,14 @@
                 <div class="text-primary fw-semibold mb-2" style="font-size: 1.1rem;">
                     Количество:
                     <span class="fs-4 fw-bold">
-                        {{ p.total_quantity|floatformat:0 }}
+                        {{ p.quantity|floatformat:0 }}
                     </span>
                     <span class="text-muted">{{ p.product__unit }}</span>
                 </div>
 
                 <!-- Total spent -->
                 <div class="badge bg-success mt-2">
-                    {{ p.total_spent }} {{ request.GET.currency }}
+                    {{ p.total_spent|floatformat:2 }} {{ currency }}
                 </div>
 
             </div>

@@ -151,26 +151,26 @@ def fetch_electricity_price():
 
 
 def fetch_cold_water():
-    url = "https://www.sofiyskavoda.bg/en/water-tariff"
-    # response = requests.get(url)
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-    except Exception:
-        return "no data"
-    soup = BeautifulSoup(response.text, 'html.parser')
-
-    td_blocks = soup.find_all('td', class_='table-header-block')
-    for td in td_blocks:
-        if "Total (supply, sewerage, treatment)" in td.text:
-
-            td_with_price = td.find_next_sibling('td').find_next_sibling('td')
-            if td_with_price:
-                text = td_with_price.get_text(" ", strip=True)
-                match = re.search(r"(\d+\.\d+)\s*€", text)
-                if match:
-                    return float(match.group(1))
-    return "no data"
+    # url = "https://www.sofiyskavoda.bg/en/water-tariff"
+    # # response = requests.get(url)
+    # try:
+    #     response = requests.get(url, timeout=10)
+    #     response.raise_for_status()
+    # except Exception:
+    #     return "no data"
+    # soup = BeautifulSoup(response.text, 'html.parser')
+    #
+    # td_blocks = soup.find_all('td', class_='table-header-block')
+    # for td in td_blocks:
+    #     if "Total (supply, sewerage, treatment)" in td.text:
+    #
+    #         td_with_price = td.find_next_sibling('td').find_next_sibling('td')
+    #         if td_with_price:
+    #             text = td_with_price.get_text(" ", strip=True)
+    #             match = re.search(r"(\d+\.\d+)\s*€", text)
+    #             if match:
+    #                 return float(match.group(1))
+    return 2.111
 
 
 def get_heating_price():

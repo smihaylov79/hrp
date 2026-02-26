@@ -3,7 +3,7 @@ from datetime import datetime, date
 import pytz
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum, F, Avg
 from django.shortcuts import render, redirect, get_object_or_404
 
 import os
@@ -22,7 +22,7 @@ from .models import DailyData, Market, DailyDataInvest, FundamentalsData, Symbol
 
 from .helpers import deep_clean, create_dataframe, convert_to_milliseconds, fetch_fundamentals_data, \
     generate_symbol_mapping, backup_chart, get_news, get_predicted_price, get_lstm_prediction, current_price_yf, \
-    time_to_angle, arc_path
+    time_to_angle, arc_path, build_transition_matrix, compute_confidence
 from .fundamentals_calculations import calculate_fair_price_fast, calculate_ebit, debt_to_equity, calculate_cogs, \
     calculate_rsi
 from .predictor import run_prediction_model
@@ -817,17 +817,84 @@ def add_symbol_to_portfolio(request):
 
 
 def gainers_loosers_prediction_view(request):
-    prediction_result = None
 
-    if request.method == 'POST':
-        form = PredictionForm(request.POST)
-        if form.is_valid():
-            date = form.cleaned_data['date']
-            prediction_result = run_prediction_model(date)
-    else:
-        form = PredictionForm()
+    # Optional: user-selected minimum absolute gap to consider (for base stats)
+    threshold = float(request.GET.get("threshold", 5))
+    min_conf = float(request.GET.get("min_conf", 0))
 
-    return render(request, 'finance/predict_gainers_loosers.html', {
-        'form': form,
-        'prediction_result': prediction_result
+    # Load all data in one query
+    all_rows = DailyData.objects.filter(instrument_type='Stock CFDs').order_by("symbol", "date")
+
+    # Group by symbol
+    grouped = defaultdict(list)
+    for row in all_rows:
+        grouped[row.symbol].append(row)
+
+    results = []
+
+    for symbol, records in grouped.items():
+        if len(records) < 5:
+            # too little history, skip
+            continue
+
+        # --- Base stats with threshold filter ---
+        filtered = [r for r in records if abs(r.gap_open_percentage) >= threshold]
+        total_events = len(filtered)
+        if total_events == 0:
+            continue
+
+        positive = sum(1 for r in filtered if r.gap_open_percentage > 0)
+        negative = sum(1 for r in filtered if r.gap_open_percentage < 0)
+
+        p_positive = (positive / total_events) * 100
+        p_negative = (negative / total_events) * 100
+        expected_gap = sum(r.gap_open_percentage for r in filtered) / total_events
+
+        company_name = records[-1].company_name
+
+        # --- Gap-after-gap behavior (transition matrix) ---
+        buckets, transitions, transition_probs = build_transition_matrix(records)
+        current_bucket = buckets[-1]
+
+        confidence, num_events, predicted_bucket, consistency = compute_confidence(
+            transitions, transition_probs, current_bucket
+        )
+
+        results.append({
+            "symbol": symbol,
+            "company": company_name,
+            "p_positive": p_positive,
+            "p_negative": p_negative,
+            "expected_gap": expected_gap,
+            "total_events": total_events,
+            "current_bucket": current_bucket,
+            "predicted_bucket": predicted_bucket,
+            "confidence": confidence,        # 0–1
+            "consistency": consistency,      # 0–1
+            "transition_events": num_events, # how many similar situations
+        })
+    # Filter by minimum confidence
+    results = [r for r in results if r["confidence"] >= min_conf]
+    results = sorted(results, key=lambda x: x["confidence"], reverse=True)
+
+    # Rank by confidence *and* positive probability for gainers
+    gainers = sorted(
+        results,
+        key=lambda x: (x["confidence"], x["p_positive"]),
+        reverse=True
+    )[:20]
+
+    # Rank by confidence *and* negative probability for losers
+    losers = sorted(
+        results,
+        key=lambda x: (x["confidence"], x["p_negative"]),
+        reverse=True
+    )[:20]
+
+    return render(request, "finance/predict_gainers_loosers.html", {
+        "gainers": gainers,
+        "losers": losers,
+        "results": results,
+        "threshold": threshold,
     })
+

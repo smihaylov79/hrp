@@ -1,22 +1,191 @@
 {% extends "finance/navigation.html" %}
 {% block finance_navigation %}
 
-<h2>📈 Predict Top Gainer & Loser</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="btn btn-primary">Predict</button>
+<div class="container mt-4">
+
+    <!-- Page Header -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3 class="card-title">📊 Gap Probability – Predicted Gainers & Losers</h3>
+            <p class="text-muted">
+                Based on historical gap behavior, bucket transitions, and confidence scoring.
+            </p>
+
+            <a href="{% url 'finance_home' %}" class="btn btn-secondary">
+                ← Back to Finance Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Threshold Filter -->
+   <form method="GET" class="mb-4">
+    <div class="row">
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Minimum Gap Threshold (%)</label>
+            <input type="number" name="threshold" value="{{ threshold }}" step="0.1"
+                   class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Minimum Confidence (0–1)</label>
+            <input type="number" name="min_conf" value="{{ min_conf }}" step="0.01" min="0" max="1"
+                   class="form-control">
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+    </div>
 </form>
 
-{% if prediction_result %}
-  <hr>
-  <h4>🔮 Prediction Result:</h4>
-  {% if prediction_result == "No historical data available." or prediction_result == "No data for selected date." %}
-    <p>{{ prediction_result }}</p>
-  {% else %}
-    <p><strong>Top Gainer:</strong> {{ prediction_result.gainer }} ({{ prediction_result.gainer_gap|floatformat:2 }}%)</p>
-    <p><strong>Top Loser:</strong> {{ prediction_result.loser }} ({{ prediction_result.loser_gap|floatformat:2 }}%)</p>
-  {% endif %}
-{% endif %}
+
+    <!-- Summary Section -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h5>Total Symbols</h5>
+                    <h3>{{ results|length }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5>Top Predicted Gainers</h5>
+                    <h3>{{ gainers|length }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5>Top Predicted Losers</h5>
+                    <h3>{{ losers|length }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Predicted Gainers & Losers -->
+    <div class="row">
+
+        <!-- Predicted Gainers -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    🔝 Predicted Gainers (Highest Confidence × P(gap > 0))
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for item in gainers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>
+                                <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank">
+                                    {{ item.symbol }}
+                                </a>
+                            </strong>
+                            <span class="text-muted">({{ item.company }})</span>
+                            <br>
+                            <small>Current: {{ item.current_bucket }}</small><br>
+                            <small>Next: {{ item.predicted_bucket }}</small>
+                        </div>
+
+                        <span class="badge bg-success rounded-pill">
+                            {{ item.confidence|floatformat:2 }}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No predictions available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Predicted Losers -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    📉 Predicted Losers (Highest Confidence × P(gap < 0))
+                </div>
+                <ul class="list-group list-group-flush">
+                    {% for item in losers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>
+                                <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank">
+                                    {{ item.symbol }}
+                                </a>
+                            </strong>
+                            <span class="text-muted">({{ item.company }})</span>
+                            <br>
+                            <small>Current: {{ item.current_bucket }}</small><br>
+                            <small>Next: {{ item.predicted_bucket }}</small>
+                        </div>
+
+                        <span class="badge bg-danger rounded-pill">
+                            {{ item.confidence|floatformat:2 }}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No predictions available.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Full Table -->
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            📘 Full Probability Table (All Symbols)
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Company</th>
+                        <th>P(gap > 0)</th>
+                        <th>P(gap < 0)</th>
+                        <th>Expected Gap</th>
+                        <th>Current Bucket</th>
+                        <th>Predicted Bucket</th>
+                        <th>Confidence</th>
+                        <th>Events</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'symbol_details' %}?symbol={{ item.symbol|urlencode }}" target="_blank">
+                                {{ item.symbol }}
+                            </a>
+                        </td>
+                        <td>{{ item.company }}</td>
+                        <td>{{ item.p_positive|floatformat:2 }}%</td>
+                        <td>{{ item.p_negative|floatformat:2 }}%</td>
+                        <td>{{ item.expected_gap|floatformat:2 }}%</td>
+                        <td>{{ item.current_bucket }}</td>
+                        <td>{{ item.predicted_bucket }}</td>
+                        <td>{{ item.confidence|floatformat:2 }}</td>
+                        <td>{{ item.transition_events }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No data available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
 
 {% endblock %}

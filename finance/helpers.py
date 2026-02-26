@@ -402,3 +402,78 @@ def arc_path(start_angle, end_angle, r=45, cx=50, cy=50):
     end = polar_to_cartesian(cx, cy, r, end_angle)
     large_arc = 1 if (end_angle - start_angle) % 360 > 180 else 0
     return f"M {start[0]} {start[1]} A {r} {r} 0 {large_arc} 1 {end[0]} {end[1]}"
+
+
+from collections import defaultdict
+
+
+def gap_bucket(gap: float) -> str:
+    if gap is None:
+        return "unknown"
+    if gap < -10:
+        return "extreme_down"
+    if gap < -5:
+        return "large_down"
+    if gap < -2:
+        return "medium_down"
+    if gap < 0:
+        return "small_down"
+    if gap < 2:
+        return "small_up"
+    if gap < 5:
+        return "medium_up"
+    if gap < 10:
+        return "large_up"
+    return "extreme_up"
+
+
+def build_transition_matrix(records):
+    """
+    records: ordered list of DailyData rows for a single symbol
+    returns: transitions dict and transition_probs dict
+    """
+    buckets = [gap_bucket(r.gap_open_percentage) for r in records]
+
+    transitions = defaultdict(lambda: defaultdict(int))
+
+    for i in range(len(buckets) - 1):
+        b1 = buckets[i]
+        b2 = buckets[i + 1]
+        transitions[b1][b2] += 1
+
+    transition_probs = {}
+    for b1, nexts in transitions.items():
+        total = sum(nexts.values())
+        if total == 0:
+            continue
+        transition_probs[b1] = {b2: count / total for b2, count in nexts.items()}
+
+    return buckets, transitions, transition_probs
+
+
+def compute_confidence(transitions, transition_probs, current_bucket):
+    """
+    transitions: raw counts dict
+    transition_probs: probabilities dict
+    current_bucket: bucket of last day
+    """
+    if current_bucket not in transitions or current_bucket not in transition_probs:
+        return 0.0, 0, None, 0.0
+
+    num_events = sum(transitions[current_bucket].values())
+    if num_events == 0:
+        return 0.0, 0, None, 0.0
+
+    next_probs = transition_probs[current_bucket]
+    if not next_probs:
+        return 0.0, num_events, None, 0.0
+
+    # most likely next bucket
+    predicted_bucket = max(next_probs.items(), key=lambda x: x[1])[0]
+    consistency = next_probs[predicted_bucket]  # 0–1
+
+    # scale confidence by sample size (cap at 20 events)
+    confidence = min(1.0, num_events / 20.0) * consistency
+
+    return confidence, num_events, predicted_bucket, consistency
+
