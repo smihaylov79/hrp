@@ -79,6 +79,12 @@ class ShoppingProduct(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0.00)
     not_for_household = models.BooleanField(default=False)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["product"]),
+            models.Index(fields=["shopping"]),
+        ]
+
     def save(self, *args, **kwargs):
         self.amount = self.quantity * self.price - self.discount
         super().save(*args, **kwargs)

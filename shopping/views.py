@@ -3,6 +3,7 @@ import time
 from decimal import Decimal
 
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponseRedirect
@@ -23,21 +24,40 @@ def shopping_list(request):
     household = user.household
     product_id = request.GET.get("product_id")
 
+    # 1. Base queryset
     if household:
         members = CustomUser.objects.filter(household=household)
-        shoppings = Shopping.objects.filter(user__in=members).order_by("-date")
+        shoppings = Shopping.objects.filter(user__in=members)
     else:
-        shoppings = Shopping.objects.filter(user=user).order_by("-date")
+        shoppings = Shopping.objects.filter(user=user)
 
+    # 2. Apply filters BEFORE pagination
     if product_id:
-        shoppings = shoppings.filter(shopping_products__product_id=product_id).distinct()
+        shoppings = shoppings.filter(shopping_products__product_id=product_id)
 
-    products = Product.objects.all().order_by("name")
+    # 3. Optimize DB access
+    shoppings = (
+        shoppings
+        .select_related("user")
+        .prefetch_related("shopping_products__product")
+        .order_by("-date")
+        .distinct()
+    )
 
-    context = {"shoppings": shoppings,
-               'products': products,
-               'selected_product_id': str(product_id) if product_id else ""
-               }
+    # 4. Pagination AFTER filtering
+    paginator = Paginator(shoppings, 50)  # 50 per page
+    page = request.GET.get("page")
+    shoppings_page = paginator.get_page(page)
+
+    # 5. Products list (optimized)
+    products = Product.objects.only("id", "name").order_by("name")
+
+    context = {
+        "shoppings": shoppings_page,
+        "products": products,
+        "selected_product_id": str(product_id) if product_id else "",
+    }
+
     return render(request, "shopping/shopping.html", context)
 
 
@@ -49,10 +69,19 @@ def regular_shopping(request):
     create_product_form = CreateProductForm()
 
     if household:
-        shopping_lists = HouseholdShoppingList.objects.filter(household=household, executed=True).order_by(
-            '-date_generated')[:5]
+        shopping_lists = (
+            HouseholdShoppingList.objects
+            .filter(household=household, executed=True)
+            .select_related("household")
+            .order_by('-date_generated')[:5]
+        )
     else:
-        shopping_lists = ShoppingList.objects.filter(user=user, executed=True).order_by('-date_generated')[:5]
+        shopping_lists = (
+            ShoppingList.objects
+            .filter(user=user, executed=True)
+            .select_related("user")
+            .order_by('-date_generated')[:5]
+        )
 
     prefill_data = load_prefill_data(request, user, household)
 
@@ -82,10 +111,11 @@ def regular_shopping(request):
     context = {
         'form': form,
         'create_product_form': create_product_form,
-        'shops': Shop.objects.all().order_by("name"),
-        'categories': ProductCategory.objects.all().order_by('name'),
-        'main_categories': MainCategory.objects.all().order_by('name'),
-        'products': Product.objects.all().order_by('name'),
+        'shops': Shop.objects.only("id", "name").order_by("name"),
+        'categories': ProductCategory.objects.only("id", "name").order_by("name"),
+        'main_categories': MainCategory.objects.only("id", "name").order_by("name"),
+        'products': Product.objects.only("id", "name").order_by("name"),
+
         'shopping_lists': shopping_lists,
         'prefill_json': json.dumps(prefill_data, cls=DjangoJSONEncoder),
     }
