@@ -29,83 +29,84 @@
   {% endfor %}
 </div>
 
-
-    <div class="container my-4">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <h5 class="mb-3">📰 Real‑Time News (FinancialJuice)</h5>
-
-      <iframe
-        src="https://www.financialjuice.com/iframe.aspx"
-        style="width:100%; height:500px; border:none;">
-      </iframe>
-
-      <p class="text-muted small mt-2">
-        Source: FinancialJuice (free real‑time squawk + headlines)
-      </p>
-    </div>
-  </div>
+<div class="calendar-wrapper my-4">
+    <div id="economicCalendarWidget"></div>
 </div>
+<style>
+.calendar-wrapper {
+    width: 100%;
+    height: 70vh;          /* Responsive height */
+    min-height: 500px;     /* Prevents collapsing */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;      /* Ensures widget fits nicely */
+}
+</style>
+<script async type="text/javascript" data-type="calendar-widget"
+        src="https://www.tradays.com/c/js/widgets/calendar/widget.js?v=15">
+  {"width":"100%","height":"100%","mode":"2","fw":"html"}
+</script>
 
 
-  <div class="container my-4">
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-            <div class="col">
-                <a href="{% url 'trade' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">💱 Търговия</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col">
-                <a href="{% url 'invest' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🌱 Инвестиции</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col">
-                <a href="{% url 'news' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">📰 Новини</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col">
-                <a href="{% url 'markets' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">💹 Пазари</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col">
-                <a href="{% url 'portfolio' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">💼 Портфейл</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            <div class="col">
-                <a href="{% url 'screener' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🔍 Радар</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-    </div>
+
+{#  <div class="container my-4">#}
+{#        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">#}
+{#            <div class="col">#}
+{#                <a href="{% url 'trade' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">💱 Търговия</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#            <div class="col">#}
+{#                <a href="{% url 'invest' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">🌱 Инвестиции</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#            <div class="col">#}
+{#                <a href="{% url 'news' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">📰 Новини</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#            <div class="col">#}
+{#                <a href="{% url 'markets' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">💹 Пазари</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#            <div class="col">#}
+{#                <a href="{% url 'portfolio' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">💼 Портфейл</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#            <div class="col">#}
+{#                <a href="{% url 'screener' %}" class="text-decoration-none">#}
+{#                    <div class="card text-center shadow-sm h-100">#}
+{#                        <div class="card-body">#}
+{#                            <h5 class="card-title">🔍 Радар</h5>#}
+{#                        </div>#}
+{#                    </div>#}
+{#                </a>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
 
 <!-- Countdown Script -->
 <script>
