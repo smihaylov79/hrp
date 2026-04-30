@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404
 
 from shopping.models import Product, ShoppingProduct
@@ -230,3 +232,23 @@ def income_vs_spendings(income_qs, spendings_qs, currency):
     # нетен баланс
     comparison["net_balance"] = comparison["total_income"] - comparison["total_spendings"]
     return comparison
+
+
+def get_category_totals(start_date, end_date):
+    return (
+        ShoppingProduct.objects
+        .filter(shopping__date__range=(start_date, end_date),
+                not_for_household=False)
+        .values(main_category=F("product__category__main_category__name"))
+        .annotate(total=Sum("amount"))
+        .order_by("main_category")
+    )
+
+
+def get_same_month_previous_years(start_date, years_back=3):
+    periods = []
+    for i in range(1, years_back + 1):
+        prev_start = start_date - relativedelta(years=i)
+        prev_end = prev_start.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)
+        periods.append((prev_start, prev_end))
+    return periods

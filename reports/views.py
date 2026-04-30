@@ -1,3 +1,4 @@
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, Sum, F, Avg
@@ -9,7 +10,7 @@ from income.models import Income
 from .forms import *
 from .utils import *
 from django.utils import timezone
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 
 # Create your views here.
@@ -716,3 +717,129 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
         })
 
         return context
+
+
+def get_same_month_previous_years(start_date, years_back=3):
+    periods = []
+    for i in range(1, years_back + 1):
+        prev_start = start_date - relativedelta(years=i)
+        prev_end = prev_start.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)
+        periods.append((prev_start, prev_end))
+    return periods
+
+
+def by_category_table(request):
+    month = request.GET.get("month")
+    target_currency = request.GET.get("currency", "BGN")
+
+    context = {
+        "selected_month": month,
+        "selected_currency": target_currency,
+    }
+
+    if not month:
+        return render(request, "reports/by_category_table.html", context)
+
+    # --- 1. Parse selected month ---
+    year, m = map(int, month.split("-"))
+    start_date = date(year, m, 1)
+    end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
+
+    context["selected_period"] = (start_date, end_date)
+
+    # --- 2. Load all shopping data once and convert to DataFrame ---
+    db_shopping = ShoppingProduct.objects.select_related(
+        "shopping", "product__category__main_category"
+    )
+
+    df = db_to_df(db_shopping, target_currency)
+
+    # --- CRITICAL FIX: ensure date column is Timestamp ---
+    df["shopping__date"] = pd.to_datetime(df["shopping__date"])
+
+    # Convert boundaries to Timestamp
+    start_ts = pd.Timestamp(start_date)
+    end_ts = pd.Timestamp(end_date)
+
+    # --- 3. Filter current period ---
+    df_current = df[
+        (df["shopping__date"] >= start_ts) &
+        (df["shopping__date"] <= end_ts)
+    ]
+
+    # --- 4. Aggregate current totals ---
+    current_totals = (
+        df_current.groupby("product__category__main_category__name")["converted_amount"]
+        .sum()
+        .to_dict()
+    )
+
+    # --- 5. Previous years ---
+    previous_periods = get_same_month_previous_years(start_date, years_back=1)
+
+    previous_data = []
+    for s, e in previous_periods:
+        s_ts = pd.Timestamp(s)
+        e_ts = pd.Timestamp(e)
+
+        df_prev = df[
+            (df["shopping__date"] >= s_ts) &
+            (df["shopping__date"] <= e_ts)
+        ]
+
+        totals = (
+            df_prev.groupby("product__category__main_category__name")["converted_amount"]
+            .sum()
+            .to_dict()
+        )
+        previous_data.append({"year": s.year, "totals": totals})
+
+    previous_years = [p["year"] for p in previous_data]
+    context["previous_years"] = previous_years
+
+    # --- 6. Build comparison rows ---
+    all_categories = sorted(
+        set(current_totals.keys()) |
+        {cat for p in previous_data for cat in p["totals"].keys()}
+    )
+
+    comparison_rows = []
+    for cat in all_categories:
+        row = {
+            "category": cat,
+            "current": current_totals.get(cat, 0),
+            "previous": []
+        }
+        for p in previous_data:
+            prev_value = p["totals"].get(cat, 0)
+            diff = row["current"] - prev_value
+            pct = (diff / prev_value * 100) if prev_value else None
+            row["previous"].append({
+                "year": p["year"],
+                "value": prev_value,
+                "diff": diff,
+                "pct": pct,
+            })
+        comparison_rows.append(row)
+
+    context["comparison_rows"] = comparison_rows
+
+    # --- 7. Grand totals ---
+    total_current = sum(current_totals.values())
+
+    total_previous = []
+    for p in previous_data:
+        prev_sum = sum(p["totals"].values())
+        diff = total_current - prev_sum
+        pct = (diff / prev_sum * 100) if prev_sum else None
+        total_previous.append({
+            "year": p["year"],
+            "value": prev_sum,
+            "diff": diff,
+            "pct": pct,
+        })
+
+    context["total_current"] = total_current
+    context["total_previous"] = total_previous
+
+    return render(request, "reports/by_category_table.html", context)

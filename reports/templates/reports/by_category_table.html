@@ -1,0 +1,103 @@
+{% extends 'reports/reports_home.html' %}
+
+{% block report_body %}
+
+<form method="get" class="mb-3">
+    <label>Избери месец:</label>
+    <input type="month" name="month" class="form-control" value="{{ request.GET.month }}">
+
+    <select name="currency" class="form-select">
+    <option value="BGN" {% if request.GET.currency == "BGN" %}selected{% endif %}>BGN</option>
+    <option value="EUR" {% if request.GET.currency == "EUR" %}selected{% endif %}>EUR</option>
+    <option value="USD" {% if request.GET.currency == "USD" %}selected{% endif %}>USD</option>
+</select>
+
+
+    <button class="btn btn-primary mt-2">Покажи</button>
+</form>
+
+
+
+{% if comparison_rows %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Категория</th>
+            <th>{{ selected_period.0|date:"F Y" }}</th>
+
+            {% for year in previous_years %}
+                <th>{{ year }}</th>
+                <th>Разлика</th>
+                <th>%</th>
+            {% endfor %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for row in comparison_rows %}
+        <tr>
+            <td>{{ row.category }}</td>
+            <td>{{ row.current|floatformat:2 }}</td>
+
+            {% for prev in row.previous %}
+                <td>{{ prev.value|floatformat:2 }}</td>
+               <td class="
+    {% if prev.diff > 0 %}text-danger
+    {% elif prev.diff < 0 %}text-success
+    {% else %}text-muted
+    {% endif %}
+">
+    {{ prev.diff|floatformat:2 }}
+</td>
+                <td class="
+    {% if prev.pct > 0 %}text-danger
+    {% elif prev.pct < 0 %}text-success
+    {% else %}text-muted
+    {% endif %}
+">
+    {% if prev.pct %}
+        {{ prev.pct|floatformat:1 }}%
+    {% else %}
+        —
+    {% endif %}
+</td>
+
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    <tr class="fw-bold table-secondary">
+    <td>Общо</td>
+    <td>{{ total_current|floatformat:2 }}</td>
+
+    {% for prev in total_previous %}
+        <td>{{ prev.value|floatformat:2 }}</td>
+        <td class="
+    {% if prev.diff > 0 %}text-danger
+    {% elif prev.diff < 0 %}text-success
+    {% else %}text-muted
+    {% endif %}
+">
+    {{ prev.diff|floatformat:2 }}
+</td>
+
+        <td class="
+    {% if prev.pct > 0 %}text-danger
+    {% elif prev.pct < 0 %}text-success
+    {% else %}text-muted
+    {% endif %}
+">
+    {% if prev.pct %}
+        {{ prev.pct|floatformat:1 }}%
+    {% else %}
+        —
+    {% endif %}
+</td>
+
+    {% endfor %}
+</tr>
+    </tbody>
+</table>
+{% endif %}
+
+
+{% endblock %}

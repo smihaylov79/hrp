@@ -12,6 +12,7 @@ urlpatterns = [
     path('income-analysis/', IncomeView.as_view(), name='income_analysis'),
     path('income-vs-spendings/', income_spendings_comparison, name='income_spendings_comparison'),
     path('consumption-summary/', ConsumptionSummaryView.as_view(), name='consumption_summary'),
+    path('by_category_table/', by_category_table, name='by_category_table'),
 
 
 ]
