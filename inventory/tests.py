@@ -19,7 +19,6 @@ class ShoppingListGenerationTest(TestCase):
         self.factory = RequestFactory()
         self.user = CustomUser.objects.create_user(email='test@user.com', password='Ineedstrongpassord123!@', first_name='test', last_name='user')
 
-    @known_bug('Phase 2/7: db_to_df crashes when the user has no purchases yet (500 for a new user)')
     def test_task_created(self):
         request = self.factory.get(reverse('shopping_list_view', args=[1]))
         request.user = self.user

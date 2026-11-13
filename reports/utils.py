@@ -4,92 +4,92 @@ from django.shortcuts import get_object_or_404
 
 from shopping.models import Product, ShoppingProduct
 from users.models import CustomUser
-from .models import ExchangeRate
+from django.utils.translation import gettext as _
+
+from .currency import ConversionReport, convert_df, normalise_currency
 import pandas as pd
 from calendar import month_name
 
 
-def convert_amount(row, target_currency):
-    base = row['shopping__currency']
-    rate = ExchangeRate.objects.filter(base_currency=base, target_currency=target_currency).order_by('-date_extracted').values_list('rate', flat=True).first()
-    rate = float(rate or 1.0)
-    return {
-        'converted_amount': round(float(row['amount']) * rate, 2),
-        'converted_price': round(float(row['price']) * rate, 2)
-    }
+SHOPPING_FIELDS = [
+    'amount',
+    'price',
+    'discount',
+    'shopping__currency',
+    'shopping__date',
+    'shopping__shop__name',
+    'product__name',
+    'product__category__name',
+    'product__category__main_category__name',
+    'quantity',
+]
+INCOME_FIELDS = ['amount', 'currency', 'date_received', 'income_type__name', 'user__first_name']
+DERIVED_FIELDS = ['total', 'year', 'month', 'month_name', 'month_num']
+
+
+def _add_period_columns(df, date_col):
+    dates = pd.to_datetime(df[date_col])
+    df['year'] = dates.dt.year
+    df['month'] = dates.dt.strftime('%m.%Y')
+    df['month_name'] = dates.dt.month_name()
+    df['month_num'] = dates.dt.month
+    return df
 
 
 def db_to_df(db_shopping, currency):
-    df = pd.DataFrame.from_records(db_shopping.values(
-        'amount',
-        'price',
-        'discount',
-        'shopping__currency',
-        'shopping__date',
-        'shopping__shop__name',
-        'product__name',
-        'product__category__name',
-        'product__category__main_category__name',
-        'quantity',
-    )
-    )
-    df_converted = df.apply(lambda row: convert_amount(row, currency), axis=1, result_type='expand')
-    df['converted_amount'] = df_converted['converted_amount'].round(2)
-    df['converted_price'] = df_converted['converted_price'].round(2)
+    """Purchased products as a DataFrame with amounts and prices converted to ``currency``.
+
+    Every purchase is converted with the rate of its own date (see reports/currency.py). Conversion problems
+    are available as ``df.attrs['rates']`` (a ConversionReport) - show them with ``rate_warnings(df)``.
+    An empty queryset gives an empty frame with the same columns.
+    """
+    currency = normalise_currency(currency)
+    df = pd.DataFrame.from_records(db_shopping.values(*SHOPPING_FIELDS), columns=SHOPPING_FIELDS)
+    if df.empty:
+        df = pd.DataFrame(columns=SHOPPING_FIELDS + ['converted_amount', 'converted_price'] + DERIVED_FIELDS)
+        df.attrs['rates'] = ConversionReport(currency)
+        return df
+
+    report = convert_df(df, currency, 'shopping__currency', 'shopping__date',
+                        {'amount': 'converted_amount', 'price': 'converted_price'})
+    # products without (main) category or shop must stay visible in every grouping
+    df['product__category__name'] = df['product__category__name'].fillna(_('Без категория'))
+    df['product__category__main_category__name'] = (
+        df['product__category__main_category__name'].fillna(_('Без категория')))
+    df['shopping__shop__name'] = df['shopping__shop__name'].fillna(_('Без магазин'))
+
     df = df.sort_values(by='shopping__date', ascending=True)
     df['total'] = df['converted_amount']
-    df['year'] = pd.to_datetime(df['shopping__date']).dt.year
-    df['month'] = pd.to_datetime(df['shopping__date']).dt.strftime('%m.%Y')
-    df['month_name'] = pd.to_datetime(df['shopping__date']).dt.month_name()
-    df['month_num'] = pd.to_datetime(df['shopping__date']).dt.month
+    df = _add_period_columns(df, 'shopping__date')
+    df.attrs['rates'] = report
     return df
 
 
 def income_db_to_df(db_income, currency):
-    df = pd.DataFrame.from_records(db_income.values(
-        'amount',
-        'currency',
-        'date_received',
-        'income_type__name',
-        'user__first_name',
-    ))
+    """Incomes as a DataFrame converted to ``currency`` with the rate of the day they were received."""
+    currency = normalise_currency(currency)
+    df = pd.DataFrame.from_records(db_income.values(*INCOME_FIELDS), columns=INCOME_FIELDS)
+    if df.empty:
+        df = pd.DataFrame(columns=INCOME_FIELDS + ['converted_amount'] + DERIVED_FIELDS)
+        df.attrs['rates'] = ConversionReport(currency)
+        return df
 
-    # конверсия към избраната валута
-    df_converted = df.apply(lambda row: convert_income_amount(row, currency), axis=1, result_type='expand')
-    df['converted_amount'] = df_converted['converted_amount'].round(2)
-
-    # сортиране по дата
+    report = convert_df(df, currency, 'currency', 'date_received', {'amount': 'converted_amount'})
     df = df.sort_values(by='date_received', ascending=True)
-
-    # обща сума
     df['total'] = df['converted_amount'].astype(float)
-
-    # времеви полета
-    df['year'] = pd.to_datetime(df['date_received']).dt.year
-    df['month'] = pd.to_datetime(df['date_received']).dt.strftime('%m.%Y')
-    df['month_name'] = pd.to_datetime(df['date_received']).dt.month_name()
-    df['month_num'] = pd.to_datetime(df['date_received']).dt.month
-
+    df = _add_period_columns(df, 'date_received')
+    df.attrs['rates'] = report
     return df
 
 
-def convert_income_amount(row, target_currency):
-    base_currency = row['currency']
-    amount = row['amount']
-
-    if base_currency == target_currency:
-        return {'converted_amount': amount}
-
-    # Тук използваш ExchangeRate модела
-    rate = ExchangeRate.objects.filter(
-        base_currency=base_currency,
-        target_currency=target_currency
-    ).order_by('-date_extracted').first()
-
-    if rate:
-        return {'converted_amount': float(amount) * float(rate.rate)}
-    else:
-        return {'converted_amount': amount}  # fallback
+def rate_warnings(*frames):
+    """Texts for the "rates missing" banner, collected from DataFrames made by db_to_df / income_db_to_df."""
+    texts = []
+    for frame in frames:
+        report = getattr(frame, 'attrs', {}).get('rates') if frame is not None else None
+        if report:
+            texts.extend(text for text in report.messages() if text not in texts)
+    return texts
 
 
 
@@ -165,9 +165,11 @@ def by_product_statistics(df):
     biggest_spent = df.groupby('product__name')['total'].sum().reset_index().sort_values(by='total', ascending=False).iloc[0].to_dict()
     biggest_spent['spent'] = biggest_spent.pop('total')
 
-    lowest_price = df[df['price'] > 0].sort_values(by='price', ascending=True).iloc[0].to_dict()
+    # compare prices in the report currency, not in the currency each purchase happened to be made in
+    priced = df[df['converted_price'] > 0]
+    lowest_price = (priced if not priced.empty else df).sort_values(by='converted_price', ascending=True).iloc[0].to_dict()
     lowest_price['price'] = lowest_price['converted_price']
-    highest_price = df.sort_values(by='price', ascending=False).iloc[0].to_dict()
+    highest_price = df.sort_values(by='converted_price', ascending=False).iloc[0].to_dict()
     highest_price['price'] = highest_price['converted_price']
     return biggest_spent, lowest_price, highest_price
 
@@ -194,7 +196,7 @@ def product_price_history(request):
             shoppingproduct__shopping__user=user).distinct().order_by('name').distinct()
 
     selected_product_id = request.GET.get("product")
-    currency = request.GET.get("currency")
+    currency = normalise_currency(request.GET.get("currency"))
     price_data_json = []
 
     if selected_product_id:
@@ -231,7 +233,7 @@ def income_vs_spendings(income_qs, spendings_qs, currency):
 
     # нетен баланс
     comparison["net_balance"] = comparison["total_income"] - comparison["total_spendings"]
-    return comparison
+    return comparison, rate_warnings(df_income, df_spendings)
 
 
 def get_category_totals(start_date, end_date):

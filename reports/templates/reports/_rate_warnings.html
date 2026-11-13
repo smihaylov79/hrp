@@ -1,0 +1,12 @@
+{% load i18n %}
+{% if rate_warnings %}
+<div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
+  <span aria-hidden="true">⚠️</span>
+  <div>
+    <strong>{% trans "Внимание: непълни валутни курсове" %}</strong>
+    <ul class="mb-0 ps-3">
+      {% for warning in rate_warnings %}<li>{{ warning }}</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}

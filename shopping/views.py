@@ -1,5 +1,4 @@
 import json
-import time
 from decimal import Decimal
 
 from django.contrib import messages
@@ -12,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from .forms import CreateProductForm, UtilityBillForm, RegularShoppingForm
 from users.models import CustomUser
-from .helpers import load_prefill_data, get_exchange_rate, save_shopping_products
+from .helpers import load_prefill_data, save_shopping_products
 from .models import Shop, ProductCategory, MainCategory, CurrencyChoice, Shopping, Product, HouseholdShoppingList, \
     ShoppingList, ShoppingProduct
 from .helpers import fetch_electricity_price, fetch_cold_water, get_heating_price
@@ -90,19 +89,7 @@ def regular_shopping(request):
         shopping.user = user
         shopping.save()
 
-        base_currency = shopping.currency
-        date = shopping.date
-
-        target_currencies = [c for c in CurrencyChoice.values]
-
-        for target_currency in target_currencies:
-            if base_currency == target_currency:
-                continue
-            try:
-                get_exchange_rate(base_currency, target_currency, date)
-                time.sleep(1)
-            except Exception as e:
-                messages.warning(request, f"Unable to fetch exchange rate for {base_currency} → {target_currency}")
+        # exchange rates are downloaded by the daily `fetch_rates` task, not while saving a purchase
 
         selected_products = json.loads(request.POST["selected_products"])
         save_shopping_products(selected_products, shopping, user, household)
@@ -137,16 +124,6 @@ def utility_bills(request):
             shopping = form.save(commit=False)
             shopping.user = request.user
             shopping.save()
-
-            base_currency = shopping.currency
-            date = shopping.date
-
-            target_currencies = [c for c in CurrencyChoice.values]
-            for target_currency in target_currencies:
-                try:
-                    get_exchange_rate(base_currency, target_currency, date)
-                except Exception as e:
-                    messages.warning(request, f"Unable to fetch exchange rate for {base_currency} → {target_currency}")
 
             selected_products = json.loads(request.POST.get("selected_products"))
             for product_data in selected_products:

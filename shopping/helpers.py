@@ -5,7 +5,6 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from inventory.models import HouseholdInventoryProduct, HouseholdProductCategory, InventoryProduct, UserProductCategory
-from reports.models import ExchangeRate
 from shopping.models import HouseholdShoppingList, ShoppingList, Product, ShoppingProduct, Shopping
 
 
@@ -89,42 +88,6 @@ def save_shopping_products(selected_products, shopping, user, household):
             user_product_category, created = UserProductCategory.objects.get_or_create(user=user,
                                                                                        product_category=product.category)
             user_product_category.save()
-
-
-def fetch_rate_from_api(base_currency, target_currency, date):
-    API_EXCHANGE_RATES = os.environ.get('API_EXCHANGE_RATES')
-    url = (f"https://api.exchangerate.host/convert"
-        f"?from={base_currency}&to={target_currency}&date={date}&amount=1"
-        f"&access_key={API_EXCHANGE_RATES}")
-    response = requests.get(url)
-    data = response.json()
-
-    rate = data.get('info', {}).get('quote')
-
-    if data.get("success") and rate:
-        return rate
-    raise ValueError("Failed to extract data")
-
-
-def get_exchange_rate(base_currency, target_currency, date):
-    rate = ExchangeRate.objects.filter(base_currency=base_currency, target_currency=target_currency, date_extracted=date).first()
-    if rate:
-        return rate.rate
-    if base_currency == 'BGN' and target_currency == 'EUR':
-        rate = Decimal(0.51129)
-        ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate,
-                                    date_extracted=date)
-        return rate
-    elif base_currency == 'EUR' and target_currency == 'BGN':
-        rate = Decimal(1.95583)
-        ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate,
-                                    date_extracted=date)
-        return rate
-
-    rate = fetch_rate_from_api(base_currency, target_currency, date)
-    ExchangeRate.objects.create(base_currency=base_currency, target_currency=target_currency, rate=rate, date_extracted=date)
-
-    return rate
 
 
 def fetch_electricity_price():

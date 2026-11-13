@@ -97,6 +97,11 @@ class HrpTestCase(TestCase):
         cls.soap = Product.objects.create(name='Сапун', category=cls.cat_clean)
         cls.shop = Shop.objects.create(name='Тестов магазин')
 
+    def setUp(self):
+        super().setUp()
+        from reports.currency import clear_cache
+        clear_cache()   # exchange rates are cached in memory; every test starts without them
+
     # -- helpers ---------------------------------------------------------------------------------
     @staticmethod
     def user_inventory(user, product, quantity=1, amount=1):

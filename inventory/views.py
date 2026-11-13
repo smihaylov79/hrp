@@ -6,6 +6,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+import pandas as pd
+
 from reports.utils import db_to_df
 from shopping.models import *
 from .models import *
@@ -189,8 +191,11 @@ def generate_shopping_list(request):
             total_consumption = product.daily_consumption * days_since_last
 
             if product.quantity - total_consumption < product.minimum_quantity and product.minimum_quantity > 0:
-                avg_price_product = avg_price[product.product.name]
-                text_for_list = f'{product.product.name} ({avg_price_product:.2f} €)'
+                avg_price_product = avg_price.get(product.product.name)
+                if avg_price_product is None or pd.isna(avg_price_product):
+                    text_for_list = f'{product.product.name} (няма данни)'
+                else:
+                    text_for_list = f'{product.product.name} ({avg_price_product:.2f} €)'
                 shopping_list.items.append(text_for_list)
 
             if product.quantity <= total_consumption:
@@ -254,9 +259,11 @@ def update_shopping_list(request, list_id):
 
             avg_price = 'N/A'
             prd_name = new_item
-            if shopping_data:
+            if product and shopping_data.exists():
                 df = db_to_df(shopping_data, 'EUR')
-                avg_price = df['total'].sum()/float(df['quantity'].sum())
+                quantity = float(df['quantity'].sum())
+                if quantity:
+                    avg_price = df['total'].sum() / quantity
                 prd_name = product.name
             # end of adding
 

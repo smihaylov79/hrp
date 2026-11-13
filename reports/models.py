@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db import models
 
 from inventory.models import InventoryProduct, HouseholdInventoryProduct
@@ -11,7 +13,8 @@ class ExchangeRate(models.Model):
     base_currency = models.CharField(max_length=3)
     target_currency = models.CharField(max_length=3)
     rate = models.DecimalField(max_digits=12, decimal_places=7)
-    date_extracted = models.DateField(auto_now_add=True)
+    # the day the rate is valid for (not the day the row was written)
+    date_extracted = models.DateField(default=date.today)
 
     class Meta:
         unique_together = (('base_currency', 'target_currency', 'date_extracted'),)

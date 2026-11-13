@@ -11,6 +11,7 @@ from django.views.generic import FormView, TemplateView
 from income.models import Income
 from .forms import *
 from .utils import *
+from .currency import DEFAULT_CURRENCY, normalise_currency
 from django.utils import timezone
 from datetime import timedelta, datetime, date
 
@@ -44,7 +45,7 @@ class SpendingsView(LoginRequiredMixin, FormView):
             main_category = form.cleaned_data.get('main_category')
             date_from = form.cleaned_data.get('date_from')
             date_to = form.cleaned_data.get('date_to')
-            currency = form.cleaned_data.get('currency')
+            currency = normalise_currency(form.cleaned_data.get('currency'))
             household_filter = form.cleaned_data.get("not_for_household_filter", "all")
 
             if household_filter == "household":
@@ -78,14 +79,9 @@ class SpendingsView(LoginRequiredMixin, FormView):
             )
             most_purchased_names = ', '.join([entry['product__name'] for entry in most_purchased])
 
-            df = None
+            df = db_to_df(shopping_data, currency)
 
-            if shopping_data:
-                df = db_to_df(shopping_data, currency)
-
-            if data_for_monthly_comparison:
-                data_for_monthly_comparison = data_for_monthly_comparison.select_related('shopping',
-                                                                                         'product__category__main_category')
+            if data_for_monthly_comparison is not None:
                 df_monthly_comparison = db_to_df(data_for_monthly_comparison, currency)
             else:
                 df_monthly_comparison = df
@@ -116,7 +112,11 @@ class SpendingsView(LoginRequiredMixin, FormView):
             # end of added 10.11
 
             context = self.get_context_data(form=form, )
-            if df is not None and not df.empty:
+            context['rate_warnings'] = rate_warnings(df, df_monthly_comparison)
+            context['selected_currency'] = currency
+            if df_monthly_comparison.empty:
+                df_monthly_comparison = df
+            if not df.empty:
                 context.update(
                     {'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
                      'subcategory_monthly_data': json.dumps(
@@ -186,14 +186,15 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
 
             shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
 
-            df = None
             shop_price_changes = None
             avg_price_changes = None
             spending_chart_data = None
             total_for_selection = 0
 
-            if shopping_data:
-                df = db_to_df(shopping_data, currency)
+            df = db_to_df(shopping_data, normalise_currency(currency))
+            context['rate_warnings'] = rate_warnings(df)
+
+            if not df.empty:
 
                 total_for_selection = df['total'].sum()
 
@@ -213,7 +214,7 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
 
             highlighted_table = []
 
-            if selected_shops:
+            if selected_shops and shop_price_changes is not None:
                 for product, row in shop_price_changes.iterrows():
                     prices_only = row.drop('Обща средна цена')
                     numeric_prices = [price for price in prices_only if isinstance(price, (int, float))]
@@ -277,6 +278,7 @@ def price_changes(request):
 
     inflation_baskets = list(user_inflation_baskets(user).order_by('name'))
     chart_data = {}
+    warnings = []
     for basket in inflation_baskets:
         if household:
             selected_ids = basket.household_basket_items.values_list("product_id", flat=True)
@@ -291,7 +293,8 @@ def price_changes(request):
         if not shopping_products.exists():
             continue  # empty basket or nothing bought yet: show it without a chart instead of crashing
 
-        df = db_to_df(shopping_products, 'BGN')
+        df = db_to_df(shopping_products, DEFAULT_CURRENCY)
+        warnings.extend(text for text in rate_warnings(df) if text not in warnings)
         inflation_data = calculate_inflation(monthly_weekly_spending(df)[0])
         first_total = inflation_data['total'].iloc[0]
         last_total = inflation_data['total'].iloc[-1]
@@ -315,6 +318,7 @@ def price_changes(request):
         "price_data": json.dumps(price_data),
         'currency': currency,
         'currencies': currencies,
+        'rate_warnings': warnings,
 
     }
     return render(request, 'reports/price_changes.html', context)
@@ -469,16 +473,11 @@ class IncomeView(LoginRequiredMixin, FormView):
             else:
                 data_for_monthly_comparison = None
 
-            df = None
-            if income_data.exists():
-                df = income_db_to_df(income_data, currency)  # твоя utils функция за конверсия
+            currency = normalise_currency(currency)
+            df = income_db_to_df(income_data, currency)
+            context['rate_warnings'] = rate_warnings(df)
 
-            if data_for_monthly_comparison:
-                df_monthly_comparison = income_db_to_df(data_for_monthly_comparison, currency)
-            else:
-                df_monthly_comparison = df
-
-            if df is not None and not df.empty:
+            if not df.empty:
                 # групиране по тип приход
                 by_type = df.groupby("income_type__name")["total"].sum().reset_index()
 
@@ -492,7 +491,7 @@ class IncomeView(LoginRequiredMixin, FormView):
 
                 type_series = [{"name": row["income_type__name"], "y": round(row["total"], 2)} for _, row in
                                by_type.iterrows()]
-                selected_currency = form.cleaned_data.get("currency") or "BGN"
+                selected_currency = currency
                 context.update({
                     "total_income": round(df["total"].sum(), 2),
                     "monthly_series": json.dumps(monthly_series),
@@ -523,13 +522,13 @@ def income_spendings_comparison(request):
     if form.is_valid():
         date_from = form.cleaned_data.get("date_from")
         date_to = form.cleaned_data.get("date_to")
-        currency = form.cleaned_data.get("currency") or "BGN"
+        currency = normalise_currency(form.cleaned_data.get("currency"))
 
         if date_from and date_to:
             income_qs = income_qs.filter(date_received__range=(date_from, date_to))
             spendings_qs = spendings_qs.filter(shopping__date__range=(date_from, date_to))
 
-        comparison_df = income_vs_spendings(income_qs, spendings_qs, currency)
+        comparison_df, warnings = income_vs_spendings(income_qs, spendings_qs, currency)
         # Convert "MM.YYYY" → datetime for proper sorting
         comparison_df["month_dt"] = pd.to_datetime(comparison_df["month"], format="%m.%Y")
 
@@ -558,6 +557,7 @@ def income_spendings_comparison(request):
             "net_series": json.dumps(net_series),
             "selected_currency": currency,
             "cumulative_series": json.dumps(cumulative_series),
+            "rate_warnings": warnings,
         }
 
     else:
@@ -583,62 +583,6 @@ def get_consumption_queryset(user, date_from=None, date_to=None):
     return qs.filter(shopping__date__range=(date_from, date_to))
 
 
-def summarize_by_product(qs, target_currency):
-    data = (
-        qs.values(
-            "product__name",
-            "product__category__name",
-            "product__category__main_category__name",
-            "shopping__currency",
-        )
-        .annotate(
-            total_quantity=Sum("quantity"),
-            amount=Sum("amount"),
-            price=Avg("price"),
-        )
-    )
-
-    # Convert each row
-    for row in data:
-        converted = convert_amount(row, target_currency)
-        row["total_spent"] = converted["converted_amount"]
-        row["converted_price"] = converted["converted_price"]
-
-    # Sort by quantity
-    return sorted(data, key=lambda x: x["total_quantity"], reverse=True)
-
-
-def summarize_by_main_category(qs, target_currency):
-    data = (
-        qs.values(
-            "product__category__main_category__name",
-            "shopping__currency",
-        )
-        .annotate(
-            total_quantity=Sum("quantity"),
-            amount=Sum("amount"),
-            price=Avg("price"),
-        )
-    )
-
-    for row in data:
-        converted = convert_amount(row, target_currency)
-        row["total_spent"] = converted["converted_amount"]
-
-    return sorted(data, key=lambda x: x["total_spent"], reverse=True)
-
-
-def summarize_by_category(qs):
-    return (
-        qs.values('product__category__name')
-        .annotate(
-            total_quantity=Sum('quantity'),
-            total_spent=Sum('amount'),
-        )
-        .order_by('-total_spent')
-    )
-
-
 class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
     template_name = "reports/consumption_summary.html"
 
@@ -651,7 +595,7 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
         request = self.request
         user = request.user
 
-        currency = request.GET.get("currency", "EUR")
+        currency = normalise_currency(request.GET.get("currency"))
         date_from = request.GET.get("date_from")
         date_to = request.GET.get("date_to")
         fast = request.GET.get("fast")  # "1", "3", "6", "12"
@@ -680,9 +624,6 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
         # -----------------------------
         # 4) SUMMARIES (with conversion)
         # -----------------------------
-        # product_summary = summarize_by_product(qs, currency)
-        # main_category_summary = summarize_by_main_category(qs, currency)
-        # subcategory_summary = summarize_by_category(qs)
         product_summary = (
             qs.groupby("product__name")
             .agg(quantity=("quantity", "sum"),
@@ -732,6 +673,7 @@ class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
             "total_spent": total_spent,
             "avg_daily_spent": avg_daily_spent,
             "selected_currency": currency,
+            "rate_warnings": rate_warnings(qs),
             "date_from": date_from,
             "date_to": date_to,
             "currency": currency,
@@ -752,7 +694,7 @@ def get_same_month_previous_years(start_date, years_back=3):
 @login_required
 def by_category_table(request):
     month = request.GET.get("month")
-    target_currency = request.GET.get("currency", "BGN")
+    target_currency = normalise_currency(request.GET.get("currency"), default="BGN")
 
     context = {
         "selected_month": month,
@@ -792,6 +734,7 @@ def by_category_table(request):
         return render(request, "reports/by_category_table.html", context)
 
     df = db_to_df(db_shopping, target_currency)
+    context["rate_warnings"] = rate_warnings(df)
 
     # --- CRITICAL FIX: ensure date column is Timestamp ---
     df["shopping__date"] = pd.to_datetime(df["shopping__date"])

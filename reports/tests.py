@@ -15,13 +15,15 @@ from shopping.models import Product, ShoppingProduct
 
 from .models import (ExchangeRate, HouseholdInflationBasket, HouseholdInflationBasketItem, UserInflationBasket,
                      UserInflationBasketItem)
-from .utils import by_category_spending, by_product_statistics, db_to_df, income_db_to_df
+from .currency import clear_cache
+from .utils import by_category_spending, by_product_statistics, db_to_df, income_db_to_df, rate_warnings
 
 
 def make_rate(base, target, rate, on_date=None):
     obj = ExchangeRate.objects.create(base_currency=base, target_currency=target, rate=Decimal(str(rate)))
-    if on_date:  # date_extracted is auto_now_add today, so a past date has to be forced
-        ExchangeRate.objects.filter(pk=obj.pk).update(date_extracted=on_date)
+    if on_date:
+        obj.date_extracted = on_date
+        obj.save()
     return obj
 
 
@@ -29,7 +31,7 @@ def make_rate(base, target, rate, on_date=None):
 # Currency conversion
 # ------------------------------------------------------------------------------------------------
 class CurrencyConversionTests(HrpTestCase):
-    """How purchases/incomes are converted today (db_to_df / income_db_to_df)."""
+    """How purchases/incomes are converted (db_to_df / income_db_to_df on top of reports/currency.py)."""
 
     def converted_total(self, currency):
         return round(float(db_to_df(ShoppingProduct.objects.all(), currency)['converted_amount'].sum()), 2)
@@ -69,8 +71,57 @@ class CurrencyConversionTests(HrpTestCase):
         df = income_db_to_df(self.alice.incomes.all(), 'EUR')
         self.assertEqual(round(float(df['total'].sum()), 2), 900.0)
 
-    # -- bugs to be fixed in Phase 2 ---------------------------------------------------------------
-    @known_bug('Phase 2 #2: a missing rate is silently treated as 1.0')
+    def test_rate_of_the_purchase_date_is_used(self):
+        """A purchase keeps the rate of its own day: later rate changes do not move old totals."""
+        make_rate('USD', 'EUR', '0.80', on_date=date(2025, 1, 10))
+        make_rate('USD', 'EUR', '0.90', on_date=date(2025, 6, 10))
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2025, 1, 10))   # 80
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2025, 3, 1))    # 80 (on or before)
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2025, 6, 10))   # 90
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2025, 12, 1))   # 90
+        df = db_to_df(ShoppingProduct.objects.all(), 'EUR')
+        self.assertEqual(df['converted_amount'].tolist(), [80.0, 80.0, 90.0, 90.0])
+        self.assertEqual(rate_warnings(df), [])
+
+    def test_purchase_older_than_the_first_rate_uses_it_and_warns(self):
+        make_rate('USD', 'EUR', '0.90', on_date=date(2025, 6, 10))
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2025, 1, 1))
+        df = db_to_df(ShoppingProduct.objects.all(), 'EUR')
+        self.assertEqual(self.converted_total('EUR'), 90.0)
+        self.assertEqual(len(rate_warnings(df)), 1)
+        self.assertIn('USD', rate_warnings(df)[0])
+
+    def test_missing_rate_rows_are_left_out_and_reported(self):
+        make_purchase(self.alice, self.milk, price=100, currency='USD')
+        make_purchase(self.alice, self.soap, price=10, currency='EUR')
+        df = db_to_df(ShoppingProduct.objects.all(), 'EUR')
+        self.assertEqual(round(float(df['converted_amount'].sum()), 2), 10.0)
+        self.assertEqual(len(rate_warnings(df)), 1)
+        self.assertIn('USD', rate_warnings(df)[0])
+
+    def test_conversion_runs_no_query_per_row(self):
+        make_rate('USD', 'EUR', '0.9')
+        for day in range(1, 21):
+            make_purchase(self.alice, self.milk, price=day, currency='USD', on_date=date(2026, 1, day))
+            make_purchase(self.alice, self.soap, price=day, currency='BGN', on_date=date(2026, 1, day))
+        clear_cache()
+        with self.assertNumQueries(2):          # the purchases + all exchange rates
+            db_to_df(ShoppingProduct.objects.all(), 'EUR')
+        with self.assertNumQueries(1):          # rates are already in memory
+            db_to_df(ShoppingProduct.objects.all(), 'BGN')
+
+    def test_unknown_currency_falls_back_to_eur(self):
+        make_purchase(self.alice, self.milk, price='195.583', currency='BGN')
+        for value in ['', None, 'XXX']:
+            with self.subTest(value=value):
+                self.assertEqual(self.converted_total(value), 100.0)
+
+    def test_change_calculator_uses_the_same_rates(self):
+        from fastapps.change_calculator.services import convert
+        self.assertEqual(convert(10, 'EUR', 'BGN'), Decimal('19.5583'))
+        with self.assertRaises(ValueError):
+            convert(10, 'USD', 'BGN')
+
     def test_missing_rate_is_never_counted_one_to_one(self):
         make_purchase(self.alice, self.milk, price=100, currency='USD')
         try:
@@ -79,7 +130,6 @@ class CurrencyConversionTests(HrpTestCase):
             return  # refusing to convert is fine; inventing a rate is not
         self.assertNotEqual(total, 100.0)
 
-    @known_bug('Phase 2 #2: income with a missing rate is silently counted 1:1')
     def test_income_missing_rate_is_never_counted_one_to_one(self):
         make_income(self.alice, 1000, currency='USD')
         try:
@@ -88,24 +138,20 @@ class CurrencyConversionTests(HrpTestCase):
             return
         self.assertNotEqual(total, 1000.0)
 
-    @known_bug('Phase 2 #5: BGN<->EUR must use the fixed peg 1.95583 and need no stored rate')
     def test_bgn_eur_uses_fixed_peg_without_stored_rate(self):
         make_purchase(self.alice, self.milk, price='195.583', currency='BGN')  # stored as 195.58
         self.assertEqual(self.converted_total('EUR'), 100.0)
 
-    @known_bug('Phase 2 #2: no inverse lookup (only EUR->USD stored, USD->EUR needed)')
     def test_inverse_rate_is_used(self):
         make_rate('EUR', 'USD', '1.25')
         make_purchase(self.alice, self.milk, price=100, currency='USD')
         self.assertEqual(self.converted_total('EUR'), 80.0)
 
-    @known_bug('Phase 2 #2: no cross rate via EUR (USD->BGN from USD->EUR and the peg)')
     def test_cross_rate_via_eur(self):
         make_rate('USD', 'EUR', '0.5')
         make_purchase(self.alice, self.milk, price=100, currency='USD')
         self.assertEqual(self.converted_total('BGN'), 97.79)
 
-    @known_bug('Phase 2 #3: ExchangeRate.date_extracted is auto_now_add, the given date is ignored')
     def test_exchange_rate_keeps_the_given_date(self):
         past = date(2025, 3, 14)
         rate = ExchangeRate.objects.create(base_currency='USD', target_currency='EUR', rate=Decimal('0.9'),
@@ -113,7 +159,6 @@ class CurrencyConversionTests(HrpTestCase):
         rate.refresh_from_db()
         self.assertEqual(rate.date_extracted, past)
 
-    @known_bug('Phase 2 #6: lowest/highest price are picked by the unconverted price')
     def test_highest_and_lowest_price_compare_converted_prices(self):
         make_rate('BGN', 'EUR', '0.51129')
         make_purchase(self.alice, self.milk, price=10, currency='BGN')   # 5.11 EUR
@@ -123,7 +168,6 @@ class CurrencyConversionTests(HrpTestCase):
         self.assertEqual(highest['product__name'], 'Сапун')
         self.assertEqual(lowest['product__name'], 'Мляко')
 
-    @known_bug('Phase 2 #7: products without category disappear from the category totals')
     def test_uncategorised_products_stay_in_category_totals(self):
         loose = Product.objects.create(name='Без категория продукт')
         make_purchase(self.alice, self.milk, price=10)
@@ -133,16 +177,14 @@ class CurrencyConversionTests(HrpTestCase):
         self.assertEqual(round(sum(row['y'] for row in main), 2), 15.0)
         self.assertEqual(round(sum(row['y'] for row in sub), 2), 15.0)
 
-    @known_bug('Phase 2/7: db_to_df crashes on an empty queryset (new user -> 500 on several pages)')
     def test_empty_queryset_gives_empty_frame(self):
         df = db_to_df(ShoppingProduct.objects.none(), 'EUR')
         self.assertTrue(df.empty)
 
 
 class CurrencyModuleSpecTests(HrpTestCase):
-    """Contract of the new reports/currency.py (Phase 2). Fails until the module exists."""
+    """Contract of reports/currency.py."""
 
-    @known_bug('Phase 2: reports/currency.py does not exist yet')
     def test_get_rate_contract(self):
         from reports.currency import BGN_PER_EUR, MissingRate, get_rate
 
@@ -159,6 +201,53 @@ class CurrencyModuleSpecTests(HrpTestCase):
         self.assertAlmostEqual(float(get_rate('USD', 'EUR', on_date=date(2025, 3, 1))), 0.8)    # on or before
         self.assertAlmostEqual(float(get_rate('EUR', 'USD')), 1 / 0.9)                          # inverse
         self.assertAlmostEqual(float(get_rate('USD', 'BGN')), 0.9 * 1.95583)                    # cross via EUR
+
+
+class RateCommandTests(HrpTestCase):
+    """fetch_rates / audit_rates management commands (the HTTP call is replaced)."""
+
+    def test_fetch_rates_stores_eur_rates_for_the_given_date(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import call_command
+        with mock.patch('reports.rates._from_frankfurter', return_value={'USD': Decimal('1.25')}) as source:
+            call_command('fetch_rates', '--date', '2026-10-28', stdout=StringIO())
+            call_command('fetch_rates', '--date', '2026-10-28', stdout=StringIO())      # twice: no duplicate
+        self.assertEqual(source.call_args[0][0], date(2026, 10, 28))
+        rate = ExchangeRate.objects.get()
+        self.assertEqual((rate.base_currency, rate.target_currency, rate.date_extracted, rate.rate),
+                         ('EUR', 'USD', date(2026, 10, 28), Decimal('1.25')))
+        make_purchase(self.alice, self.milk, price=100, currency='USD', on_date=date(2026, 10, 29))
+        self.assertEqual(round(float(db_to_df(ShoppingProduct.objects.all(), 'EUR')['total'].sum()), 2), 80.0)
+
+    def test_fetch_failure_is_reported_and_stores_nothing(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import CommandError, call_command
+        with mock.patch.dict('os.environ', {'API_EXCHANGE_RATES': ''}):
+            with self.assertRaises(CommandError):       # network is blocked in tests
+                call_command('fetch_rates', stdout=StringIO(), stderr=StringIO())
+        self.assertFalse(ExchangeRate.objects.exists())
+
+    def test_audit_rates_lists_records_without_a_usable_rate(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+        from .rates import audit
+        make_purchase(self.alice, self.milk, price=1, currency='BGN', on_date=date(2025, 1, 1))     # peg: fine
+        make_purchase(self.alice, self.milk, price=1, currency='USD', on_date=date(2025, 1, 1))
+        self.assertEqual([p[0] for p in audit()], ['missing'])
+        make_rate('EUR', 'USD', '1.1', on_date=date(2025, 3, 1))
+        self.assertEqual([p[0] for p in audit()], ['later'])
+        make_rate('EUR', 'USD', '1.1', on_date=date(2024, 12, 1))
+        self.assertEqual([p[0] for p in audit()], ['stale'])
+        make_rate('EUR', 'USD', '1.1', on_date=date(2024, 12, 31))
+        self.assertEqual(audit(), [])
+        out = StringIO()
+        call_command('audit_rates', stdout=out)
+        self.assertIn('Every record has an exchange rate', out.getvalue())
 
 
 # ------------------------------------------------------------------------------------------------
@@ -257,6 +346,41 @@ class ReportIsolationTests(HrpTestCase):
         response = self.get_as(self.alice, 'price_changes')
         names = [p.name for p in response.context['products']]
         self.assertEqual(sorted(names), ['Мляко', 'Сапун'])
+
+    def test_reports_do_not_crash_without_data(self):
+        """A new user (no purchases, no income) can open every report."""
+        newcomer = make_user('new@example.com', 'New')
+        for name, params in [('spendings_history', {'currency': 'EUR'}), ('by_shop', {'currency': 'EUR'}),
+                             ('price_changes', {}), ('income_analysis', {'currency': 'EUR'}),
+                             ('income_spendings_comparison', {'currency': 'EUR'}),
+                             ('consumption_summary', {'fast': '3'}),
+                             ('by_category_table', {'month': self.month, 'currency': 'EUR'})]:
+            with self.subTest(view=name):
+                self.get_as(newcomer, name, params)
+
+    def test_missing_rate_shows_a_warning_banner(self):
+        make_purchase(self.alice, self.milk, price=7, currency='USD', on_date=self.day)
+        for name, params in [('spendings_history', {'currency': 'EUR'}), ('by_shop', {'currency': 'EUR'}),
+                             ('income_spendings_comparison', {'currency': 'EUR'}),
+                             ('consumption_summary', {'fast': '12'}),
+                             ('by_category_table', {'month': self.month, 'currency': 'EUR'})]:
+            with self.subTest(view=name):
+                response = self.get_as(self.alice, name, params)
+                self.assertContains(response, 'USD → EUR')
+        # the USD purchase is left out, never added 1:1
+        response = self.get_as(self.alice, 'spendings_history', {'currency': 'EUR'})
+        self.assertEqual(float(response.context['total_spent']), 15.0)
+        # no banner when everything can be converted
+        self.assertNotContains(self.get_as(self.bob, 'spendings_history', {'currency': 'EUR'}), 'alert-warning')
+
+    def test_category_totals_add_up_to_the_grand_total(self):
+        loose = Product.objects.create(name='Продукт без категория')
+        make_purchase(self.alice, loose, price=4, on_date=self.day)
+        response = self.get_as(self.alice, 'by_category_table', {'month': self.month, 'currency': 'EUR'})
+        rows = response.context['comparison_rows']
+        self.assertEqual(round(sum(row['current'] for row in rows), 2), 19.0)
+        self.assertEqual(round(float(response.context['total_current']), 2), 19.0)
+        self.assertEqual(len(rows), 3)   # Храна, Дом and the uncategorised product
 
     # -- inflation baskets -------------------------------------------------------------------------
     def make_user_basket(self, user, name, product):
