@@ -4,3 +4,15 @@
 __pycache__/
 *.sqlite3
 media/
+
+# collected static files (run collectstatic on deploy)
+staticfiles/
+
+# IDE
+.idea/
+
+# archives and database dumps
+*.zip
+*.sql
+backups/
+finance_backup.json

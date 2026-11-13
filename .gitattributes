@@ -1,0 +1,18 @@
+# Normalise line endings in the repository (LF), whatever the editor/OS writes.
+* text=auto
+*.bat text eol=crlf
+
+# Never touch binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.mo binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
