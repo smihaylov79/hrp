@@ -91,7 +91,6 @@ class InventoryOwnershipTests(HrpTestCase):
         self.home_milk.refresh_from_db()
         self.assertEqual(self.home_milk.quantity, Decimal('3'))
 
-    @known_bug('Phase 1: update_inventory updates rows by id with no owner filter (IDOR)')
     def test_user_cannot_update_another_users_inventory(self):
         self.client.force_login(self.alice)
         self.client.post(reverse('update_inventory'), {f'quantity_{self.bob_milk.pk}': '0',
@@ -100,7 +99,6 @@ class InventoryOwnershipTests(HrpTestCase):
         self.assertEqual(self.bob_milk.quantity, Decimal('7'))
         self.assertEqual(self.bob_milk.amount, Decimal('21'))
 
-    @known_bug('Phase 1: update_inventory updates household rows by id with no household filter (IDOR)')
     def test_member_cannot_update_another_households_inventory(self):
         from users.models import HouseHold
         other = HouseHold.objects.create(name='other', nickname='other_home', address='x', owner=self.bob)
@@ -110,12 +108,10 @@ class InventoryOwnershipTests(HrpTestCase):
         foreign.refresh_from_db()
         self.assertEqual(foreign.quantity, Decimal('4'))
 
-    @known_bug('Phase 1: update_inventory has no @login_required')
     def test_update_inventory_requires_login(self):
         self.assertLoginRequired(reverse('update_inventory'), method='post',
                                  data={f'quantity_{self.bob_milk.pk}': '0'})
 
-    @known_bug('Phase 1: user_category_settings has no @login_required')
     def test_category_settings_require_login(self):
         self.assertLoginRequired(reverse('user_category_settings'))
 

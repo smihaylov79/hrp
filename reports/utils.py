@@ -205,15 +205,15 @@ def product_price_history(request):
         else:
             price_changes = ShoppingProduct.objects.filter(shopping__user=user, product=product)
 
-        price_data = price_changes.select_related('shopping', 'shop', 'product__category__main_category')
-        price_data = db_to_df(price_data, currency)
+        if price_changes.exists():
+            price_data = db_to_df(price_changes, currency)
 
-        minimal_df = pd.DataFrame({
-            'date': pd.to_datetime(price_data['shopping__date'], errors='coerce').dt.strftime('%Y-%m-%d'),
-            'price': price_data['converted_price'].astype(float)
-        })
+            minimal_df = pd.DataFrame({
+                'date': pd.to_datetime(price_data['shopping__date'], errors='coerce').dt.strftime('%Y-%m-%d'),
+                'price': price_data['converted_price'].astype(float)
+            })
 
-        price_data_json = minimal_df.to_dict(orient='records')
+            price_data_json = minimal_df.to_dict(orient='records')
 
     return products, selected_product_id, price_data_json, currency
 

@@ -211,6 +211,7 @@ def edit_shopping(request, shopping_id):
     return render(request, "shopping/edit_shopping.html", context)
 
 
+@login_required
 def add_product(request):
     if request.method == "POST":
         form = CreateProductForm(request.POST)

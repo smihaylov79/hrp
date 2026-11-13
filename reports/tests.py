@@ -198,19 +198,15 @@ class ReportIsolationTests(HrpTestCase):
                 self.assertLoginRequired(reverse(name))
         self.assertLoginRequired(reverse('edit_inflation_basket', kwargs={'basket_id': 1}))
 
-    @known_bug('Phase 1: price_changes has no @login_required')
     def test_login_required_price_changes(self):
         self.assertLoginRequired(reverse('price_changes'))
 
-    @known_bug('Phase 1: save_inflation_basket has no @login_required')
     def test_login_required_save_inflation_basket(self):
         self.assertLoginRequired(reverse('save_inflation_basket'), method='post', data={'name': 'x'})
 
-    @known_bug('Phase 1: income_spendings_comparison has no @login_required')
     def test_login_required_income_vs_spendings(self):
         self.assertLoginRequired(reverse('income_spendings_comparison'))
 
-    @known_bug('Phase 1: by_category_table has no @login_required')
     def test_login_required_by_category_table(self):
         self.assertLoginRequired(reverse('by_category_table'), data={'month': self.month, 'currency': 'EUR'})
 
@@ -248,7 +244,6 @@ class ReportIsolationTests(HrpTestCase):
                 self.assertEqual(income, self.expected_income[user])
                 self.assertEqual(spent, self.expected_spent[user])
 
-    @known_bug('Phase 1 / Phase 2 #1: by_category_table sums the purchases of ALL users')
     def test_by_category_table_shows_only_own_or_household_spending(self):
         for user, expected in self.expected_spent.items():
             with self.subTest(user=user.email):
@@ -269,14 +264,12 @@ class ReportIsolationTests(HrpTestCase):
         UserInflationBasketItem.objects.create(basket=basket, product=self.user_inventory(user, product))
         return basket
 
-    @known_bug('Phase 1: price_changes lists the inflation baskets of every user')
     def test_price_changes_shows_only_own_baskets(self):
         self.make_user_basket(self.alice, 'Кошница на Алис', self.milk)
         self.make_user_basket(self.bob, 'Кошница на Боб', self.milk)
         response = self.get_as(self.alice, 'price_changes')
         self.assertEqual([b.name for b in response.context['inflation_baskets']], ['Кошница на Алис'])
 
-    @known_bug('Phase 1: price_changes lists the inflation baskets of every household')
     def test_price_changes_shows_only_own_household_baskets(self):
         other_home = HouseholdInflationBasket.objects.create(household=self.household, name='Домашна кошница')
         HouseholdInflationBasketItem.objects.create(
@@ -290,28 +283,24 @@ class ReportIsolationTests(HrpTestCase):
         response = self.get_as(self.carol, 'price_changes')
         self.assertEqual([b.name for b in response.context['inflation_baskets']], ['Домашна кошница'])
 
-    @known_bug('Phase 1: the basket product picker lists the inventory of every user')
     def test_create_basket_lists_only_own_inventory(self):
         mine = self.user_inventory(self.alice, self.milk)
         self.user_inventory(self.bob, self.soap)
         response = self.get_as(self.alice, 'create_inflation_basket')
         self.assertEqual([p.pk for p in response.context['products']], [mine.pk])
 
-    @known_bug('Phase 1: edit basket product picker lists the inventory of every user')
     def test_edit_basket_lists_only_own_inventory(self):
         basket = self.make_user_basket(self.alice, 'Кошница на Алис', self.milk)
         self.user_inventory(self.bob, self.soap)
         response = self.get_as(self.alice, 'edit_inflation_basket', basket_id=basket.pk)
         self.assertEqual([p.product.name for p in response.context['products']], ['Мляко'])
 
-    @known_bug('Phase 1: a basket can be saved with another user\'s inventory rows')
     def test_save_basket_rejects_foreign_inventory_products(self):
         foreign = self.user_inventory(self.bob, self.soap)
         self.client.force_login(self.alice)
         self.client.post(reverse('save_inflation_basket'), {'name': 'Чужда', 'product_id[]': [foreign.pk]})
         self.assertFalse(UserInflationBasketItem.objects.filter(product=foreign).exists())
 
-    @known_bug('Phase 1: editing another user\'s basket raises DoesNotExist (500) instead of 404')
     def test_edit_foreign_basket_is_404(self):
         basket = self.make_user_basket(self.bob, 'Кошница на Боб', self.milk)
         self.client.force_login(self.alice)
@@ -329,7 +318,6 @@ class ReportIsolationTests(HrpTestCase):
         self.assertEqual(basket.name, 'Кошница на Боб')
         self.assertEqual(basket.user_basket_items.count(), 1)
 
-    @known_bug('Phase 1: basket name is unique globally instead of per user')
     def test_two_users_can_use_the_same_basket_name(self):
         UserInflationBasket.objects.create(user=self.alice, name='Храна')
         with transaction.atomic():

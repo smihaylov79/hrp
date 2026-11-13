@@ -27,7 +27,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG')
+def env_bool(name, default=False):
+    """Read a boolean from the environment: only 1 / true / yes (any case) mean True."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ('1', 'true', 'yes')
+
+
+DEBUG = env_bool('DEBUG')
 
 
 ALLOWED_HOSTS = [
@@ -36,6 +44,19 @@ ALLOWED_HOSTS = [
     'smihailov79.pythonanywhere.com',
     '.ngrok-free.app',
 ]
+
+# POST requests over https are only accepted from these origins
+CSRF_TRUSTED_ORIGINS = [
+    'https://smihailov79.pythonanywhere.com',
+    'https://*.ngrok-free.app',
+]
+
+if not DEBUG:
+    # Production (PythonAnywhere terminates https and forwards the scheme in this header)
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
 # Application definition

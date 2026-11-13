@@ -53,5 +53,47 @@ class RecipeTest(TestCase):
         self.assertIn('Test Product 2', item_obj.items)
 
 
+class FavouriteGroupCsrfTest(TestCase):
+    """The favourites AJAX endpoints change data, so they must be CSRF protected."""
 
+    def setUp(self):
+        from django.test import Client
+        from .models import UserFavouriteRecipe
+        self.user = CustomUser.objects.create_user(email='test@user.com', password='Ineedstrongpassord123!@',
+                                                   first_name='test', last_name='user')
+        self.group = UserFavouriteRecipe.objects.create(user=self.user, name='Меню')
+        self.strict = Client(enforce_csrf_checks=True)
+        self.strict.force_login(self.user)
+        self.client.force_login(self.user)
 
+    def urls(self):
+        return [reverse('create_favourite_group_ajax'), reverse('add_recipe_to_group_ajax'),
+                reverse('update_group_name_ajax', args=[self.group.id]),
+                reverse('remove_recipe_from_group_ajax', args=[self.group.id, 1]),
+                reverse('delete_group_ajax', args=[self.group.id])]
+
+    def test_post_without_csrf_token_is_rejected(self):
+        from .models import UserFavouriteRecipe
+        for url in self.urls():
+            with self.subTest(url=url):
+                self.assertEqual(self.strict.post(url, {'name': 'x'}).status_code, 403)
+        self.assertEqual(UserFavouriteRecipe.objects.get().name, 'Меню')
+
+    def test_post_with_csrf_header_works(self):
+        from .models import UserFavouriteRecipe
+        self.strict.get(reverse('favourite_recipes'))            # sets the csrftoken cookie
+        token = self.strict.cookies['csrftoken'].value
+        response = self.strict.post(reverse('update_group_name_ajax', args=[self.group.id]), {'name': 'Ново'},
+                                    headers={'X-CSRFToken': token})
+        self.assertEqual(response.json(), {'success': True, 'new_name': 'Ново'})
+
+    def test_recipe_list_is_not_shared_between_users(self):
+        """recipe_list used to be cached for 10 minutes for everybody, including the navbar with the user's name."""
+        other = CustomUser.objects.create_user(email='other@user.com', password='Ineedstrongpassord123!@',
+                                               first_name='Друг', last_name='user')
+        first = self.client.get(reverse('recipe_list'))
+        self.assertContains(first, 'test')
+        self.client.force_login(other)
+        second = self.client.get(reverse('recipe_list'))
+        self.assertContains(second, 'Друг')
+        self.assertNotIn('max-age', second.get('Cache-Control', ''))

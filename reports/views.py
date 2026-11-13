@@ -2,7 +2,9 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, Sum, F, Avg
-from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 import json
 from django.views.generic import FormView, TemplateView
 
@@ -246,49 +248,59 @@ class SpendingsByShopView(LoginRequiredMixin, FormView):
         return self.render_to_response(context)
 
 
+def user_shopping_products(user):
+    """All purchased products the user may see: the household's when in one, else their own."""
+    if user.household:
+        members = CustomUser.objects.filter(household=user.household)
+        return ShoppingProduct.objects.filter(shopping__user__in=members)
+    return ShoppingProduct.objects.filter(shopping__user=user)
+
+
+def user_inflation_baskets(user):
+    """Inflation baskets owned by the user's household, or by the user when they have no household."""
+    if user.household:
+        return HouseholdInflationBasket.objects.filter(household=user.household)
+    return UserInflationBasket.objects.filter(user=user)
+
+
+def user_inventory_products(user):
+    """Inventory rows that may be put in a basket: only the owner's."""
+    if user.household:
+        return HouseholdInventoryProduct.objects.filter(household=user.household)
+    return InventoryProduct.objects.filter(user=user)
+
+
+@login_required
 def price_changes(request):
     user = request.user
     household = user.household
 
-    total_inflation_data = {}
-    if household:
-        members = [m for m in CustomUser.objects.filter(household=household)]
-        inflation_baskets = HouseholdInflationBasket.objects.all()
-        for basket in inflation_baskets:
-            selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id",
-                                                                                                  flat=True)
-            shopping_products = ShoppingProduct.objects.filter(shopping__user__in=members,
-                                                               product__household_inventory_product__in=selected_ids)
-            shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
-            shopping_products = db_to_df(shopping_products, 'BGN')
-            inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
-            total_change = ((inflation_data['total'].iloc[-1] - inflation_data['total'].iloc[0]) /
-                            inflation_data['total'].iloc[0]) * 100
-            total_change = round(total_change, 2)
-            basket.total_change = total_change
-            total_inflation_data[basket.id] = inflation_data, total_change
-
-    else:
-        inflation_baskets = UserInflationBasket.objects.all()
-        for basket in inflation_baskets:
-            selected_ids = UserInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
-            shopping_products = ShoppingProduct.objects.filter(shopping__user=user,
-                                                               product__inventory_product__in=selected_ids)
-            shopping_products = shopping_products.select_related('shopping', 'shop', 'product__category__main_category')
-            shopping_products = db_to_df(shopping_products, 'BGN')
-            inflation_data = calculate_inflation(monthly_weekly_spending(shopping_products)[0])
-            total_change = ((inflation_data['total'].iloc[-1] - inflation_data['total'].iloc[0]) /
-                            inflation_data['total'].iloc[0]) * 100
-            total_change = round(total_change, 2)
-            basket.total_change = total_change
-            total_inflation_data[basket.id] = inflation_data, total_change
-
+    inflation_baskets = list(user_inflation_baskets(user).order_by('name'))
     chart_data = {}
-    for basket_id, (inflation_data, total_change) in total_inflation_data.items():
-        chart_data[basket_id] = {
+    for basket in inflation_baskets:
+        if household:
+            selected_ids = basket.household_basket_items.values_list("product_id", flat=True)
+            shopping_products = user_shopping_products(user).filter(
+                product__household_inventory_product__in=selected_ids)
+        else:
+            selected_ids = basket.user_basket_items.values_list("product_id", flat=True)
+            shopping_products = user_shopping_products(user).filter(product__inventory_product__in=selected_ids)
+
+        basket.total_change = 0
+        chart_data[basket.id] = {'months': [], 'inflation_values': [], 'total_inflation': 0}
+        if not shopping_products.exists():
+            continue  # empty basket or nothing bought yet: show it without a chart instead of crashing
+
+        df = db_to_df(shopping_products, 'BGN')
+        inflation_data = calculate_inflation(monthly_weekly_spending(df)[0])
+        first_total = inflation_data['total'].iloc[0]
+        last_total = inflation_data['total'].iloc[-1]
+        total_change = round((last_total - first_total) / first_total * 100, 2) if first_total else 0
+        basket.total_change = total_change
+        chart_data[basket.id] = {
             'months': inflation_data['month'].tolist(),
             'inflation_values': inflation_data['inflation_mom'].fillna(0).round(2).tolist(),
-            'total_inflation': round(total_change, 2),
+            'total_inflation': total_change,
         }
 
     products, selected_product_id, price_data, currency = product_price_history(request)
@@ -310,66 +322,74 @@ def price_changes(request):
 
 @login_required
 def create_inflation_basket(request):
-    user = request.user
-    household = user.household
-    if household:
-        products = HouseholdInventoryProduct.objects.all().order_by('product__name')
-    else:
-        products = InventoryProduct.objects.all().order_by('product__name')
     context = {
-        'products': products,
+        'products': user_inventory_products(request.user).order_by('product__name'),
     }
     return render(request, 'reports/create_inflation_basket.html', context)
 
 
+def _basket_name_error(request, name, exclude_pk=None):
+    """Validate a basket name for the current owner; returns an error text or None."""
+    if not name:
+        return "Името на кошницата е задължително."
+    same_name = user_inflation_baskets(request.user).filter(name=name)
+    if exclude_pk:
+        same_name = same_name.exclude(pk=exclude_pk)
+    if same_name.exists():
+        return "Вече имате кошница с това име."
+    return None
+
+
+@login_required
+@require_POST
 def save_inflation_basket(request):
     user = request.user
     household = user.household
-    if request.method == "POST":
-        name = request.POST['name']
-        product_ids = request.POST.getlist("product_id[]")
-        if household:
-            basket = HouseholdInflationBasket.objects.create(household=household, name=name)
-            for i in range(len(product_ids)):
-                product = HouseholdInventoryProduct.objects.get(id=product_ids[i])
-                HouseholdInflationBasketItem.objects.create(basket=basket, product=product)
+    name = request.POST.get('name', '').strip()
+    error = _basket_name_error(request, name)
+    if error:
+        messages.error(request, error)
+        return redirect('create_inflation_basket')
 
-        else:
-            basket = UserInflationBasket.objects.create(user=user, name=name)
-            for i in range(len(product_ids)):
-                product = InventoryProduct.objects.get(id=product_ids[i])
-                UserInflationBasketItem.objects.create(basket=basket, product=product)
-        return redirect('price_changes')
+    # only the owner's inventory rows may go in the basket
+    product_ids = [pk for pk in request.POST.getlist("product_id[]") if pk.isdigit()]
+    products = user_inventory_products(user).filter(id__in=product_ids)
+    if household:
+        basket = HouseholdInflationBasket.objects.create(household=household, name=name)
+        HouseholdInflationBasketItem.objects.bulk_create(
+            [HouseholdInflationBasketItem(basket=basket, product=product) for product in products])
+    else:
+        basket = UserInflationBasket.objects.create(user=user, name=name)
+        UserInflationBasketItem.objects.bulk_create(
+            [UserInflationBasketItem(basket=basket, product=product) for product in products])
+    return redirect('price_changes')
 
 
 @login_required
 def edit_inflation_basket(request, basket_id):
     user = request.user
     household = user.household
+    basket = get_object_or_404(user_inflation_baskets(user), id=basket_id)
+    products = user_inventory_products(user).order_by('product__name')
     if household:
-        basket = HouseholdInflationBasket.objects.get(id=basket_id, household=user.household)
-        products = HouseholdInventoryProduct.objects.all().order_by('product__name')
-        selected_ids = HouseholdInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
-
+        item_model, items = HouseholdInflationBasketItem, basket.household_basket_items
     else:
-        basket = UserInflationBasket.objects.get(id=basket_id, user=user)
-        products = InventoryProduct.objects.all().order_by('product__name')
-        selected_ids = UserInflationBasketItem.objects.filter(basket=basket).values_list("product_id", flat=True)
+        item_model, items = UserInflationBasketItem, basket.user_basket_items
+    selected_ids = items.values_list("product_id", flat=True)
 
     if request.method == "POST":
-        basket.name = request.POST['name']
+        name = request.POST.get('name', '').strip()
+        error = _basket_name_error(request, name, exclude_pk=basket.pk)
+        if error:
+            messages.error(request, error)
+            return redirect('edit_inflation_basket', basket_id=basket.pk)
+        basket.name = name
         basket.save()
-        new_ids = request.POST.getlist("product_id[]")
-        if household:
-            basket.household_basket_items.all().delete()
-            for i in new_ids:
-                product = HouseholdInventoryProduct.objects.get(id=i)
-                HouseholdInflationBasketItem.objects.create(basket=basket, product=product)
-        else:
-            basket.user_basket_items.all().delete()
-            for i in new_ids:
-                product = InventoryProduct.objects.get(id=i)
-                UserInflationBasketItem.objects.create(basket=basket, product=product)
+        new_ids = [pk for pk in request.POST.getlist("product_id[]") if pk.isdigit()]
+        new_products = list(products.filter(id__in=new_ids))
+        # replaces the basket's own item rows (same behaviour as before, now limited to the owner's products)
+        items.all().delete()
+        item_model.objects.bulk_create([item_model(basket=basket, product=product) for product in new_products])
         return redirect('price_changes')
 
     context = {
@@ -484,6 +504,7 @@ class IncomeView(LoginRequiredMixin, FormView):
         return self.render_to_response(context)
 
 
+@login_required
 def income_spendings_comparison(request):
     form = IncomeSpendingsComparisonForm(request.GET or None)
 
@@ -728,6 +749,7 @@ def get_same_month_previous_years(start_date, years_back=3):
     return periods
 
 
+@login_required
 def by_category_table(request):
     month = request.GET.get("month")
     target_currency = request.GET.get("currency", "BGN")
@@ -741,16 +763,33 @@ def by_category_table(request):
         return render(request, "reports/by_category_table.html", context)
 
     # --- 1. Parse selected month ---
-    year, m = map(int, month.split("-"))
-    start_date = date(year, m, 1)
+    try:
+        year, m = map(int, month.split("-"))
+        start_date = date(year, m, 1)
+    except (ValueError, TypeError):
+        context["selected_month"] = None
+        return render(request, "reports/by_category_table.html", context)
     end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
 
     context["selected_period"] = (start_date, end_date)
+    previous_periods = get_same_month_previous_years(start_date, years_back=1)
 
-    # --- 2. Load all shopping data once and convert to DataFrame ---
-    db_shopping = ShoppingProduct.objects.select_related(
+    # --- 2. Load only this user's / household's purchases for the compared months ---
+    period_filter = Q(shopping__date__range=(start_date, end_date))
+    for s, e in previous_periods:
+        period_filter |= Q(shopping__date__range=(s, e))
+    db_shopping = user_shopping_products(request.user).filter(period_filter).select_related(
         "shopping", "product__category__main_category"
     )
+
+    if not db_shopping.exists():
+        context.update({
+            "previous_years": [s.year for s, e in previous_periods],
+            "comparison_rows": [],
+            "total_current": 0,
+            "total_previous": [{"year": s.year, "value": 0, "diff": 0, "pct": None} for s, e in previous_periods],
+        })
+        return render(request, "reports/by_category_table.html", context)
 
     df = db_to_df(db_shopping, target_currency)
 
@@ -775,8 +814,6 @@ def by_category_table(request):
     )
 
     # --- 5. Previous years ---
-    previous_periods = get_same_month_previous_years(start_date, years_back=1)
-
     previous_data = []
     for s, e in previous_periods:
         s_ts = pd.Timestamp(s)

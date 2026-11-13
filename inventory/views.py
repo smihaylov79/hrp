@@ -63,6 +63,7 @@ def inventory_list(request):
     })
 
 
+@login_required
 def update_inventory(request):
     if request.method == "POST":
         user = request.user
@@ -88,15 +89,16 @@ def update_inventory(request):
                         data[product_id][field] = 0.0
 
         if household:
-            HouseholdInventoryProduct.bulk_update_inventory(data)
+            HouseholdInventoryProduct.bulk_update_inventory(data, household)
         else:
-            InventoryProduct.bulk_update_inventory(data)
+            InventoryProduct.bulk_update_inventory(data, user)
 
         return redirect("inventory")
 
     return redirect("inventory")
 
 
+@login_required
 def user_category_settings(request):
     user = request.user
     household = user.household

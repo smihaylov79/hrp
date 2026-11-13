@@ -15,8 +15,6 @@ from inventory.models import InventoryProduct, HouseholdInventoryProduct
 from shopping.forms import CreateProductForm
 from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingList, RecipeShoppingList
 
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.cache import cache_page
 
 from users.models import HouseHold
 
@@ -30,7 +28,6 @@ from users.models import HouseHold
 
 # Create your views here.
 
-@cache_page(60 * 10)
 def recipe_list(request):
     category_name = request.GET.get('category', 'all')
     ingredient = request.GET.get('ingredient', 'all')
@@ -406,7 +403,6 @@ def favourite_groups_list(request):
 
 
 @login_required
-@csrf_exempt
 def create_favourite_group_ajax(request):
     if request.method == "POST":
         name = request.POST.get("name")
@@ -423,7 +419,6 @@ def create_favourite_group_ajax(request):
 
 
 @login_required
-@csrf_exempt
 def add_recipe_to_group_ajax(request):
     if request.method == "POST":
         recipe_id = request.POST.get("recipe_id")
@@ -440,7 +435,6 @@ def add_recipe_to_group_ajax(request):
 
 
 @login_required
-@csrf_exempt
 def update_group_name_ajax(request, group_id):
     if request.method == "POST":
         new_name = request.POST.get("name")
@@ -455,7 +449,6 @@ def update_group_name_ajax(request, group_id):
 
 
 @login_required
-@csrf_exempt
 def remove_recipe_from_group_ajax(request, group_id, recipe_id):
     if request.method == "POST":
         try:
@@ -470,7 +463,6 @@ def remove_recipe_from_group_ajax(request, group_id, recipe_id):
 
 
 @login_required
-@csrf_exempt
 def delete_group_ajax(request, group_id):
     if request.method == "POST":
         try:

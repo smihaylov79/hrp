@@ -83,17 +83,14 @@ class BudgetOwnershipTests(HrpTestCase):
         self.assertEqual(response.context['total_actual'], 10.0)
 
     # -- foreign data ------------------------------------------------------------------------------
-    @known_bug('Phase 1: budget_detail loads any budget by pk (no owner check)')
     def test_foreign_budget_detail_is_404(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.get(self.url('budget_detail', self.home_budget)).status_code, 404)
 
-    @known_bug('Phase 1: track_budget loads any budget by pk (no owner check)')
     def test_foreign_budget_tracking_is_404(self):
         self.client.force_login(self.bob)
         self.assertEqual(self.client.get(self.url('track_budget', self.home_budget)).status_code, 404)
 
-    @known_bug('Phase 1: edit_budget loads any budget by pk (no owner check)')
     def test_foreign_budget_cannot_be_edited(self):
         item = self.home_budget.items.get()
         self.client.force_login(self.bob)
@@ -101,7 +98,6 @@ class BudgetOwnershipTests(HrpTestCase):
         item.refresh_from_db()
         self.assertEqual(item.planned_amount, Decimal('1200'))
 
-    @known_bug('Phase 1: propose_budget finalize takes any budget_id and wipes its items')
     def test_finalize_cannot_wipe_a_foreign_budget(self):
         self.client.force_login(self.bob)
         try:

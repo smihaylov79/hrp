@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
 from django.db.models import Count
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -94,7 +95,7 @@ def user_library(request):
 @login_required
 def library_detail(request, library_id):
     user = request.user
-    library = UserLibrary.objects.get(pk=library_id)
+    library = get_object_or_404(UserLibrary, pk=library_id, user=user)
     library_books = UserBook.objects.filter(library=library, user=user).order_by('-rating')
     context = {
         'library': library,
@@ -103,6 +104,7 @@ def library_detail(request, library_id):
     return render(request, 'reading/library_detail.html', context)
 
 
+@login_required
 def add_author_ajax(request):
     if request.method == 'POST':
         form = AuthorForm(request.POST, request.FILES)
@@ -112,6 +114,7 @@ def add_author_ajax(request):
     return JsonResponse({'error': 'Invalid data'}, status=400)
 
 
+@login_required
 def add_genre_ajax(request):
     if request.method == 'POST':
         form = GenreForm(request.POST)
@@ -121,6 +124,7 @@ def add_genre_ajax(request):
     return JsonResponse({'error': 'Invalid data'}, status=400)
 
 
+@login_required
 def add_library_ajax(request):
     if request.method == 'POST':
         form = LibraryForm(request.POST)
@@ -152,6 +156,8 @@ def book_detail(request, source, book_id):
         library = None
 
         if request.method == 'POST':
+            if not user.is_authenticated:
+                return redirect_to_login(request.get_full_path())
             from_shared_to_user(request, book)
             return redirect('user_library')
 
@@ -166,13 +172,13 @@ def book_detail(request, source, book_id):
             if b.comments:
                 comments[b.user.first_name] = b.comments
 
-    user_book = UserBook.objects.filter(title=book.title, user=request.user).first()
+    user_book = UserBook.objects.filter(title=book.title, user=user).first() if user.is_authenticated else None
     user_book_id = user_book.id if user_book else None
 
     context = {
         'book': book,
         'library': library,
-        'libraries': UserLibrary.objects.filter(user=user),  # Needed for the dropdown
+        'libraries': UserLibrary.objects.filter(user=user) if user.is_authenticated else UserLibrary.objects.none(),
         'library_id': library.id if library else None,
         'library_form': library_form,
         'source': source,
@@ -183,6 +189,7 @@ def book_detail(request, source, book_id):
     return render(request, 'reading/book_detail.html', context)
 
 
+@login_required
 def upload_note_image(request, source, book_id):
     user = request.user
 
@@ -202,6 +209,7 @@ def upload_note_image(request, source, book_id):
     return redirect('book_detail', source='user', book_id=book.id)
 
 
+@login_required
 def save_extracted_comment(request, source, book_id):
     user = request.user
 

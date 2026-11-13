@@ -3,6 +3,7 @@ from datetime import date
 
 import pandas as pd
 from django.db.models import Sum
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
@@ -17,6 +18,16 @@ from users.models import CustomUser
 
 from decimal import Decimal
 
+
+
+def get_user_budget(user, pk):
+    """The budget with this pk if the user may access it, else 404.
+
+    A household budget belongs to all members of the household; a budget without household only to its creator.
+    """
+    if user.household:
+        return get_object_or_404(Budget, pk=pk, household=user.household)
+    return get_object_or_404(Budget, pk=pk, creator=user, household__isnull=True)
 
 
 @login_required
@@ -52,7 +63,9 @@ def propose_budget(request):
     # финализиране на бюджета
     if request.method == "POST" and request.POST.get("action") == "finalize":
         budget_id = request.POST.get("budget_id")
-        budget = Budget.objects.get(pk=budget_id)
+        if not str(budget_id).isdigit():
+            raise Http404
+        budget = get_user_budget(user, budget_id)
         budget.items.all().delete()
         budget.income_items.all().delete()
 
@@ -207,7 +220,7 @@ def propose_budget(request):
 
 @login_required
 def budget_detail(request, pk):
-    budget = get_object_or_404(Budget, pk=pk)
+    budget = get_user_budget(request.user, pk)
     approvals = BudgetApproval.objects.filter(budget=budget)
 
     user_approval = approvals.filter(user=request.user).first()
@@ -244,7 +257,7 @@ def budget_detail(request, pk):
 @login_required
 def track_budget(request, pk):
     """Track изпълнението спрямо реалните разходи"""
-    budget = get_object_or_404(Budget, pk=pk)
+    budget = get_user_budget(request.user, pk)
     items = budget.items.all()
     income_items = BudgetIncomeItem.objects.filter(budget=budget)
     today = date.today()
@@ -322,7 +335,7 @@ def track_budget(request, pk):
 
 @login_required
 def edit_budget(request, pk):
-    budget = get_object_or_404(Budget, pk=pk)
+    budget = get_user_budget(request.user, pk)
     items = budget.items.select_related("category").all()
     income_items = budget.income_items.select_related("income_type").all()
 

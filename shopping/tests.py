@@ -45,3 +45,13 @@ class ProductTestCase(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('Име и категория са задължителни!', form.errors['__all__'])
 
+
+
+class AddProductAccessTest(TestCase):
+    def test_add_product_requires_login(self):
+        category = ProductCategory.objects.create(name='Test Subcategory')
+        response = self.client.post('/shopping/add_product/', {'name': 'Spam product', 'category': category.id,
+                                                               'calories': 1})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response['Location'].startswith('/users/please-login/'))
+        self.assertFalse(Product.objects.filter(name='Spam product').exists())

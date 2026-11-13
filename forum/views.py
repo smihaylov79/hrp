@@ -1,6 +1,8 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 
 from taskmanager.models import Task
@@ -85,8 +87,11 @@ def create_thread(request, category_id):
     return render(request, "forum/create_thread.html", {"form": form, "category": category})
 
 
+@login_required
 def edit_request_thread(request, request_id):
-    requested_thread = ThreadRequest.objects.get(id=request_id)
+    if not request.user.is_staff:
+        raise PermissionDenied
+    requested_thread = get_object_or_404(ThreadRequest, id=request_id)
     form = UpdateThreadRequestForm(instance=requested_thread)
 
     if request.method == "POST":
@@ -113,6 +118,8 @@ def thread_detail(request, thread_id):
     posts = Post.objects.filter(thread=thread).order_by("created_at")
 
     if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path())
         form = PostForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)

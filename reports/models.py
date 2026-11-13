@@ -21,8 +21,13 @@ class ExchangeRate(models.Model):
 
 
 class UserInflationBasket(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'name'], name='unique_basket_name_per_user'),
+        ]
 
 
 class UserInflationBasketItem(models.Model):
@@ -31,8 +36,13 @@ class UserInflationBasketItem(models.Model):
 
 
 class HouseholdInflationBasket(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     household = models.ForeignKey(HouseHold, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['household', 'name'], name='unique_basket_name_per_household'),
+        ]
 
 
 class HouseholdInflationBasketItem(models.Model):

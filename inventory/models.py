@@ -42,8 +42,9 @@ class InventoryProduct(BaseInventoryProduct):
 
 
     @staticmethod
-    def bulk_update_inventory(data):
-        products = InventoryProduct.objects.filter(id__in=data.keys())
+    def bulk_update_inventory(data, user):
+        """Update the given rows ({id: {field: value}}) - only rows that belong to `user`."""
+        products = InventoryProduct.objects.filter(id__in=data.keys(), user=user)
         for product in products:
             updates = data[str(product.id)]
             product.quantity = updates.get("quantity", product.quantity)
@@ -77,8 +78,9 @@ class HouseholdInventoryProduct(BaseInventoryProduct):
                                  related_name='household_inventory_category')
 
     @staticmethod
-    def bulk_update_inventory(data):
-        products = HouseholdInventoryProduct.objects.filter(id__in=data.keys())
+    def bulk_update_inventory(data, household):
+        """Update the given rows ({id: {field: value}}) - only rows that belong to `household`."""
+        products = HouseholdInventoryProduct.objects.filter(id__in=data.keys(), household=household)
         for product in products:
             updates = data[str(product.id)]
             product.quantity = updates.get("quantity", product.quantity)

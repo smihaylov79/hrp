@@ -12,8 +12,11 @@ def get_weather_data(request):
     location = request.session.get("geo_location", "Sofia")
     if not location:
         location = "Sofia"
-    url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={location}&days=4"
-    response = requests.get(url)
+    url = "https://api.weatherapi.com/v1/forecast.json"
+    try:
+        response = requests.get(url, params={"key": api_key, "q": location, "days": 4}, timeout=5)
+    except requests.RequestException:
+        return {"error": "Прогнозата за времето не е достъпна в момента."}
     if response.status_code == 200:
         return response.json()
     else:
@@ -32,7 +35,7 @@ def detailed_forecast(request, date):
     forecast_day = None
     formated_day = None
 
-    if weather_data:
+    if weather_data and 'forecast' in weather_data:
         for day in weather_data['forecast']['forecastday']:
             if day['date'] == date:
                 formated_day = datetime.strptime(day['date'], "%Y-%m-%d")
