@@ -25,6 +25,8 @@ def inventory_list(request):
     else:
         user_categories = UserProductCategory.objects.filter(user=request.user)
         inventory_items = InventoryProduct.objects.filter(user=request.user).order_by('product__name')
+    inventory_items = inventory_items.select_related('product')
+    user_categories = user_categories.select_related('product_category')
 
     category_filter = request.GET.get("category")
     search_query = request.GET.get("search")

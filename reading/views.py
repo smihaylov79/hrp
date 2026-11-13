@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
-from django.db.models import Count
+from django.db.models import Avg, Count
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -17,7 +17,13 @@ from .helpers import from_user_to_shared, from_shared_to_user
 
 
 def reading_home(request):
-    books = Book.objects.all().order_by('title')
+    books = list(Book.objects.select_related('shared_from').order_by('title'))
+    # average rating per title in one query (was one query per book in the template)
+    ratings = dict(UserBook.objects.filter(title__in=[b.title for b in books])
+                   .values_list('title').annotate(avg=Avg('rating')))
+    for book in books:
+        average = ratings.get(book.title)
+        book.avg_rating = round(average, 1) if average is not None else None
     context = {
         'books': books,
     }
@@ -44,7 +50,7 @@ def user_library(request):
     genre = request.GET.get('genre')
     title = request.GET.get('title')
 
-    user_books = UserBook.objects.filter(user=request.user, library__isnull=True)
+    user_books = UserBook.objects.filter(user=request.user, library__isnull=True).select_related('author', 'genre')
 
     if author:
         user_books = user_books.filter(author__name__icontains=author)

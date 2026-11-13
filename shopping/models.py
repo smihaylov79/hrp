@@ -60,6 +60,11 @@ class Shopping(models.Model):
     shop = models.ForeignKey(Shop, on_delete=models.SET_NULL, null=True, blank=True)
     currency = models.CharField(max_length=3, choices=CurrencyChoice.choices, default=CurrencyChoice.BGN)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["user", "date"], name="shopping_user_date_idx"),
+        ]
+
     def total_amount(self):
         return sum(sp.amount for sp in self.shopping_products.all())
 

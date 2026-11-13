@@ -31,6 +31,20 @@ class FinanceUnpluggedTests(HrpTestCase):
         request.assert_not_called()
 
 
+class SettingsTests(SimpleTestCase):
+    def test_locale_middleware_is_between_session_and_common(self):
+        from django.conf import settings
+        order = settings.MIDDLEWARE.index
+        self.assertLess(order('django.contrib.sessions.middleware.SessionMiddleware'),
+                        order('django.middleware.locale.LocaleMiddleware'))
+        self.assertLess(order('django.middleware.locale.LocaleMiddleware'),
+                        order('django.middleware.common.CommonMiddleware'))
+
+    def test_cache_is_shared_between_workers(self):
+        from django.conf import settings
+        self.assertIn('DatabaseCache', settings.CACHES['default']['BACKEND'])
+
+
 class EnvBoolTests(SimpleTestCase):
     """DEBUG=False in .env must really switch DEBUG off (any non-empty string used to be truthy)."""
 

@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 3**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 4**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -24,6 +24,10 @@ Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.vi
 
 - [ ] `git fetch && git checkout improvements` (or merge `improvements` into `master` and pull).
 - [ ] The `finance/` folder is still in the repo but the app is **unplugged** — do not delete it on the server.
+- [ ] **`staticfiles/` is no longer in git (Phase 4).** The pull removes the collected static files from the
+      server's working copy, so the site has **no CSS/JS until `collectstatic` is run** (§5). Do the pull,
+      `pip install`, `migrate`, `createcachetable` and `collectstatic` in one go, then reload.
+      (`.idea/` and `project_helpers.zip` also left the repo; nothing on the server needs them.)
 
 ---------------------------------------------------------------------------------------------------
 ## 2. Python packages (requirements)
@@ -61,16 +65,21 @@ Run: `python manage.py migrate`
 |---|---|---|
 | `reports.0004_basket_name_unique_per_owner` (Phase 1) | Inflation-basket name unique per user / per household instead of globally (index change) | No |
 | `reports.0005_exchange_rate_keeps_given_date` (Phase 2) | `ExchangeRate.date_extracted` default = today instead of forced "now" | No |
+| `shopping.0020_user_date_index` (Phase 4) | Adds index (user, date) on purchases | No |
+| `income.0003_user_date_index` (Phase 4) | Adds index (user, date_received) on incomes | No |
 
 - [ ] `python manage.py migrate`
 - [ ] `python manage.py makemigrations --check` must print "No changes detected".
+- [ ] **`python manage.py createcachetable`** (Phase 4) — creates the table `hrp_cache` used by the shared cache
+      (recipe catalogue, weather, utility prices). Safe to run more than once. Without it the cooking pages,
+      the home page and the utility-bills page fail with "Table ... hrp_cache doesn't exist".
 - Finance: **no migration**. Its 12 `finance_*` tables and its rows in `django_migrations` stay exactly as they are.
 
 ---------------------------------------------------------------------------------------------------
 ## 5. PythonAnywhere settings (Web tab)
 
 - [ ] **Static files** mappings exist: URL `/static/` → `<project>/staticfiles`, URL `/media/` → the `MEDIA_ROOT` folder.
-- [ ] `python manage.py collectstatic --noinput`
+- [ ] `python manage.py collectstatic --noinput` — **required** on this deploy (see §1: `staticfiles/` left git).
 - [ ] **Force HTTPS**: enabled (session and CSRF cookies are HTTPS-only when `DEBUG=False`).
 - [ ] **Reload** the web app (after everything else in this file).
 
@@ -112,6 +121,8 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 - [ ] Log in; home page loads; there is no "Пари" item in the navbar or on the home page; `/finance/` gives 404.
 - [ ] Reports → each of the 7 reports opens; "Категории (таблица)" shows only your household's numbers.
 - [ ] Add a small purchase in EUR — saving is immediate (no 1–2 s wait).
+- [ ] Cooking → recipe list: your own name is in the navbar; log in as a second user and check theirs too.
+- [ ] Pages have their styling (proves `collectstatic` ran) and recipe / book images load (media mapping).
 - [ ] Inventory: change a quantity and save. Cooking → Favourites: create/rename/delete a group (CSRF check).
 - [ ] Log out and open `/reports/price-changes/` — you are redirected to the login page.
 - [ ] An error page shows the plain "Server Error (500)" text, not the yellow debug page (proves DEBUG is off).
@@ -121,10 +132,12 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 
 - **Deleting a user who has a finance portfolio fails** (MySQL still has the foreign key from
   `finance_userportfolio` to users). Stays until the finance tables are dropped in Phase 8 (GATE, with the owner).
-- The recipe list is no longer cached for 10 minutes (it leaked one user's page to others); the proper cache
-  comes in Phase 4.
-- `staticfiles/`, `.idea/` and `project_helpers.zip` are git-ignored but still tracked; untracking is planned
-  together with the static-files setup in Phase 4 (after `git pull` run `collectstatic` — see §5).
+- Database connections are now kept open for 280 s (`CONN_MAX_AGE`) with a health check; PythonAnywhere closes
+  idle MySQL connections after 300 s, so no setting has to change there.
+- The recipe catalogue is cached for up to 1 hour and refreshed automatically when a recipe, ingredient,
+  recipe category or product is saved in the app or the admin. A change made directly in MySQL shows up after
+  at most 1 hour (or immediately after `python manage.py shell -c "from django.core.cache import cache; cache.clear()"`).
+- Weather is cached 30 minutes per city; electricity / heating prices 24 hours.
 
 ---------------------------------------------------------------------------------------------------
 ## Change log of this file
@@ -136,3 +149,4 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 2 | Migration `reports.0005`, `audit_rates`, `fetch_rates --backfill`, daily `fetch_rates` task |
 | 3 (steps 1–3) | Finance unplugged (no migration), finance backups, user-deletion caveat |
 | 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
+| 4 | `createcachetable`, index migrations `shopping.0020` + `income.0003`, `collectstatic` now mandatory (`staticfiles/` untracked), cache notes |

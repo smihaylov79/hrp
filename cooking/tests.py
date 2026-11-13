@@ -97,3 +97,89 @@ class FavouriteGroupCsrfTest(TestCase):
         second = self.client.get(reverse('recipe_list'))
         self.assertContains(second, 'Друг')
         self.assertNotIn('max-age', second.get('Cache-Control', ''))
+
+
+class RecipeCatalogueTests(TestCase):
+    """The recipe catalogue is cached for everybody; cost/availability stay per user; pages do not run N+1 queries."""
+
+    @classmethod
+    def setUpTestData(cls):
+        from .models import UserFavouriteRecipe
+        cls.owner = CustomUser.objects.create_user(email='owner@user.com', password='Ineedstrongpassord123!@',
+                                                   first_name='Owner', last_name='user')
+        cls.other = CustomUser.objects.create_user(email='other@user.com', password='Ineedstrongpassord123!@',
+                                                   first_name='Other', last_name='user')
+        product_cat = ProductCategory.objects.create(name='Test subcat')
+        cls.category = RecipeCategory.objects.create(name='Супи')
+        cls.products = [Product.objects.create(name=f'Продукт {i}', category=product_cat, suitable_for_cooking=True)
+                        for i in range(8)]
+        cls.recipes = []
+        for i in range(12):
+            recipe = Recipe.objects.create(name=f'Рецепта {i}', category=cls.category)
+            for product in cls.products[:4]:
+                RecipeIngredient.objects.create(recipe=recipe, product=product, quantity=1)
+            cls.recipes.append(recipe)
+        for product in cls.products:       # only the owner has everything, at 2.00 each
+            InventoryProduct.objects.create(user=cls.owner, product=product, quantity=5, amount=10, average_price=2)
+        group = UserFavouriteRecipe.objects.create(user=cls.owner, name='Меню')
+        group.recipes.set(cls.recipes)
+        cls.group = group
+
+    def queries_for(self, user, url):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        self.client.force_login(user)
+        self.client.get(url)                 # warm the shared cache
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return len(ctx), response
+
+    def test_cooking_pages_stay_under_the_query_budget(self):
+        for url in [reverse('recipe_list'), reverse('cooking_home'), reverse('favourite_recipes'),
+                    reverse('favourite_group_detail', args=[self.group.id]),
+                    reverse('recipe_view', args=[self.recipes[0].id])]:
+            with self.subTest(url=url):
+                count, _ = self.queries_for(self.owner, url)
+                self.assertLessEqual(count, 15, f'{url} ran {count} queries')
+
+    def test_cost_and_availability_are_per_user_although_the_catalogue_is_shared(self):
+        _, mine = self.queries_for(self.owner, reverse('recipe_list'))
+        _, theirs = self.queries_for(self.other, reverse('recipe_list'))
+        self.assertEqual({r.user_cost for r in mine.context['recipes']}, {8})          # 4 ingredients x 2.00
+        self.assertTrue(all(r.user_availability for r in mine.context['recipes']))
+        self.assertEqual({r.user_cost for r in theirs.context['recipes']}, {0})
+        self.assertFalse(any(r.user_availability for r in theirs.context['recipes']))
+        self.assertContains(mine, 'Всички продукти налични')
+        self.assertNotContains(theirs, 'Всички продукти налични')
+        self.assertContains(theirs, 'Other')
+        self.assertNotContains(theirs, 'Owner')
+
+    def test_catalogue_is_refreshed_when_a_recipe_changes(self):
+        self.client.force_login(self.owner)
+        self.assertNotContains(self.client.get(reverse('recipe_list')), 'Нова рецепта')
+        recipe = Recipe.objects.create(name='Нова рецепта', category=self.category)
+        self.assertContains(self.client.get(reverse('recipe_list')), 'Нова рецепта')
+        recipe.name = 'Преименувана'
+        recipe.save()
+        self.assertContains(self.client.get(reverse('recipe_list')), 'Преименувана')
+        recipe.delete()
+        self.assertNotContains(self.client.get(reverse('recipe_list')), 'Преименувана')
+
+    def test_filters_work_on_the_cached_catalogue(self):
+        other_category = RecipeCategory.objects.create(name='Десерти')
+        dessert = Recipe.objects.create(name='Торта', category=other_category)
+        RecipeIngredient.objects.create(recipe=dessert, product=self.products[7], quantity=1)
+        self.client.force_login(self.owner)
+        by_category = self.client.get(reverse('recipe_list'), {'category': 'Десерти'})
+        self.assertEqual([r.name for r in by_category.context['recipes']], ['Торта'])
+        by_ingredient = self.client.get(reverse('recipe_list'), {'ingredient': self.products[7].id})
+        self.assertEqual([r.name for r in by_ingredient.context['recipes']], ['Торта'])
+        self.assertEqual(by_ingredient.context['product'], self.products[7])
+        self.assertEqual(self.client.get(reverse('recipe_list'), {'ingredient': 'abc'}).status_code, 200)
+
+    def test_anonymous_visitor_can_browse_recipes(self):
+        self.client.logout()
+        response = self.client.get(reverse('recipe_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['recipes']), 12)

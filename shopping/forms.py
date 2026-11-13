@@ -56,7 +56,8 @@ class CreateProductForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['category'].queryset = ProductCategory.objects.all().order_by('name')
+        # the option label is str(category), which reads the main category -> load it in the same query
+        self.fields['category'].queryset = ProductCategory.objects.select_related('main_category').order_by('name')
 
     def clean(self):
         cleaned_data = super().clean()

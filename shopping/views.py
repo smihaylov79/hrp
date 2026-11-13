@@ -14,7 +14,7 @@ from users.models import CustomUser
 from .helpers import load_prefill_data, save_shopping_products
 from .models import Shop, ProductCategory, MainCategory, CurrencyChoice, Shopping, Product, HouseholdShoppingList, \
     ShoppingList, ShoppingProduct
-from .helpers import fetch_electricity_price, fetch_cold_water, get_heating_price
+from .helpers import fetch_electricity_price, fetch_cold_water, get_heating_price, cached_price
 
 
 @login_required
@@ -37,7 +37,7 @@ def shopping_list(request):
     # 3. Optimize DB access
     shoppings = (
         shoppings
-        .select_related("user")
+        .select_related("user", "shop")
         .prefetch_related("shopping_products__product")
         .order_by("-date")
         .distinct()
@@ -99,9 +99,11 @@ def regular_shopping(request):
         'form': form,
         'create_product_form': create_product_form,
         'shops': Shop.objects.only("id", "name").order_by("name"),
-        'categories': ProductCategory.objects.only("id", "name").order_by("name"),
+        'categories': ProductCategory.objects.only("id", "name", "main_category_id").order_by("name"),
         'main_categories': MainCategory.objects.only("id", "name").order_by("name"),
-        'products': Product.objects.only("id", "name").order_by("name"),
+        'products': (Product.objects.select_related("category")
+                     .only("id", "name", "category__id", "category__name", "category__main_category_id")
+                     .order_by("name")),
 
         'shopping_lists': shopping_lists,
         'prefill_json': json.dumps(prefill_data, cls=DjangoJSONEncoder),
@@ -113,10 +115,11 @@ def regular_shopping(request):
 def utility_bills(request):
     selected_categories = ['Битови сметки', 'Наем', 'Финансиране', 'Инвестиции', 'Джобни']
     category = ProductCategory.objects.filter(name__in=selected_categories)
-    bills = Product.objects.filter(category__in=category).order_by('name')
-    electricity_price = fetch_electricity_price() or None
+    bills = Product.objects.filter(category__in=category).select_related('category__main_category').order_by('name')
+    # external prices change at most daily: cached, with timeouts (see helpers.cached_price)
+    electricity_price = cached_price('electricity', fetch_electricity_price) or None
     cold_water = fetch_cold_water() or None
-    heating_price = get_heating_price() or None
+    heating_price = cached_price('heating', get_heating_price) or None
 
     if request.method == "POST":
         form = UtilityBillForm(request.POST)

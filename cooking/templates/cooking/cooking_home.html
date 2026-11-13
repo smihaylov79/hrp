@@ -22,9 +22,9 @@
           <div class="row g-0 align-items-center">
             <div class="col-md-4 d-flex align-items-center" style="height: 180px;">
               {% if recipe.image %}
-                <img src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
+                <img loading="lazy" decoding="async" src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
               {% else %}
-                <img src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+                <img loading="lazy" decoding="async" src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
               {% endif %}
             </div>
             <div class="col-md-5">

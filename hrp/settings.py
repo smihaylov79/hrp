@@ -93,12 +93,12 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',   # must be after sessions and before CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
 ]
 
 ROOT_URLCONF = 'hrp.urls'
@@ -115,7 +115,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'shopping.context_processors.current_datetime',
-                'forum.views.get_categories',
+                'forum.views.forum_categories',
                 'taskmanager.context_processor.incomplete_tasks',
                 "fastapps.context_processor_fastapps.fastapps_list",
             ],
@@ -158,6 +158,20 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': '3306',
+        # reuse connections between requests; PythonAnywhere's MySQL closes idle ones after 300 s
+        'CONN_MAX_AGE': 280,
+        'CONN_HEALTH_CHECKS': True,
+    }
+}
+
+# One cache shared by all web workers (table created with `manage.py createcachetable`).
+# Only user-independent data may be cached: recipe catalogue, weather per city, utility prices.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'hrp_cache',
+        'TIMEOUT': 600,
+        'OPTIONS': {'MAX_ENTRIES': 500},
     }
 }
 

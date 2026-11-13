@@ -55,3 +55,19 @@ class AddProductAccessTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response['Location'].startswith('/users/please-login/'))
         self.assertFalse(Product.objects.filter(name='Spam product').exists())
+
+
+class CachedPriceTest(TestCase):
+    def test_value_is_fetched_once_and_failures_are_remembered_briefly(self):
+        from unittest import mock
+        from .helpers import cached_price
+        ok = mock.Mock(return_value=0.25)
+        self.assertEqual(cached_price('test-ok', ok), 0.25)
+        self.assertEqual(cached_price('test-ok', ok), 0.25)
+        self.assertEqual(ok.call_count, 1)
+
+        for failing in (mock.Mock(side_effect=RuntimeError('site down')), mock.Mock(return_value='no data')):
+            name = f'test-fail-{id(failing)}'
+            self.assertIsNone(cached_price(name, failing))
+            self.assertIsNone(cached_price(name, failing))
+            self.assertEqual(failing.call_count, 1)

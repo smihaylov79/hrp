@@ -136,5 +136,6 @@ def thread_detail(request, thread_id):
     return render(request, "forum/thread_detail.html", {"thread": thread, "posts": posts, "form": form})
 
 
-def get_categories(request):
-    return {"categories": Category.objects.all()}
+def forum_categories(request):
+    """Context processor for forum/forum_nav.html. Lazy: no query unless a template iterates it."""
+    return {"forum_categories": Category.objects.all()}

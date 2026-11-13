@@ -13,7 +13,7 @@
         <div class="col">
           <div class="card h-100 shadow-sm">
             {% if entry.cover_image %}
-            <img src="{{ entry.cover_image }}" class="card-img-top" alt="{{ entry.title }}">
+            <img loading="lazy" decoding="async" src="{{ entry.cover_image }}" class="card-img-top" alt="{{ entry.title }}">
             {% else %}
             <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
               <span class="fs-5">Без корица</span>

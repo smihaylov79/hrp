@@ -32,7 +32,7 @@
     {% for product in products %}
       <option value="{{ product.id }}"
           {% if request.GET.ingredient == product.id|stringformat:"s" %}selected{% endif %}>
-    {{ product.id|get_product_name }}
+    {{ product.name }}
       </option>
     {% endfor %}
   </select>
@@ -53,9 +53,9 @@
   <div class="row g-0 align-items-center">
     <div class="col-md-4 d-flex align-items-center" style="height: 180px;">
   {% if recipe.image %}
-    <img src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
+    <img loading="lazy" decoding="async" src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
   {% else %}
-    <img src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+    <img loading="lazy" decoding="async" src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
   {% endif %}
 </div>
 
@@ -67,7 +67,7 @@
         <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.total_calories }} kcal</p>
         <p class="card-text mb-1"><strong>📂:</strong> {{ recipe.category.name }}</p>
 
-        {% if recipe.user_availability_status == "OK" %}
+        {% if recipe.user_availability %}
           <p class="text-success small">✅ Всички продукти налични</p>
         {% else %}
           <p class="text-danger small">❌ Липсващи продукти</p>

@@ -18,6 +18,8 @@ from shopping.models import Product, ProductCategory, HouseholdRecipeShoppingLis
 
 from users.models import HouseHold
 
+from .services import inventory_maps, missing_ingredients, recipe_catalogue, recipe_categories, recipe_cost
+
 
 # from django.core.cache import cache
 # from django.test import RequestFactory
@@ -32,39 +34,31 @@ def recipe_list(request):
     category_name = request.GET.get('category', 'all')
     ingredient = request.GET.get('ingredient', 'all')
 
-    # 1. Prefetch everything needed
-    recipes = (
-        Recipe.objects.all()
-        .select_related("category")
-        .prefetch_related("recipe_ingredients__product")
-        .order_by("category__name")
-    )
+    # 1. The catalogue is the same for everybody (cached); filter it in memory
+    recipes = recipe_catalogue()
+    products = list(Product.objects.filter(suitable_for_cooking=True).order_by('name'))
 
     # 2. Filter by ingredient
     selected_product = None
     if ingredient != 'all':
-        recipes = recipes.filter(ingredients__id=ingredient)
-        selected_product = Product.objects.filter(id=ingredient).first()
+        ingredient_id = int(ingredient) if ingredient.isdigit() else None
+        recipes = [r for r in recipes
+                   if any(ing.product_id == ingredient_id for ing in r.recipe_ingredients.all())]
+        selected_product = next((p for p in products if p.id == ingredient_id), None)
+        if selected_product is None and ingredient_id:
+            selected_product = Product.objects.filter(id=ingredient_id).first()
 
     # 3. Filter by category
     if category_name != 'all':
-        recipes = recipes.filter(category__name=category_name)
+        recipes = [r for r in recipes if r.category.name == category_name]
 
-    categories = RecipeCategory.objects.annotate(recipe_count=Count('recipes'))
-    total_recipes = recipes.count()
+    categories = recipe_categories()
+    total_recipes = len(recipes)
 
-    # 4. Load user inventory once
+    # 4. Everything that depends on the user is computed per request: inventory in ONE query
     user = request.user if request.user.is_authenticated else None
-    # household = getattr(user, 'household', None) if user else None
     household = user.household if user else None
-
-    if household:
-        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
-    else:
-        user_inventory = InventoryProduct.objects.filter(user=user)
-
-    product_price_map = {item.product.id: item.average_price for item in user_inventory}
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+    product_price_map, product_quantity_map = inventory_maps(user)
 
     # 5. Load times cooked in ONE query
     if household:
@@ -75,8 +69,7 @@ def recipe_list(request):
             .values("recipe_id")
             .annotate(count=Count("id"))
         }
-
-    else:
+    elif user:
         cooked_counts = {
             r["recipe_id"]: r["count"]
             for r in RecipeTimesCooked.objects
@@ -84,22 +77,14 @@ def recipe_list(request):
                 .values("recipe_id")
                 .annotate(count=Count("id"))
         }
+    else:
+        cooked_counts = {}
 
-    # 6. Compute cost + availability using prefetched ingredients
+    # 6. Compute cost + availability using the prefetched ingredients
     for recipe in recipes:
-        ingredients = recipe.recipe_ingredients.all()
-
-        recipe.user_cost = round(sum(
-            product_price_map.get(ing.product.id, 0) * ing.quantity
-            for ing in ingredients
-        ), 2)
-
-        recipe.user_availability = all(
-            product_quantity_map.get(ing.product.id, 0) >= ing.quantity
-            for ing in ingredients
-        )
-
-        recipe.ingredients_list = ingredients
+        recipe.user_cost = recipe_cost(recipe, product_price_map)
+        recipe.user_availability = missing_ingredients(recipe, product_quantity_map) == 0
+        recipe.ingredients_list = recipe.recipe_ingredients.all()
         recipe.times_cooked = cooked_counts.get(recipe.id, 0)
         recipe.category_name = recipe.category.name.lower()
 
@@ -115,7 +100,7 @@ def recipe_list(request):
         'user_inventory': product_quantity_map,
         'categories': categories,
         'selected_category': category_name,
-        'products': Product.objects.filter(suitable_for_cooking=True).order_by('name'),
+        'products': products,
         'ingredient': ingredient,
         'total_recipes': total_recipes,
         'product': selected_product,
@@ -192,11 +177,12 @@ def cook_recipe(request, recipe_id):
         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
     else:
         user_inventory = InventoryProduct.objects.filter(user=user)
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
-
+    inventory_by_product = {}
+    for item in user_inventory:
+        inventory_by_product.setdefault(item.product_id, item)
 
     for ingredient in RecipeIngredient.objects.filter(recipe=recipe):
-        inventory_product = user_inventory.filter(product=ingredient.product).first()
+        inventory_product = inventory_by_product.get(ingredient.product_id)
         if inventory_product:
             if inventory_product.quantity > ingredient.quantity:
                 inventory_product.quantity -= ingredient.quantity
@@ -229,14 +215,14 @@ def generate_recipe_shopping_list(request, recipe_id):
         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
     else:
         user_inventory = InventoryProduct.objects.filter(user=user)
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+    product_quantity_map = dict(user_inventory.values_list('product_id', 'quantity'))
 
-    ingredients = RecipeIngredient.objects.filter(recipe=recipe)
+    ingredients = RecipeIngredient.objects.filter(recipe=recipe).select_related('product')
 
     missing_products = [
         ingredient.product.name
         for ingredient in ingredients
-        if product_quantity_map.get(ingredient.product.id, 0) < ingredient.quantity
+        if product_quantity_map.get(ingredient.product_id, 0) < ingredient.quantity
     ]
 
     if missing_products:
@@ -259,31 +245,24 @@ def recipe_view(request, recipe_id):
     if request.user.is_authenticated:
         user = request.user
         household = user.household
-        recipe = Recipe.objects.get(id=recipe_id)
         if household:
-            cooking_history = HouseholdRecipeTimesCooked.objects.filter(household=household, recipe=recipe).order_by('date')
+            cooking_history = HouseholdRecipeTimesCooked.objects.filter(household=household, recipe_id=recipe_id).order_by('date')
         else:
-            cooking_history = RecipeTimesCooked.objects.filter(user=user, recipe=recipe).order_by('date')
+            cooking_history = RecipeTimesCooked.objects.filter(user=user, recipe_id=recipe_id).order_by('date')
         if cooking_history:
             times_cooked = cooking_history.count()
             last_cooked = cooking_history.last().date
 
-    recipe = get_object_or_404(Recipe, id=recipe_id)
-    if household and household is not None:
-        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
-    else:
-        user_inventory = InventoryProduct.objects.filter(user=user)
-    product_price_map = {item.product.id: item.average_price for item in user_inventory}
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+    recipe = get_object_or_404(
+        Recipe.objects.select_related('category').prefetch_related('recipe_ingredients__product'), id=recipe_id)
+    product_price_map, product_quantity_map = inventory_maps(user)
 
-    recipe.user_cost = round(sum(product_price_map.get(ingredient.product.id, 0) * ingredient.quantity
-                                     for ingredient in recipe.recipe_ingredients.all()), 2)
-    recipe.user_availability = all(product_quantity_map.get(ingredient.product.id, 0) >= ingredient.quantity
-                                       for ingredient in recipe.recipe_ingredients.all())
-    recipe.ingredients_list = RecipeIngredient.objects.filter(recipe=recipe)
+    recipe.user_cost = recipe_cost(recipe, product_price_map)
+    recipe.user_availability = missing_ingredients(recipe, product_quantity_map) == 0
+    recipe.ingredients_list = recipe.recipe_ingredients.all()
     context = {
         "recipe": recipe,
-        'user_inventory': {item.product.id: item.quantity for item in user_inventory},
+        'user_inventory': product_quantity_map,
         'user': user,
         'times_cooked': times_cooked,
         'last_cooked' :last_cooked
@@ -303,23 +282,21 @@ def cooking_home(request):
         recent_cooked_ids = HouseholdRecipeTimesCooked.objects.filter(
             household=household, date__gte=recent_threshold
         ).values_list('recipe_id', flat=True)
-        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
     else:
         recent_cooked_ids = RecipeTimesCooked.objects.filter(
             user=user, date__gte=recent_threshold
         ).values_list('recipe_id', flat=True)
-        user_inventory = InventoryProduct.objects.filter(user=user)
 
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+    _prices, product_quantity_map = inventory_maps(user)
+    recent_cooked_ids = set(recent_cooked_ids)
 
     ready_by_category = defaultdict(list)
     almost_ready = []
 
-    for recipe in Recipe.objects.exclude(id__in=recent_cooked_ids).prefetch_related('recipe_ingredients__product'):
-        missing_count = 0
-        for ri in recipe.recipe_ingredients.all():
-            if product_quantity_map.get(ri.product.id, 0) < ri.quantity:
-                missing_count += 1
+    for recipe in recipe_catalogue():
+        if recipe.id in recent_cooked_ids:
+            continue
+        missing_count = missing_ingredients(recipe, product_quantity_map)
 
         if missing_count == 0:
             if len(ready_by_category[recipe.category.name]) < 4:
@@ -354,14 +331,15 @@ def add_recipe_to_group(request, group_id, recipe_id):
 @login_required
 def favourite_group_detail(request, group_id):
     group = get_object_or_404(UserFavouriteRecipe, id=group_id, user=request.user)
-    recipes = group.recipes.all()
+    recipes = list(group.recipes.select_related('category').prefetch_related('recipe_ingredients'))
 
     # добавяме динамични полета за cost
+    prices, _quantities = inventory_maps(request.user)
     for r in recipes:
-        r.user_cost = r.calculate_cost(request.user)
+        r.user_cost = recipe_cost(r, prices)
 
     categories = (
-        recipes.values('category__name')
+        group.recipes.values('category__name')
         .annotate(recipe_count=Count('id'))
         .order_by('category__name')
     )
@@ -370,7 +348,7 @@ def favourite_group_detail(request, group_id):
         "group": group,
         "recipes": recipes,
         "categories": categories,
-        "total_recipes": recipes.count(),
+        "total_recipes": len(recipes),
     }
     return render(request, "cooking/favourite_group_detail.html", context)
 
@@ -380,20 +358,21 @@ def favourite_group_detail(request, group_id):
 @login_required
 def favourite_groups_list(request):
     groups = UserFavouriteRecipe.objects.filter(user=request.user).prefetch_related(
-        'recipes',  # actual Recipe objects via through
+        'recipes__recipe_ingredients',  # actual Recipe objects via through, with their ingredients
     )
+    prices, _quantities = inventory_maps(request.user)
 
     favourite_groups = []
     for g in groups:
         recipes = g.recipes.all()
         total_time = sum(r.time_to_prepare or 0 for r in recipes)
-        total_cost = sum(r.calculate_cost(request.user) for r in recipes)
+        total_cost = sum(recipe_cost(r, prices) for r in recipes)
         total_calories = sum(r.total_calories for r in recipes)
 
         favourite_groups.append({
             "id": g.id,
             "name": g.name,
-            "recipes_count": recipes.count(),
+            "recipes_count": len(recipes),
             "total_time": total_time,
             "total_cost": total_cost,
             "total_calories": total_calories,
@@ -481,15 +460,10 @@ def generate_group_shopping_list(request, group_id):
     group = get_object_or_404(UserFavouriteRecipe, id=group_id, user=user)
 
     # Взимаме всички рецепти в групата
-    recipes = group.recipes.all()
+    recipes = group.recipes.prefetch_related('recipe_ingredients__product')
 
     # Взимаме инвентара на потребителя/домакинството
-    if household:
-        user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
-    else:
-        user_inventory = InventoryProduct.objects.filter(user=user)
-
-    product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
+    _prices, product_quantity_map = inventory_maps(user)
 
     # Събираме липсващите продукти от всички рецепти
     missing_products = {}
@@ -500,7 +474,7 @@ def generate_group_shopping_list(request, group_id):
             if ingredient.product.name not in all_products:
                 all_products[ingredient.product.name] = 0
             all_products[ingredient.product.name] += required_qty
-            available_qty = product_quantity_map.get(ingredient.product.id, 0)
+            available_qty = product_quantity_map.get(ingredient.product_id, 0)
             if available_qty < required_qty:
                 # добавяме към общия списък
                 if ingredient.product.name not in missing_products:

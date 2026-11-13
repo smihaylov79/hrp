@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 import os
 import requests
+from django.core.cache import cache
 from bs4 import BeautifulSoup
 import re
 from inventory.models import HouseholdInventoryProduct, HouseholdProductCategory, InventoryProduct, UserProductCategory
@@ -90,8 +91,30 @@ def save_shopping_products(selected_products, shopping, user, household):
             user_product_category.save()
 
 
+PRICE_CACHE_SECONDS = 24 * 60 * 60
+PRICE_FAILURE_SECONDS = 15 * 60
+
+
+def cached_price(name, fetch):
+    """Result of ``fetch()`` cached for a day; a failure ("no data"/None/exception) is remembered for 15 minutes
+    so that a slow or dead external site does not delay every page load."""
+    key = f"utility_price:{name}"
+    cached = cache.get(key)
+    if cached is not None:
+        return None if cached == "__failed__" else cached
+    try:
+        value = fetch()
+    except Exception:
+        value = None
+    if value in (None, "no data"):
+        cache.set(key, "__failed__", PRICE_FAILURE_SECONDS)
+        return None
+    cache.set(key, value, PRICE_CACHE_SECONDS)
+    return value
+
+
 def fetch_electricity_price():
-    url = "https://api.energy-charts.info/price?country=bg&year=2026"
+    url = f"https://api.energy-charts.info/price?country=bg&year={datetime.now().year}"
 
     try:
         response = requests.get(url, timeout=10)
@@ -138,7 +161,8 @@ def fetch_cold_water():
 
 def get_heating_price():
     url = "https://toplo.bg/prices"
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, 'html.parser')
 
     price_tags = soup.find_all('p', class_='red-text red-text-price')

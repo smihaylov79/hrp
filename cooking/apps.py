@@ -7,3 +7,4 @@ class CookingConfig(AppConfig):
 
     def ready(self):
         import cooking.signals
+        import cooking.services  # cache invalidation signals

@@ -2,9 +2,12 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 import requests
 from datetime import datetime
+import hashlib
 import os
 
-# Create your views here.
+from django.core.cache import cache
+
+WEATHER_CACHE_SECONDS = 30 * 60
 
 
 def get_weather_data(request):
@@ -12,13 +15,20 @@ def get_weather_data(request):
     location = request.session.get("geo_location", "Sofia")
     if not location:
         location = "Sofia"
+    cache_key = "weather:" + hashlib.md5(location.strip().lower().encode("utf-8")).hexdigest()
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     url = "https://api.weatherapi.com/v1/forecast.json"
     try:
         response = requests.get(url, params={"key": api_key, "q": location, "days": 4}, timeout=5)
     except requests.RequestException:
         return {"error": "Прогнозата за времето не е достъпна в момента."}
     if response.status_code == 200:
-        return response.json()
+        data = response.json()
+        cache.set(cache_key, data, WEATHER_CACHE_SECONDS)   # the forecast is the same for everybody in a city
+        return data
     else:
         request.session["geo_location"] = "Sofia"
         return {"error": "Градът не беше намерен. Показвам прогнозата за София."}

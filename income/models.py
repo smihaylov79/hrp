@@ -22,6 +22,9 @@ class Income(models.Model):
 
     class Meta:
         ordering = ["-date_received"]
+        indexes = [
+            models.Index(fields=["user", "date_received"], name="income_user_date_idx"),
+        ]
 
     def __str__(self):
         return f"{self.income_type.name} - {self.amount} {self.currency}"

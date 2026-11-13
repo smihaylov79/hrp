@@ -117,25 +117,31 @@ class SpendingsView(LoginRequiredMixin, FormView):
             if df_monthly_comparison.empty:
                 df_monthly_comparison = df
             if not df.empty:
+                # each summary is computed once (they used to be recomputed for every value taken from them)
+                monthly_spent, weekly_spent = monthly_weekly_spending(df)
+                main_chart, sub_chart = by_category_spending(df)
+                biggest_spent, lowest_price, highest_price = by_product_statistics(df)
+                top_increase, top_decrease = calculate_price_changes(df)
+                yearly_series, yearly_labels = monthly_compare_chart(df_monthly_comparison)
                 context.update(
                     {'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
                      'subcategory_monthly_data': json.dumps(
                          subcategory_monthly.to_dict(orient='records')),
-                     'monthly_data': json.dumps(monthly_weekly_spending(df)[0]),
-                     'weekly_data': json.dumps(monthly_weekly_spending(df)[1]),
+                     'monthly_data': json.dumps(monthly_spent),
+                     'weekly_data': json.dumps(weekly_spent),
                      'total_spent': round(df['total'].sum(), 2),
                      'main_category_name': main_category.name if main_category else '',
-                     'main_chart_data': json.dumps(by_category_spending(df)[0]),
-                     'sub_chart_data': json.dumps(by_category_spending(df)[1]),
+                     'main_chart_data': json.dumps(main_chart),
+                     'sub_chart_data': json.dumps(sub_chart),
                      'shoppings_count': shoppings_count,
                      'most_purchased_names': most_purchased_names,
-                     'biggest_spent': by_product_statistics(df)[0],
-                     'lowest_price': by_product_statistics(df)[1],
-                     'highest_price': by_product_statistics(df)[2],
-                     'top_increase': calculate_price_changes(df)[0],
-                     'top_decrease': calculate_price_changes(df)[1],
-                     'yearly_series': json.dumps(monthly_compare_chart(df_monthly_comparison)[0]),
-                     'month_labels': json.dumps(monthly_compare_chart(df_monthly_comparison)[1]),
+                     'biggest_spent': biggest_spent,
+                     'lowest_price': lowest_price,
+                     'highest_price': highest_price,
+                     'top_increase': top_increase,
+                     'top_decrease': top_decrease,
+                     'yearly_series': json.dumps(yearly_series),
+                     'month_labels': json.dumps(yearly_labels),
                      # 'main_category_series': json.dumps(main_category_series)
                      })
         return self.render_to_response(context)

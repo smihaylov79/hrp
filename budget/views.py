@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import date
 
 import pandas as pd
-from django.db.models import Sum
+from django.db.models import Prefetch, Sum, prefetch_related_objects
 from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -221,7 +221,13 @@ def propose_budget(request):
 @login_required
 def budget_detail(request, pk):
     budget = get_user_budget(request.user, pk)
-    approvals = BudgetApproval.objects.filter(budget=budget)
+    # the template lists items with their category / income type: load them together
+    prefetch_related_objects(
+        [budget],
+        Prefetch('items', queryset=BudgetItem.objects.select_related('category')),
+        Prefetch('income_items', queryset=BudgetIncomeItem.objects.select_related('income_type')),
+    )
+    approvals = BudgetApproval.objects.filter(budget=budget).select_related('user')
 
     user_approval = approvals.filter(user=request.user).first()
 
@@ -258,7 +264,7 @@ def budget_detail(request, pk):
 def track_budget(request, pk):
     """Track изпълнението спрямо реалните разходи"""
     budget = get_user_budget(request.user, pk)
-    items = budget.items.all()
+    items = budget.items.select_related('category')
     income_items = BudgetIncomeItem.objects.filter(budget=budget)
     today = date.today()
     total_days = (budget.date_to - budget.date_from).days + 1

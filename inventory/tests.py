@@ -148,3 +148,41 @@ class InventoryOwnershipTests(HrpTestCase):
         self.client.force_login(self.alice)
         response = self.client.get(reverse('all_shopping_lists'))
         self.assertEqual([l.pk for l in response.context['shopping_lists']], [mine.pk])
+
+
+class PageQueryBudgetTests(HrpTestCase):
+    """Pages that list many rows must not run one query per row."""
+
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        from shopping.models import Product, Shop
+        for i in range(25):
+            product = Product.objects.create(name=f'Продукт {i:02}', category=cls.cat_dairy)
+            cls.user_inventory(cls.alice, product)
+            make_purchase(cls.alice, product, price=1, shop=Shop.objects.create(name=f'Магазин {i}'))
+
+    def assertQueryBudget(self, url, budget=15):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        self.client.force_login(self.alice)
+        self.client.get(url)                 # first load may fill a cache (prices, rates)
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertLessEqual(len(ctx), budget, f'{url} ran {len(ctx)} queries')
+
+    def test_inventory_list(self):
+        self.assertQueryBudget(reverse('inventory'))
+
+    def test_shopping_history(self):
+        self.assertQueryBudget(reverse('shopping'))
+
+    def test_new_purchase_page(self):
+        self.assertQueryBudget(reverse('regular_shopping'))
+
+    def test_utility_bills_page(self):
+        self.assertQueryBudget(reverse('utility_bills'))
+
+    def test_spendings_report(self):
+        self.assertQueryBudget(reverse('spendings_history') + '?currency=EUR')

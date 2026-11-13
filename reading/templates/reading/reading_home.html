@@ -30,7 +30,7 @@
     <div class="col">
       <div class="card h-100 shadow-sm">
         {% if book.cover_image %}
-        <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
+        <img loading="lazy" decoding="async" src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}">
         {% else %}
         <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
           <span class="fs-4">Без корица</span>
@@ -44,7 +44,7 @@
           </h5>
           <p class="card-text text-muted small">{{ book.description|truncatewords:20 }}</p>
           <div class="mt-auto">
-            <p class="mb-1"><strong>⭐ Рейтинг:</strong> {{ book.title|calculate_rating }}</p>
+            <p class="mb-1"><strong>⭐ Рейтинг:</strong> {{ book.avg_rating|default_if_none:'-' }}</p>
             <p class="mb-0"><strong>👤 Споделена от:</strong> {{ book.shared_from.first_name }}</p>
           </div>
         </div>

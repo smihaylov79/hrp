@@ -10,7 +10,7 @@
 
         <div class="collapse navbar-collapse" id="forumNavDropdown">
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                {% for category in categories %}
+                {% for category in forum_categories %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'category_threads' category.id %}">{{ category.name }}</a>
                 </li>
