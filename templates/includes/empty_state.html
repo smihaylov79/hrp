@@ -1,0 +1,6 @@
+{% comment %} Empty state. Usage:
+     { % include "includes/empty_state.html" with icon="bi-box-seam" text="Всичко е налично." link_url=url link_text="Към наличностите" % } {% endcomment %}
+<div class="hrp-empty">
+  <i class="bi {{ icon|default:'bi-inbox' }}"></i>{{ text }}
+  {% if link_url %}<br><a href="{{ link_url }}" class="small">{{ link_text }}</a>{% endif %}
+</div>

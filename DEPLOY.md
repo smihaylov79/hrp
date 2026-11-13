@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 4**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 4 and Phase 6 part 1 (new layout + home)**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -81,6 +81,9 @@ Run: `python manage.py migrate`
 - [ ] **Static files** mappings exist: URL `/static/` → `<project>/staticfiles`, URL `/media/` → the `MEDIA_ROOT` folder.
 - [ ] `python manage.py collectstatic --noinput` — **required** on this deploy (see §1: `staticfiles/` left git).
 - [ ] **Force HTTPS**: enabled (session and CSRF cookies are HTTPS-only when `DEBUG=False`).
+- The new layout (Phase 6) loads its own stylesheet `static/css/theme.css` — it reaches the server only through
+  `collectstatic`. Bootstrap 5.3.3, Bootstrap Icons 1.11.3 and the Inter font come from public CDNs
+  (jsDelivr, Google Fonts) with pinned versions and integrity hashes; nothing to install.
 - [ ] **Reload** the web app (after everything else in this file).
 
 ---------------------------------------------------------------------------------------------------
@@ -118,7 +121,10 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 ---------------------------------------------------------------------------------------------------
 ## 8. Smoke test after reload
 
-- [ ] Log in; home page loads; there is no "Пари" item in the navbar or on the home page; `/finance/` gives 404.
+- [ ] Log in; the home page is the new dashboard with the sidebar on the left; `/finance/` gives 404.
+- [ ] Top bar: the dark-mode button switches the theme and the choice survives a reload; the language menu works;
+      the search box finds one of your products.
+- [ ] On a phone (or a narrow window) the sidebar is replaced by the menu button.
 - [ ] Reports → each of the 7 reports opens; "Категории (таблица)" shows only your household's numbers.
 - [ ] Add a small purchase in EUR — saving is immediate (no 1–2 s wait).
 - [ ] Cooking → recipe list: your own name is in the navbar; log in as a second user and check theirs too.
@@ -138,6 +144,12 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
   recipe category or product is saved in the app or the admin. A change made directly in MySQL shows up after
   at most 1 hour (or immediately after `python manage.py shell -c "from django.core.cache import cache; cache.clear()"`).
 - Weather is cached 30 minutes per city; electricity / heating prices 24 hours.
+- **Translations:** the new layout and dashboard add Bulgarian texts that have no English / Romanian / Greek
+  translation yet, so those languages show a mix until the `.po` files are updated
+  (`django-admin makemessages -l en -l ro -l el`, translate, `compilemessages`; needs GNU gettext). Planned for
+  the end of Phase 6.
+- Pages other than the home page still have their old content inside the new frame; they are restyled page by
+  page in the rest of Phase 5 / 6.
 
 ---------------------------------------------------------------------------------------------------
 ## Change log of this file
@@ -150,3 +162,4 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 3 (steps 1–3) | Finance unplugged (no migration), finance backups, user-deletion caveat |
 | 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
 | 4 | `createcachetable`, index migrations `shopping.0020` + `income.0003`, `collectstatic` now mandatory (`staticfiles/` untracked), cache notes |
+| 6 (part 1) | `theme.css` via `collectstatic`, CDN assets pinned with SRI, smoke-test steps for the new layout, translation note |

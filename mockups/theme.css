@@ -1,0 +1,180 @@
+/* HRP design layer (draft for approval) — sits on top of Bootstrap 5.3, no build step.
+   After approval this file becomes static/css/theme.css. */
+
+:root,
+[data-bs-theme="light"] {
+  --hrp-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* brand + surfaces */
+  --hrp-primary: #2563c9;
+  --hrp-primary-rgb: 37, 99, 201;
+  --hrp-primary-soft: #e8f0fd;
+  --hrp-bg: #f4f5f7;
+  --hrp-surface: #fcfcfb;
+  --hrp-surface-2: #f0efec;
+  --hrp-border: #e3e2de;
+  --hrp-text: #0b0b0b;
+  --hrp-text-2: #52514e;
+  --hrp-text-3: #7a7974;
+
+  /* chart roles (validated palette; text never uses these) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --seq-light: #cde2fb;
+  --grid: #e9e8e4;
+
+  /* status: always shown with an icon + a label */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --status-good-text: #006300;
+  --status-critical-text: #a52a2a;
+
+  --hrp-radius: 14px;
+  --hrp-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 4px 16px rgba(16, 24, 40, .06);
+  --hrp-sidebar-w: 248px;
+
+  /* Bootstrap overrides */
+  --bs-body-font-family: var(--hrp-font);
+  --bs-body-bg: var(--hrp-bg);
+  --bs-body-color: var(--hrp-text);
+  --bs-secondary-color: var(--hrp-text-2);
+  --bs-border-color: var(--hrp-border);
+  --bs-primary: var(--hrp-primary);
+  --bs-primary-rgb: var(--hrp-primary-rgb);
+  --bs-link-color: var(--hrp-primary);
+  --bs-link-color-rgb: var(--hrp-primary-rgb);
+  --bs-border-radius: 10px;
+  --bs-border-radius-lg: var(--hrp-radius);
+}
+
+[data-bs-theme="dark"] {
+  --hrp-primary: #6ea0f2;
+  --hrp-primary-rgb: 110, 160, 242;
+  --hrp-primary-soft: #1d2b44;
+  --hrp-bg: #121211;
+  --hrp-surface: #1a1a19;
+  --hrp-surface-2: #262624;
+  --hrp-border: #33332f;
+  --hrp-text: #f0efec;
+  --hrp-text-2: #c3c2b7;
+  --hrp-text-3: #94938a;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --seq-light: #184f95;
+  --grid: #2c2c29;
+
+  --status-good-text: #4fd24f;
+  --status-critical-text: #f08a8a;
+
+  --hrp-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 4px 16px rgba(0, 0, 0, .25);
+}
+
+body { font-family: var(--hrp-font); font-feature-settings: "cv11", "ss01"; }
+.num, .table td.num, .table th.num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+h1, h2, h3, h4, h5 { letter-spacing: -.01em; font-weight: 650; }
+
+/* ---------- app shell ---------- */
+.hrp-shell { display: flex; min-height: 100vh; }
+.hrp-sidebar {
+  width: var(--hrp-sidebar-w); flex: 0 0 var(--hrp-sidebar-w);
+  background: var(--hrp-surface); border-right: 1px solid var(--hrp-border);
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 16px 12px;
+}
+.hrp-brand { display: flex; align-items: center; gap: 10px; padding: 6px 10px 16px; font-weight: 700; font-size: 1.05rem;
+  color: var(--hrp-text); text-decoration: none; }
+.hrp-brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--hrp-primary); color: #fff;
+  display: grid; place-items: center; font-size: 1.1rem; }
+.hrp-nav-group { font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--hrp-text-3); padding: 14px 12px 6px; }
+.hrp-nav a { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px;
+  color: var(--hrp-text-2); text-decoration: none; font-weight: 500; font-size: .94rem; }
+.hrp-nav a i { font-size: 1.05rem; width: 20px; text-align: center; }
+.hrp-nav a:hover { background: var(--hrp-surface-2); color: var(--hrp-text); }
+.hrp-nav a.active { background: var(--hrp-primary-soft); color: var(--hrp-primary); font-weight: 600; }
+.hrp-nav .badge { margin-left: auto; }
+
+.hrp-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.hrp-topbar { position: sticky; top: 0; z-index: 1020; display: flex; align-items: center; gap: 12px;
+  padding: 10px 24px; background: color-mix(in srgb, var(--hrp-bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--hrp-border); }
+.hrp-search { max-width: 380px; flex: 1 1 auto; position: relative; }
+.hrp-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--hrp-text-3); }
+.hrp-search input { padding-left: 36px; background: var(--hrp-surface); border-radius: 999px; }
+.hrp-icon-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--hrp-border);
+  background: var(--hrp-surface); color: var(--hrp-text-2); display: inline-grid; place-items: center; }
+.hrp-icon-btn:hover { color: var(--hrp-text); background: var(--hrp-surface-2); }
+.hrp-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--hrp-primary-soft); color: var(--hrp-primary);
+  display: inline-grid; place-items: center; font-weight: 700; font-size: .85rem; }
+.hrp-content { padding: 24px; max-width: 1320px; width: 100%; margin: 0 auto; }
+
+@media (max-width: 991.98px) {
+  .hrp-sidebar { display: none; }
+  .hrp-topbar { padding: 10px 16px; }
+  .hrp-content { padding: 16px; }
+}
+.offcanvas.hrp-offcanvas { width: 280px; background: var(--hrp-surface); }
+
+/* ---------- reusable pieces ---------- */
+.hrp-page-header { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 18px; }
+.hrp-page-header h1 { font-size: 1.6rem; margin: 0; }
+.hrp-page-header .sub { color: var(--hrp-text-2); margin: 2px 0 0; }
+.hrp-page-header .actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.hrp-card { background: var(--hrp-surface); border: 1px solid var(--hrp-border); border-radius: var(--hrp-radius);
+  box-shadow: var(--hrp-shadow); padding: 18px 20px; height: 100%; }
+.hrp-card > h2 { font-size: 1rem; margin: 0 0 2px; }
+.hrp-card > .hint { color: var(--hrp-text-3); font-size: .85rem; margin-bottom: 12px; }
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .label { color: var(--hrp-text-2); font-size: .82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.kpi .value { font-size: 1.65rem; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.kpi .value small { font-size: .95rem; font-weight: 600; color: var(--hrp-text-2); }
+.kpi .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.kpi .note { color: var(--hrp-text-3); font-size: .8rem; }
+.delta { display: inline-flex; align-items: center; gap: 4px; font-size: .8rem; font-weight: 600; padding: 2px 8px;
+  border-radius: 999px; background: var(--hrp-surface-2); color: var(--hrp-text-2); font-variant-numeric: tabular-nums; }
+.delta.bad { color: var(--status-critical-text); }
+.delta.good { color: var(--status-good-text); }
+.spark { width: 96px; height: 28px; flex: 0 0 auto; }
+.spark path { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.spark circle { fill: var(--series-1); stroke: var(--hrp-surface); stroke-width: 2; }
+
+.hrp-filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; background: var(--hrp-surface);
+  border: 1px solid var(--hrp-border); border-radius: var(--hrp-radius); padding: 10px 14px; margin-bottom: 18px; }
+.hrp-filterbar .btn-group .btn { --bs-btn-padding-y: .3rem; --bs-btn-padding-x: .7rem; --bs-btn-font-size: .85rem; }
+.hrp-filterbar label { font-size: .8rem; color: var(--hrp-text-3); margin-right: 6px; }
+.hrp-filterbar .form-select { width: auto; }
+
+.hrp-tabs { border-bottom: 1px solid var(--hrp-border); margin-bottom: 18px; display: flex; gap: 4px; overflow-x: auto; }
+.hrp-tabs a { padding: 9px 14px; color: var(--hrp-text-2); text-decoration: none; font-weight: 500; white-space: nowrap;
+  border-bottom: 2px solid transparent; display: inline-flex; gap: 8px; align-items: center; }
+.hrp-tabs a:hover { color: var(--hrp-text); }
+.hrp-tabs a.active { color: var(--hrp-primary); border-bottom-color: var(--hrp-primary); font-weight: 600; }
+
+/* horizontal bar list (top categories, budget usage) */
+.barlist { display: grid; gap: 12px; }
+.barlist .row-head { display: flex; justify-content: space-between; gap: 12px; font-size: .9rem; margin-bottom: 5px; }
+.barlist .name { font-weight: 500; }
+.barlist .val { color: var(--hrp-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.barlist .track { height: 10px; border-radius: 0 4px 4px 0; background: var(--hrp-surface-2); position: relative; }
+.barlist .fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+.barlist .fill.over { background: var(--status-critical); }
+.barlist .marker { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--hrp-text); border-radius: 1px; }
+.status { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600; }
+.status.ok { color: var(--status-good-text); }
+.status.over { color: var(--status-critical-text); }
+
+.hrp-empty { text-align: center; color: var(--hrp-text-3); padding: 28px 12px; }
+.hrp-empty i { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+.hrp-list { list-style: none; margin: 0; padding: 0; }
+.hrp-list li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--hrp-border); }
+.hrp-list li:last-child { border-bottom: 0; }
+.hrp-list .ico { width: 34px; height: 34px; border-radius: 10px; background: var(--hrp-surface-2); color: var(--hrp-text-2);
+  display: grid; place-items: center; flex: 0 0 auto; }
+.hrp-list .meta { color: var(--hrp-text-3); font-size: .82rem; }
+.table { --bs-table-bg: transparent; }
+.table thead th { font-size: .78rem; font-weight: 600; color: var(--hrp-text-3); text-transform: uppercase; letter-spacing: .04em; }
+.mock-note { border: 1px dashed var(--hrp-border); border-radius: 10px; padding: 8px 12px; color: var(--hrp-text-3);
+  font-size: .82rem; margin-bottom: 16px; }

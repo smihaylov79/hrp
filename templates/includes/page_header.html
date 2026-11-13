@@ -1,0 +1,9 @@
+{% comment %} Page header. Usage:
+     { % include "includes/page_header.html" with title="Наличности" subtitle="…" % }
+   For action buttons, wrap it instead:  <div class="hrp-page-header"><div><h1>…</h1></div><div class="actions">…</div></div> {% endcomment %}
+<div class="hrp-page-header">
+  <div>
+    <h1>{{ title }}</h1>
+    {% if subtitle %}<p class="sub">{{ subtitle }}</p>{% endif %}
+  </div>
+</div>

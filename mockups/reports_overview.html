@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="bg" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HRP — макет: Отчети / Обзор</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="theme.css" rel="stylesheet">
+</head>
+<body data-active="reports">
+<div class="hrp-shell">
+  <aside class="hrp-sidebar" id="sidebar"></aside>
+
+  <div class="hrp-main">
+    <header class="hrp-topbar" id="topbar"></header>
+
+    <main class="hrp-content">
+      <div class="mock-note"><i class="bi bi-info-circle me-1"></i>Макет за одобрение — Отчети → Обзор. Месечните суми са реалните на домакинството за последните 12 месеца; разбивката по категории и бюджетът са примерни. Филтрите и разделите тук не са активни.</div>
+
+      <div class="hrp-page-header">
+        <div>
+          <h1>Отчети</h1>
+          <p class="sub">Октомври 2026 · домакинство · в евро</p>
+        </div>
+        <div class="actions">
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-download me-1"></i>Експорт</button>
+            <ul class="dropdown-menu dropdown-menu-end"><li><a class="dropdown-item" href="#">CSV</a></li><li><a class="dropdown-item" href="#">Excel (XLSX)</a></li></ul>
+          </div>
+        </div>
+      </div>
+
+      <nav class="hrp-tabs" aria-label="Раздели на отчетите">
+        <a class="active" href="#"><i class="bi bi-speedometer2"></i>Обзор</a>
+        <a href="#"><i class="bi bi-diagram-3"></i>Категории</a>
+        <a href="#"><i class="bi bi-shop"></i>Магазини</a>
+        <a href="#"><i class="bi bi-graph-up-arrow"></i>Цени и инфлация</a>
+        <a href="#"><i class="bi bi-cash-stack"></i>Паричен поток</a>
+        <a href="#"><i class="bi bi-piggy-bank"></i>Бюджет</a>
+      </nav>
+
+      <!-- one shared filter bar for every report tab; state is kept in the URL -->
+      <form class="hrp-filterbar" aria-label="Филтри">
+        <div class="btn-group flex-wrap" role="group" aria-label="Период">
+          <button type="button" class="btn btn-outline-primary">Този месец</button>
+          <button type="button" class="btn btn-primary">Миналия месец</button>
+          <button type="button" class="btn btn-outline-primary">3 м</button>
+          <button type="button" class="btn btn-outline-primary">6 м</button>
+          <button type="button" class="btn btn-outline-primary">12 м</button>
+          <button type="button" class="btn btn-outline-primary">От началото на годината</button>
+          <button type="button" class="btn btn-outline-primary"><i class="bi bi-calendar3 me-1"></i>Период…</button>
+        </div>
+        <div class="ms-lg-auto d-flex flex-wrap align-items-center gap-3">
+          <div><label for="scope">Обхват</label>
+            <select id="scope" class="form-select form-select-sm d-inline-block"><option>Домакинство</option><option>Лични</option><option>Извън домакинството</option></select></div>
+          <div><label for="currency">Валута</label>
+            <select id="currency" class="form-select form-select-sm d-inline-block"><option>EUR</option><option>BGN</option><option>USD</option></select></div>
+        </div>
+      </form>
+
+      <div class="alert alert-warning d-flex align-items-start gap-2 py-2" role="alert">
+        <i class="bi bi-exclamation-triangle mt-1"></i>
+        <div><strong>Пример за предупреждение:</strong> Липсва валутен курс USD → EUR: 2 записа не са включени в сумите.
+          <span class="text-body-secondary">(показва се само когато има проблем с курсовете)</span></div>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-bag"></i>Похарчено</div>
+          <div class="value">4 615 <small>€</small></div>
+          <div class="foot"><span class="note">30 покупки · 149 € на ден</span><svg class="spark" data-series="spend" role="img" aria-label="Разходи, последни 12 месеца"></svg></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-arrow-left-right"></i>Спрямо предходния месец</div>
+          <div class="value">+822 <small>€</small></div>
+          <div class="foot"><span class="delta bad"><i class="bi bi-arrow-up-right"></i>+21,7 %</span><span class="note">септември: 3 793 €</span></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-calendar2-week"></i>Спрямо октомври 2025</div>
+          <div class="value">+1 176 <small>€</small></div>
+          <div class="foot"><span class="delta bad"><i class="bi bi-arrow-up-right"></i>+34,2 %</span><span class="note">тогава: 3 439 €</span></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-wallet2"></i>Приходи</div>
+          <div class="value">4 573 <small>€</small></div>
+          <div class="foot"><span class="delta good"><i class="bi bi-arrow-up-right"></i>+1,1 %</span><svg class="spark" data-series="income" role="img" aria-label="Приходи, последни 12 месеца"></svg></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-plus-slash-minus"></i>Нетно (приходи − разходи)</div>
+          <div class="value">−42 <small>€</small></div>
+          <div class="foot"><span class="status over"><i class="bi bi-exclamation-circle"></i>месец на минус</span></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-percent"></i>Спестявания</div>
+          <div class="value">−0,9 <small>%</small></div>
+          <div class="foot"><span class="note">средно за 12 м: 11,7 %</span></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-calendar-day"></i>Средно на ден</div>
+          <div class="value">148,87 <small>€</small></div>
+          <div class="foot"><span class="note">най-скъп ден: 17.10 · 612 €</span></div>
+        </div></div>
+        <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+          <div class="label"><i class="bi bi-piggy-bank"></i>Изпълнение на бюджета</div>
+          <div class="value">108 <small>%</small></div>
+          <div class="foot"><span class="status over"><i class="bi bi-exclamation-circle"></i>365 € над плана</span></div>
+        </div></div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-xl-8">
+          <div class="hrp-card">
+            <div class="d-flex align-items-start gap-2">
+              <div class="flex-grow-1"><h2 class="h6 mb-0" style="font-size:1rem">Приходи и разходи по месеци</h2>
+                <div class="hint" style="color:var(--hrp-text-3);font-size:.85rem">Последните 12 месеца, в евро</div></div>
+              <div class="btn-group btn-group-sm" role="group" aria-label="Изглед">
+                <button class="btn btn-outline-secondary active" id="viewChart"><i class="bi bi-graph-up"></i> Графика</button>
+                <button class="btn btn-outline-secondary" id="viewTable"><i class="bi bi-table"></i> Таблица</button>
+              </div>
+            </div>
+            <div id="cashflow" style="height:320px" class="mt-2"></div>
+            <div id="cashflowTable" class="table-responsive mt-2 d-none"></div>
+          </div>
+        </div>
+
+        <div class="col-xl-4">
+          <div class="hrp-card">
+            <h2>Топ 5 категории</h2>
+            <div class="hint">Дял от разходите за периода</div>
+            <div class="barlist" id="topCategories"></div>
+            <div class="mt-3"><a href="#" class="small">Всички категории <i class="bi bi-arrow-right"></i></a></div>
+          </div>
+        </div>
+
+        <div class="col-xl-7">
+          <div class="hrp-card">
+            <h2>Бюджет спрямо реално</h2>
+            <div class="hint">По основна категория за избрания период</div>
+            <div class="barlist">
+              <div><div class="row-head"><span class="name">Дом</span><span class="val">1 780 от 1 500 € <span class="status over ms-2"><i class="bi bi-exclamation-circle"></i>+280 €</span></span></div>
+                <div class="track"><div class="fill over" style="width:100%"></div></div></div>
+              <div><div class="row-head"><span class="name">Семейство</span><span class="val">700 от 600 € <span class="status over ms-2"><i class="bi bi-exclamation-circle"></i>+100 €</span></span></div>
+                <div class="track"><div class="fill over" style="width:100%"></div></div></div>
+              <div><div class="row-head"><span class="name">Транспорт</span><span class="val">365 от 550 € <span class="status ok ms-2"><i class="bi bi-check-circle"></i>остават 185 €</span></span></div>
+                <div class="track"><div class="fill" style="width:66%"></div></div></div>
+              <div><div class="row-head"><span class="name">Хранителни стоки</span><span class="val">340 от 600 € <span class="status ok ms-2"><i class="bi bi-check-circle"></i>остават 260 €</span></span></div>
+                <div class="track"><div class="fill" style="width:57%"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-5">
+          <div class="hrp-card">
+            <h2>Най-големи покупки</h2>
+            <div class="hint">За избрания период</div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Продукт</th><th>Магазин</th><th class="num">Сума</th></tr></thead>
+                <tbody>
+                  <tr><td>Наем</td><td class="text-body-secondary">—</td><td class="num">650,00 €</td></tr>
+                  <tr><td>Вноска кредит</td><td class="text-body-secondary">Банка</td><td class="num">455,00 €</td></tr>
+                  <tr><td>Зимни гуми</td><td class="text-body-secondary">Автосервиз</td><td class="num">312,00 €</td></tr>
+                  <tr><td>Ток</td><td class="text-body-secondary">Електрохолд</td><td class="num">148,30 €</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="offcanvas offcanvas-start hrp-offcanvas" tabindex="-1" id="navOffcanvas">
+  <div class="offcanvas-header"><strong>Home Resource Planner</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Затвори"></button></div>
+  <div class="offcanvas-body pt-0" id="offcanvas-body"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.highcharts.com/11.4.8/highcharts.js"></script>
+<script src="shell.js"></script>
+<script>
+(function () {
+  const months = ['ное 25', 'дек 25', 'яну 26', 'фев 26', 'мар 26', 'апр 26', 'май 26', 'юни 26', 'юли 26', 'авг 26', 'сеп 26', 'окт 26'];
+  const data = {
+    spend:  [4126, 4195, 3780, 3402, 4358, 4544, 3662, 3740, 3901, 4884, 3793, 4615],
+    income: [3836, 2513, 5817, 4017, 4016, 4163, 5607, 6861, 4647, 4904, 4523, 4573],
+  };
+  const fmt = (n) => n.toLocaleString('bg-BG').replace(/ /g, ' ');
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // sparklines: a 12-month trend with only the last point marked
+  document.querySelectorAll('svg.spark').forEach((svg) => {
+    const values = data[svg.dataset.series], w = 96, h = 28, pad = 5;
+    const min = Math.min(...values), max = Math.max(...values);
+    const pts = values.map((v, i) => [pad + i * (w - 2 * pad) / (values.length - 1), h - pad - (v - min) / (max - min) * (h - 2 * pad)]);
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.innerHTML = `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' L')}"/>` +
+      `<circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="4"/>`;
+  });
+
+  // top categories: one hue (magnitude), value + share at the end of each row
+  const categories = [['Дом', 1780], ['Семейство', 700], ['Луксозни', 460], ['Финанси', 455], ['Транспорт', 365]];
+  const total = 4615, top = categories[0][1];
+  document.getElementById('topCategories').innerHTML = categories.map(([name, value]) =>
+    `<div><div class="row-head"><span class="name">${name}</span><span class="val">${fmt(value)} € · ${(value / total * 100).toFixed(0)} %</span></div>` +
+    `<div class="track"><div class="fill" style="width:${(value / top * 100).toFixed(1)}%"></div></div></div>`).join('') +
+    `<div class="row-head mb-0"><span class="name text-body-secondary">Останалите 11 категории</span><span class="val">${fmt(total - 3760)} € · 19 %</span></div>`;
+
+  // table view of the chart (same numbers, for screen readers and exact values)
+  document.getElementById('cashflowTable').innerHTML =
+    '<table class="table table-sm mb-0"><thead><tr><th>Месец</th><th class="num">Приходи</th><th class="num">Разходи</th><th class="num">Нетно</th></tr></thead><tbody>' +
+    months.map((m, i) => `<tr><td>${m}</td><td class="num">${fmt(data.income[i])} €</td><td class="num">${fmt(data.spend[i])} €</td>` +
+      `<td class="num">${data.income[i] - data.spend[i] < 0 ? '−' : '+'}${fmt(Math.abs(data.income[i] - data.spend[i]))} €</td></tr>`).join('') + '</tbody></table>';
+  const chartEl = document.getElementById('cashflow'), tableEl = document.getElementById('cashflowTable');
+  const show = (table) => {
+    chartEl.classList.toggle('d-none', table); tableEl.classList.toggle('d-none', !table);
+    document.getElementById('viewTable').classList.toggle('active', table);
+    document.getElementById('viewChart').classList.toggle('active', !table);
+  };
+  document.getElementById('viewChart').addEventListener('click', () => show(false));
+  document.getElementById('viewTable').addEventListener('click', () => show(true));
+
+  function draw() {
+    const text = css('--hrp-text'), text2 = css('--hrp-text-2'), grid = css('--grid'), surface = css('--hrp-surface');
+    const last = months.length - 1;
+    const series = (name, values, color, labelY) => ({
+      name, color, lineWidth: 2,
+      data: values.map((y, i) => i === last
+        ? { y, marker: { enabled: true, radius: 4, lineWidth: 2, lineColor: surface },
+            dataLabels: { enabled: true, format: '{y:,.0f} €', align: 'left', x: 8, y: labelY, crop: false, overflow: 'allow', allowOverlap: true,
+                          style: { color: text, fontWeight: '600', fontSize: '12px', textOutline: 'none' } } }
+        : y),
+    });
+    Highcharts.setOptions({ lang: { thousandsSep: ' ', decimalPoint: ',' } });
+    Highcharts.chart('cashflow', {
+      chart: { type: 'line', backgroundColor: 'transparent', spacingRight: 64, style: { fontFamily: css('--hrp-font') } },
+      title: { text: null }, credits: { enabled: false },
+      xAxis: { categories: months, lineColor: grid, tickLength: 0, crosshair: { width: 1, color: grid },
+               labels: { style: { color: text2, fontSize: '12px' } } },
+      yAxis: { title: { text: null }, gridLineColor: grid, min: 0, tickInterval: 2000,
+               labels: { format: '{value:,.0f}', style: { color: text2, fontSize: '12px' } } },
+      legend: { align: 'left', verticalAlign: 'top', itemStyle: { color: text, fontWeight: '500' }, itemHoverStyle: { color: text },
+                symbolWidth: 14, symbolRadius: 2, margin: 8, padding: 0 },
+      tooltip: { shared: true, backgroundColor: surface, borderColor: grid, borderRadius: 10, shadow: false,
+                 style: { color: text, fontSize: '12.5px' }, valueSuffix: ' €', valueDecimals: 0 },
+      plotOptions: { series: { marker: { enabled: false, symbol: 'circle', states: { hover: { enabled: true, radius: 4 } } },
+                               states: { inactive: { opacity: 1 } }, animation: false } },
+      // the two lines end close together: the higher end label sits above its point, the lower one below
+      series: [series('Приходи', data.income, css('--series-1'), data.income[last] >= data.spend[last] ? -6 : 16),
+               series('Разходи', data.spend, css('--series-2'), data.spend[last] > data.income[last] ? -6 : 16)],
+    });
+  }
+  draw();
+  document.addEventListener('hrp-theme', draw);   // dark mode has its own validated colour steps
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Търсене" %} · Home Resource Planner{% endblock %}
+{% block content %}
+<div class="hrp-page-header">
+  <div>
+    <h1>{% trans "Търсене" %}</h1>
+    <p class="sub">{% if search_query %}„{{ search_query }}“ · {% blocktrans count n=result_count %}{{ n }} резултат{% plural %}{{ n }} резултата{% endblocktrans %}{% else %}{% trans "Въведете поне 2 символа в полето горе." %}{% endif %}</p>
+  </div>
+</div>
+
+{% if result_count %}
+<div class="row g-3">
+  {% if products %}
+  <div class="col-lg-4"><div class="hrp-card">
+    <h2>{% trans "Продукти" %}</h2><div class="hint">{% trans "Купувани от вас" %}</div>
+    <ul class="hrp-list">
+      {% for product in products %}
+      <li><span class="ico"><i class="bi bi-bag"></i></span>
+        <div class="flex-grow-1"><div class="fw-medium">{{ product.name }}</div>
+          <div class="meta"><a href="{% url 'shopping' %}?product_id={{ product.id }}">{% trans "Покупки" %}</a> ·
+            <a href="{% url 'price_changes' %}?product={{ product.id }}&currency=EUR">{% trans "Движение на цената" %}</a></div></div></li>
+      {% endfor %}
+    </ul></div></div>
+  {% endif %}
+  {% if recipes %}
+  <div class="col-lg-4"><div class="hrp-card">
+    <h2>{% trans "Рецепти" %}</h2><div class="hint">&nbsp;</div>
+    <ul class="hrp-list">
+      {% for recipe in recipes %}
+      <li><span class="ico"><i class="bi bi-egg-fried"></i></span>
+        <div class="flex-grow-1"><div class="fw-medium"><a href="{% url 'recipe_view' recipe.id %}" class="text-reset">{{ recipe.name }}</a></div>
+          <div class="meta">{{ recipe.category.name }}</div></div></li>
+      {% endfor %}
+    </ul></div></div>
+  {% endif %}
+  {% if tasks %}
+  <div class="col-lg-4"><div class="hrp-card">
+    <h2>{% trans "Задачи" %}</h2><div class="hint">&nbsp;</div>
+    <ul class="hrp-list">
+      {% for task in tasks %}
+      <li><span class="ico"><i class="bi {% if task.completed %}bi-check2-circle{% else %}bi-check2-square{% endif %}"></i></span>
+        <div class="flex-grow-1"><div class="fw-medium"><a href="{% url 'update_task' task.id %}" class="text-reset">{{ task.title }}</a></div>
+          <div class="meta">{{ task.due_date|date:"d.m.Y" }}{% if task.completed %} · {% trans "изпълнена" %}{% endif %}</div></div></li>
+      {% endfor %}
+    </ul></div></div>
+  {% endif %}
+</div>
+{% elif search_query %}
+  <div class="hrp-card" style="height:auto">{% include "includes/empty_state.html" with icon="bi-search" text=_("Нищо не е намерено.") %}</div>
+{% endif %}
+{% endblock %}

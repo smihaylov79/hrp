@@ -1,0 +1,15 @@
+{% comment %} KPI card. Usage:
+     { % include "includes/kpi_card.html" with icon="bi-bag" label="Похарчено" value="4 615" unit="€" note="149 € на ден" % }
+   Optional: status ("ok" / "over") + status_text, link_url + link_text. {% endcomment %}
+<div class="hrp-card kpi">
+  <div class="label">{% if icon %}<i class="bi {{ icon }}"></i>{% endif %}{{ label }}</div>
+  <div class="value">{{ value }}{% if unit %} <small>{{ unit }}</small>{% endif %}</div>
+  <div class="foot">
+    {% if status_text %}
+      <span class="status {{ status|default:'ok' }}"><i class="bi {% if status == 'over' %}bi-exclamation-circle{% else %}bi-check-circle{% endif %}"></i>{{ status_text }}</span>
+    {% elif note %}
+      <span class="note">{{ note }}</span>
+    {% endif %}
+    {% if link_url %}<a href="{{ link_url }}" class="small">{{ link_text }}</a>{% endif %}
+  </div>
+</div>

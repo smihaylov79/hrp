@@ -1,6 +1,7 @@
-from datetime import date, datetime, time
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-from taskmanager.models import Task, Event
+
+from . import dashboard
 from .utils import collect_weather_data
 
 
@@ -13,24 +14,9 @@ class HomeView(TemplateView):
         user = self.request.user
 
         if user.is_authenticated:
-            today = date.today()
-            now = datetime.now()
-            end_of_day = datetime.combine(now.date(), time(23, 59, 59))
-            tasks_today = Task.objects.filter(user=user, due_date=today, completed=False)
-            tasks_overdue = Task.objects.filter(user=user, due_date__lt=today, completed=False)
-
-            context['tasks_today'] = tasks_today.count()
-            context['tasks_overdue'] = tasks_overdue.count()
-            context['task_total'] = tasks_today.count() + tasks_overdue.count()
-
-            context['events_today'] = Event.objects.filter(user=user,
-                                                           start_datetime__gte=now,
-                                                           start_datetime__lte=end_of_day)
-
+            context.update(dashboard.build(user))
         else:
-            context['tasks_today'] = []
-            context['tasks_overdue'] = []
-            context['task_total'] = 0
+            context.update({'tasks_today': 0, 'tasks_overdue': 0, 'task_total': 0})
 
         weather_data, error_message, current_time, rate = collect_weather_data(self.request)
         context.update(
@@ -39,4 +25,18 @@ class HomeView(TemplateView):
              'now': current_time,
              'rate': rate})
 
+        return context
+
+
+class SearchView(LoginRequiredMixin, TemplateView):
+    """Search box in the top bar: the user's bought products, recipes and tasks."""
+    template_name = 'search.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        query = self.request.GET.get('q', '').strip()
+        results = dashboard.search(self.request.user, query)
+        context.update(results)
+        context['search_query'] = query
+        context['result_count'] = sum(len(rows) for rows in results.values())
         return context

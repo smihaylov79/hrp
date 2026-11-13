@@ -1,0 +1,18 @@
+{% load i18n %}
+{# Django messages as toasts (top right). Included once in base.html. #}
+{% if messages %}
+<div class="hrp-toasts" aria-live="polite" aria-atomic="true">
+  {% for message in messages %}
+  <div class="toast" role="status" data-bs-delay="{% if 'error' in message.tags or 'warning' in message.tags %}12000{% else %}6000{% endif %}">
+    <div class="toast-body d-flex align-items-start gap-2">
+      {% if 'success' in message.tags %}<i class="bi bi-check-circle" style="color:var(--status-good-text)"></i>
+      {% elif 'error' in message.tags %}<i class="bi bi-x-circle" style="color:var(--status-critical-text)"></i>
+      {% elif 'warning' in message.tags %}<i class="bi bi-exclamation-triangle"></i>
+      {% else %}<i class="bi bi-info-circle"></i>{% endif %}
+      <div class="flex-grow-1">{{ message }}</div>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="{% trans 'Затвори' %}"></button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

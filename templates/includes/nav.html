@@ -1,0 +1,34 @@
+{% load i18n %}
+{# Main navigation: used by the sidebar and by the mobile offcanvas in base.html #}
+{% with p=request.path %}
+<nav class="hrp-nav" aria-label="{% trans 'Основно меню' %}">
+  <a href="{% url 'home' %}" class="{% if p == '/' %}active{% endif %}"><i class="bi bi-house"></i>{% trans "Начало" %}</a>
+
+  <div class="hrp-nav-group">{% trans "Пари" %}</div>
+  <a href="{% url 'shopping' %}" class="{% if '/shopping/' in p %}active{% endif %}"><i class="bi bi-bag"></i>{% trans "Пазаруване" %}</a>
+  <a href="{% url 'income_home' %}" class="{% if '/income/' in p %}active{% endif %}"><i class="bi bi-wallet2"></i>{% trans "Приходи" %}</a>
+  <a href="{% url 'budget_home' %}" class="{% if '/budget/' in p %}active{% endif %}"><i class="bi bi-piggy-bank"></i>{% trans "Бюджет" %}</a>
+  <a href="{% url 'reports_home' %}" class="{% if '/reports/' in p %}active{% endif %}"><i class="bi bi-bar-chart-line"></i>{% trans "Отчети" %}</a>
+
+  <div class="hrp-nav-group">{% trans "Дом" %}</div>
+  <a href="{% url 'inventory' %}" class="{% if '/inventory/' in p %}active{% endif %}"><i class="bi bi-box-seam"></i>{% trans "Наличности" %}</a>
+  <a href="{% if user.is_authenticated %}{% url 'cooking_home' %}{% else %}{% url 'recipe_list' %}{% endif %}"
+     class="{% if '/cooking/' in p %}active{% endif %}"><i class="bi bi-egg-fried"></i>{% trans "Готвене" %}</a>
+  <a href="{% url 'task_list' %}" class="{% if '/tasks/' in p and '/calendar/' not in p %}active{% endif %}"><i class="bi bi-check2-square"></i>{% trans "Задачи" %}
+    {% if incomplete_tasks > 0 %}<span class="badge rounded-pill text-bg-primary">{{ incomplete_tasks }}</span>{% endif %}</a>
+  <a href="{% url 'calendar' %}" class="{% if '/tasks/calendar/' in p %}active{% endif %}"><i class="bi bi-calendar3"></i>{% trans "Календар" %}</a>
+
+  <div class="hrp-nav-group">{% trans "Свободно време" %}</div>
+  <a href="{% url 'reading_home' %}" class="{% if '/reading/' in p %}active{% endif %}"><i class="bi bi-book"></i>{% trans "Четене" %}</a>
+  <a href="{% url 'entertainment_home' %}" class="{% if '/entertainment/' in p %}active{% endif %}"><i class="bi bi-controller"></i>{% trans "Забавление" %}</a>
+  <a href="{% url 'forum_home' %}" class="{% if '/forum/' in p %}active{% endif %}"><i class="bi bi-chat-dots"></i>{% trans "Форум" %}</a>
+
+  {% if fastapps_list %}
+  <div class="hrp-nav-group">{% trans "Приложения" %}</div>
+  {% for app_name, url_name in fastapps_list %}
+    {% url url_name as app_url %}
+    <a href="{{ app_url }}" class="{% if app_url == p %}active{% endif %}"><i class="bi bi-calculator"></i>{{ app_name }}</a>
+  {% endfor %}
+  {% endif %}
+</nav>
+{% endwith %}

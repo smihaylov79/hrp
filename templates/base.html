@@ -1,139 +1,151 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load static %}{% load i18n %}{% get_current_language as LANGUAGE_CODE %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" data-bs-theme="light">
 <head>
-    {% load static %}
-    {% load i18n %}
-    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home Resource Planner</title>
+    <title>{% block title %}Home Resource Planner{% endblock %}</title>
 
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    {# Set the saved / preferred colour theme before anything is painted (no flash) #}
+    <script>
+      (function () {
+        var theme = null;
+        try { theme = localStorage.getItem('hrp-theme'); } catch (e) {}
+        if (!theme) { theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      })();
+    </script>
 
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {# Pinned versions with integrity hashes #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"
+          integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary px-4">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">🏠 {% trans "Начало" %}</a>
-
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
-      aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navbarMain">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
-        <li class="nav-item"><a class="nav-link" href="/reports/">{% trans "Отчети/Анализи" %}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/shopping/">{% trans "Пазаруване/Разходи" %}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/income/">{% trans "Приходи" %}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/inventory/">{% trans "Наличности" %}</a></li>
-
-        {% if user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="/cooking/cooking-home/">{% trans "Сготви" %}</a></li>
-        {% else %}
-          <li class="nav-item"><a class="nav-link" href="/cooking/">{% trans "Сготви" %}</a></li>
-        {% endif %}
-
-        <li class="nav-item"><a class="nav-link" href="/entertainment/">{% trans "Забавление" %}</a></li>
-        <li class="nav-item"><a class="nav-link" href="/forum/">{% trans "Форум" %}</a></li>
-
-<li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="fastappsDropdown" role="button"
-       data-bs-toggle="dropdown" aria-expanded="false">
-        {% trans "Приложения" %}
+<div class="hrp-shell">
+  <aside class="hrp-sidebar">
+    <a class="hrp-brand" href="{% url 'home' %}">
+      <span class="hrp-brand-mark"><i class="bi bi-house-heart"></i></span>Home Resource Planner
     </a>
-    <ul class="dropdown-menu" aria-labelledby="fastappsDropdown">
-        {% for app_name, url_name in fastapps_list %}
-            <li><a class="dropdown-item" href="{% url url_name %}">{{ app_name }}</a></li>
-        {% endfor %}
-    </ul>
-</li>
+    {% include "includes/nav.html" %}
+  </aside>
 
+  <div class="hrp-main">
+    <header class="hrp-topbar">
+      <button class="hrp-icon-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#navOffcanvas"
+              aria-controls="navOffcanvas" aria-label="{% trans 'Меню' %}"><i class="bi bi-list"></i></button>
 
+      {% if user.is_authenticated %}
+      <form class="hrp-search" action="{% url 'search' %}" method="get" role="search">
+        <i class="bi bi-search"></i>
+        <input class="form-control" type="search" name="q" value="{{ search_query|default:'' }}"
+               placeholder="{% trans 'Търси продукт, рецепта, задача…' %}" aria-label="{% trans 'Търсене' %}">
+      </form>
+      {% endif %}
 
-        <li class="nav-item">
-          <a class="nav-link" href="/tasks/">
-            {% trans "Задачи" %} {% if incomplete_tasks > 0 %} ({{ incomplete_tasks }}) {% endif %}
-          </a>
-        </li>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <div class="dropdown">
+          <button class="hrp-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                  aria-label="{% trans 'Език' %}" title="{% trans 'Език' %}"><i class="bi bi-translate"></i></button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <form action="{% url 'set_language' %}" method="post" class="hrp-lang-form">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button name="language" value="bg" class="dropdown-item {% if LANGUAGE_CODE == 'bg' %}active{% endif %}">Български</button>
+              <button name="language" value="en" class="dropdown-item {% if LANGUAGE_CODE == 'en' %}active{% endif %}">English</button>
+              <button name="language" value="ro" class="dropdown-item {% if LANGUAGE_CODE == 'ro' %}active{% endif %}">Română</button>
+              <button name="language" value="el" class="dropdown-item {% if LANGUAGE_CODE == 'el' %}active{% endif %}">Ελληνικά</button>
+            </form>
+          </div>
+        </div>
 
-      </ul>
-
-      <ul class="navbar-nav mb-2 mb-lg-0">
-
-        <!-- 🌍 Language Selector -->
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="langDropdown" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
-                🌐 {{ LANGUAGE_CODE|upper }}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="langDropdown">
-                <li>
-                    <form action="{% url 'set_language' %}" method="post" class="px-3 py-1">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.path }}">
-                        <button name="language" value="bg" class="dropdown-item">BG — Български</button>
-                        <button name="language" value="en" class="dropdown-item">EN — English</button>
-                        <button name="language" value="ro" class="dropdown-item">RO — Română</button>
-                        <button name="language" value="el" class="dropdown-item">GR — Ελληνικά</button>
-                    </form>
-                </li>
-            </ul>
-        </li>
+        <button class="hrp-icon-btn" type="button" id="themeToggle" aria-label="{% trans 'Тъмен режим' %}"
+                title="{% trans 'Тъмен режим' %}"><i class="bi bi-moon-stars"></i></button>
 
         {% if user.is_authenticated %}
-          <li class="nav-item">
-            <strong><a class="nav-link" href="{% url 'profile' %}">👤 {{ user.first_name }}</a></strong>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'logout' %}">{% trans "Изход" %}</a>
-          </li>
+        <div class="dropdown">
+          <button class="btn d-flex align-items-center gap-2 p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="hrp-avatar">{{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}</span>
+            <span class="d-none d-md-inline fw-semibold">{{ user.first_name }}</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>{% trans "Профил" %}</a></li>
+            {% if user.household_id %}
+            <li><a class="dropdown-item" href="{% url 'household' user.household_id %}"><i class="bi bi-people me-2"></i>{% trans "Домакинство" %}</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>{% trans "Изход" %}</a></li>
+          </ul>
+        </div>
         {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}">{% trans "Влез" %}</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'register' %}">{% trans "Регистрирай се" %}</a>
-          </li>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'login' %}">{% trans "Влез" %}</a>
+          <a class="btn btn-primary btn-sm" href="{% url 'register' %}">{% trans "Регистрирай се" %}</a>
         {% endif %}
-      </ul>
-    </div>
+      </div>
+    </header>
+
+    <main class="hrp-content">
+      <div class="container">
+        {% block content %}
+
+        {% endblock %}
+      </div>
+    </main>
+
+    <footer class="hrp-footer">© 2025–{% now "Y" %} Householdiq — {% trans "Всички права запазени." %}</footer>
   </div>
-</nav>
-
-
-
-
-<div class="container">
-    {% block content %}
-
-    {% endblock %}
 </div>
 
-<footer class="bg-light text-center text-lg-start mt-5 border-top pt-3">
-  <div class="container text-center text-muted small">
-    <p class="mb-0">© 2025 Householdiq — Всички права запазени.</p>
+{# Mobile navigation #}
+<div class="offcanvas offcanvas-start hrp-offcanvas" tabindex="-1" id="navOffcanvas" aria-label="{% trans 'Основно меню' %}">
+  <div class="offcanvas-header">
+    <strong>Home Resource Planner</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="{% trans 'Затвори' %}"></button>
   </div>
-</footer>
+  <div class="offcanvas-body pt-0">{% include "includes/nav.html" %}</div>
+</div>
 
+{% include "includes/messages.html" %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // keep the scroll position across form submits / reloads
         let scrollPosition = localStorage.getItem("scrollPosition");
         if (scrollPosition) {
             window.scrollTo(0, scrollPosition);
             localStorage.removeItem("scrollPosition"); // Clear after restoring
         }
-
         window.addEventListener("beforeunload", function () {
             localStorage.setItem("scrollPosition", window.scrollY);
         });
+
+        // light / dark theme toggle (the initial theme is set in <head>)
+        var root = document.documentElement, toggle = document.getElementById("themeToggle");
+        function paint() {
+            var dark = root.getAttribute("data-bs-theme") === "dark";
+            toggle.querySelector("i").className = dark ? "bi bi-sun" : "bi bi-moon-stars";
+        }
+        paint();
+        toggle.addEventListener("click", function () {
+            var next = root.getAttribute("data-bs-theme") === "dark" ? "light" : "dark";
+            root.setAttribute("data-bs-theme", next);
+            try { localStorage.setItem("hrp-theme", next); } catch (e) { /* private mode */ }
+            paint();
+            document.dispatchEvent(new CustomEvent("hrp-theme", {detail: next}));  // charts redraw with the theme's colours
+        });
+
+        document.querySelectorAll(".hrp-toasts .toast").forEach(function (el) { new bootstrap.Toast(el).show(); });
     });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -34,6 +34,7 @@ urlpatterns = [
     # path('images/', include(wagtailimages_urls)),
 
     path('', HomeView.as_view(), name='home'),
+    path('search/', SearchView.as_view(), name='search'),
 
     path('users/', include('users.urls')),
     path('shopping/', include('shopping.urls')),

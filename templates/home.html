@@ -2,203 +2,265 @@
 {% load i18n %}
 {% block content %}
 
-    {% if weather_error %}
-        <div class="alert alert-warning mt-3">
-            ⚠️ {{ weather_error }}
-        </div>
-    {% endif %}
-
-    {% if weather_data %}
-        <div class="container mt-3">
-
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap">
-                        <div>
-                            <form method="get" action="{% url 'set_location' %}" class="d-flex align-items-center mb-2"
-                                  style="max-width: 300px;">
-                                <input type="text" name="location" class="form-control form-control-sm me-2"
-                                       placeholder="{% trans 'Въведи град...' %}" required>
-                                <button type="submit" class="btn btn-outline-primary btn-sm">
-                                    {% trans "Промени" %}
-                                </button>
-                            </form>
-
-                            <h6 class="card-title mb-1">
-                                {{ now|date:"d M, H:i" }} – {{ weather_data.location.name }}
-                                ({{ weather_data.location.region }})
-                            </h6>
-
-                            <p class="mb-0">
-                                🌡️ {{ weather_data.current.temp_c }}°C,
-                                {{ weather_data.current.condition.text }}
-                                <img src="{{ weather_data.current.condition.icon }}" alt="{% trans 'Weather icon' %}">
-                                <div class="mb-0">
-                                    {{ rate.base_currency }} / {{ rate.target_currency }}: {{ rate.rate }}
-                                </div>
-                            </p>
-                        </div>
-
-                        <div class="d-flex gap-3 flex-wrap">
-                            {% for day in weather_data.forecast.forecastday|slice:":3" %}
-                                <div class="text-center">
-                                    <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}"
-                                       class="text-decoration-none text-dark">
-                                        <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
-                                        <small>
-                                            {% trans "min" %} {{ day.day.mintemp_c }}°C<br>
-                                            {% trans "max" %} {{ day.day.maxtemp_c }}°C
-                                        </small><br>
-                                        {{ day.day.condition.text }}<br>
-                                        <img src="{{ day.day.condition.icon }}" alt="{% trans 'Icon' %}"><br>
-                                        🌧️{{ day.day.daily_chance_of_rain }}%
-                                    </a>
-                                </div>
-                            {% endfor %}
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-        {% if task_total > 0 %}
-            <div class="alert alert-info mt-3">
-
-                {% if tasks_today %}
-                    📝 {% blocktrans %}Имаш {{ tasks_today }} задачи за днес{% endblocktrans %}
-                {% else %}
-                    ✅ {% trans "Няма задачи за днес!" %}
-                {% endif %}
-
-                {% if tasks_overdue %}
-                    {% blocktrans %}и {{ tasks_overdue }} просрочени!{% endblocktrans %}
-                {% endif %}
-
-                <a href="{% url 'task_list' %}" class="btn btn-sm btn-primary ms-3">
-                    {% trans "Виж всички задачи" %}
-                </a>
-            </div>
-        {% else %}
-            <div class="alert alert-success mt-3">
-                ✅ {% trans "Няма задачи за днес!" %}
-            </div>
-        {% endif %}
-
-        {% if events_today %}
-            <div class="alert alert-primary mt-3">
-                📅 {% blocktrans %}Имаш {{ events_today|length }} събития за днес{% endblocktrans %}
-                <a href="{% url 'calendar' %}" class="btn btn-sm btn-outline-primary ms-3">
-                    {% trans "Виж календар" %}
-                </a>
-            </div>
-        {% else %}
-            <div class="alert alert-success mt-3">
-                📅 {% trans "Няма събития за деня!" %}
-            </div>
-        {% endif %}
-    {% endif %}
-
-    <div class="container my-4">
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
-
-            <div class="col">
-                <a href="{% url 'reports_home' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">📊 {% trans "Отчети и анализи" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'shopping' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🛍️ {% trans "Пазаруване/Разходи" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'income_home' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">💶 {% trans "Приходи" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'inventory' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🏬 {% trans "Наличности" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                {% if user.is_authenticated %}
-                    <a href="{% url 'cooking_home' %}" class="text-decoration-none">
-                {% else %}
-                    <a href="{% url 'recipe_list' %}" class="text-decoration-none">
-                {% endif %}
-                        <div class="card text-center shadow-sm h-100">
-                            <div class="card-body">
-                                <h5 class="card-title">🥣 {% trans "Сготви" %}</h5>
-                            </div>
-                        </div>
-                    </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'entertainment_home' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🏝️🍹⛱️🌞 🌊 {% trans "Забавление" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'forum_home' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🗪 {% trans "Форум" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'task_list' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">📝 {% trans "Задачи" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <div class="col">
-                <a href="{% url 'calendar' %}" class="text-decoration-none">
-                    <div class="card text-center shadow-sm h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">🗓️ {% trans "Календар" %}</h5>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-        </div>
+{% if user.is_authenticated %}
+  <div class="hrp-page-header">
+    <div>
+      <h1>{% blocktrans with name=user.first_name %}Здравей, {{ name }}{% endblocktrans %}</h1>
+      <p class="sub">{{ today|date:"l, j F Y" }}{% if household_name %} · {% trans "домакинство" %} „{{ household_name }}“{% endif %}</p>
     </div>
+    <div class="actions">
+      <a class="btn btn-primary" href="{% url 'regular_shopping' %}"><i class="bi bi-plus-lg me-1"></i>{% trans "Нова покупка" %}</a>
+      <a class="btn btn-outline-secondary" href="{% url 'utility_bills' %}"><i class="bi bi-receipt me-1"></i>{% trans "Сметка" %}</a>
+      <a class="btn btn-outline-secondary" href="{% url 'register_income' %}"><i class="bi bi-wallet2 me-1"></i>{% trans "Приход" %}</a>
+    </div>
+  </div>
+
+  {% include "reports/_rate_warnings.html" %}
+
+  {# ---------- KPI row ---------- #}
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-xl-3">
+      <div class="hrp-card kpi">
+        <div class="label"><i class="bi bi-check2-square"></i>{% trans "Задачи за днес" %}</div>
+        <div class="value">{{ tasks_today }}</div>
+        <div class="foot">
+          {% if tasks_overdue %}
+            <span class="status over"><i class="bi bi-exclamation-circle"></i>{% blocktrans count n=tasks_overdue %}{{ n }} просрочена{% plural %}{{ n }} просрочени{% endblocktrans %}</span>
+          {% elif tasks_today %}
+            <span class="note">{% trans "няма просрочени" %}</span>
+          {% else %}
+            <span class="status ok"><i class="bi bi-check-circle"></i>{% trans "Няма задачи за днес!" %}</span>
+          {% endif %}
+          <a href="{% url 'task_list' %}" class="small">{% trans "Виж всички" %}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+      <div class="hrp-card kpi">
+        <div class="label"><i class="bi bi-bag"></i>{% trans "Похарчено този месец" %}</div>
+        <div class="value">{{ month_total|floatformat:"0g" }} <small>€</small></div>
+        <div class="foot"><span class="note">{% blocktrans count days=month_days with per_day=month_per_day|floatformat:"0g" %}{{ days }} ден · {{ per_day }} € на ден{% plural %}{{ days }} дни · {{ per_day }} € на ден{% endblocktrans %}</span></div>
+      </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+      <div class="hrp-card kpi">
+        <div class="label"><i class="bi bi-piggy-bank"></i>{% blocktrans with month=today|date:"F"|lower %}Бюджет за {{ month }}{% endblocktrans %}</div>
+        {% if budget_progress %}
+          <div class="value">{{ budget_progress.percent }} <small>%</small></div>
+          <div class="foot">
+            {% if budget_progress.points_over_pace > 5 %}
+              <span class="status over"><i class="bi bi-arrow-up-right"></i>{% blocktrans with points=budget_progress.points_over_pace %}{{ points }} пункта над темпото{% endblocktrans %}</span>
+            {% else %}
+              <span class="status ok"><i class="bi bi-check-circle"></i>{% trans "в график" %}</span>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="value">–</div>
+          <div class="foot"><span class="note">{% trans "няма активен бюджет" %}</span><a href="{% url 'budget_home' %}" class="small">{% trans "Бюджети" %}</a></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-6 col-xl-3">
+      <div class="hrp-card kpi">
+        {% if weather_data %}
+          <div class="label"><i class="bi bi-cloud-sun"></i>{{ weather_data.location.name }}</div>
+          <div class="value">{{ weather_data.current.temp_c|floatformat:"0" }} <small>°C</small></div>
+          <div class="foot"><span class="note">{{ weather_data.current.condition.text }}</span></div>
+        {% else %}
+          <div class="label"><i class="bi bi-cloud-slash"></i>{% trans "Време" %}</div>
+          <div class="value">–</div>
+          <div class="foot"><span class="note">{{ weather_error|default:_("Няма данни за времето") }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    {# ---------- budget ---------- #}
+    <div class="col-lg-7">
+      <div class="hrp-card">
+        <h2>{% trans "Бюджет за месеца" %}</h2>
+        {% if budget_progress and budget_progress.rows %}
+          <div class="hint">{% blocktrans with pace=budget_progress.pace %}Реално спрямо планирано; чертата показва къде трябва да сте днес ({{ pace }} % от месеца){% endblocktrans %}</div>
+          <div class="barlist">
+            {% for row in budget_progress.rows %}
+            <div>
+              <div class="row-head">
+                <span class="name">{{ row.name }}</span>
+                <span class="val">{% blocktrans with spent=row.spent|floatformat:"0g" planned=row.planned|floatformat:"0g" %}{{ spent }} от {{ planned }} €{% endblocktrans %}
+                  {% if row.state == 'exceeded' %}<span class="status over ms-2"><i class="bi bi-exclamation-circle"></i>{% trans "надхвърлен" %}</span>
+                  {% elif row.state == 'ahead' %}<span class="status over ms-2"><i class="bi bi-exclamation-circle"></i>{% trans "над темпото" %}</span>
+                  {% else %}<span class="status ok ms-2"><i class="bi bi-check-circle"></i>{% trans "в график" %}</span>{% endif %}
+                </span>
+              </div>
+              <div class="track" role="img" aria-label="{{ row.name }}: {{ row.percent }} %">
+                <div class="fill {% if row.state == 'exceeded' %}over{% endif %}" style="width:{{ row.width }}%"></div>
+                <div class="marker" style="left:{{ budget_progress.pace }}%"></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mt-3"><a href="{% url 'track_budget' budget_progress.budget.pk %}" class="small">{% trans "Изпълнение на бюджета" %} <i class="bi bi-arrow-right"></i></a></div>
+        {% else %}
+          <div class="hint">{% trans "Планирано спрямо реално по категории" %}</div>
+          {% url 'budget_home' as budget_url %}
+          {% include "includes/empty_state.html" with icon="bi-piggy-bank" text=_("Няма активен бюджет в евро за този месец.") link_url=budget_url link_text=_("Към бюджетите") %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# ---------- today ---------- #}
+    <div class="col-lg-5">
+      <div class="hrp-card">
+        <h2>{% trans "Днес" %}</h2>
+        <div class="hint">{% trans "Задачи и събития" %}</div>
+        {% if task_rows or events_today %}
+          <ul class="hrp-list">
+            {% for row in task_rows %}
+            <li>
+              <span class="ico"><i class="bi bi-check2-square"></i></span>
+              <div class="flex-grow-1">
+                <div class="fw-medium">{{ row.task.title }}</div>
+                <div class="meta">{% if row.overdue %}{% blocktrans with date=row.task.due_date|date:"d.m" %}Просрочена от {{ date }}{% endblocktrans %}{% else %}{% trans "За днес" %}{% endif %}</div>
+              </div>
+              {% if row.overdue %}<span class="status over"><i class="bi bi-exclamation-circle"></i>{% trans "просрочена" %}</span>{% endif %}
+            </li>
+            {% endfor %}
+            {% for event in events_today %}
+            <li>
+              <span class="ico"><i class="bi bi-calendar-event"></i></span>
+              <div class="flex-grow-1">
+                <div class="fw-medium">{{ event.title }}</div>
+                <div class="meta">{% if event.all_day %}{% trans "Цял ден" %}{% else %}{{ event.start_datetime|time:"H:i" }} – {{ event.end_datetime|time:"H:i" }}{% endif %}{% if event.location %} · {{ event.location }}{% endif %}</div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="mt-3 d-flex gap-3">
+            <a href="{% url 'task_list' %}" class="small">{% trans "Виж всички задачи" %} <i class="bi bi-arrow-right"></i></a>
+            <a href="{% url 'calendar' %}" class="small">{% trans "Виж календар" %} <i class="bi bi-arrow-right"></i></a>
+          </div>
+        {% else %}
+          {% url 'calendar' as calendar_url %}
+          {% include "includes/empty_state.html" with icon="bi-emoji-smile" text=_("Няма задачи и събития за днес.") link_url=calendar_url link_text=_("Виж календар") %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# ---------- cooking ---------- #}
+    <div class="col-lg-7">
+      <div class="hrp-card">
+        <h2>{% trans "Готови за готвене" %}</h2>
+        <div class="hint">{% trans "Рецепти, за които имате всички продукти" %}</div>
+        {% if ready_recipes %}
+          <ul class="hrp-list">
+            {% for row in ready_recipes %}
+            <li>
+              <span class="ico"><i class="bi bi-egg-fried"></i></span>
+              <div class="flex-grow-1">
+                <div class="fw-medium"><a href="{% url 'recipe_view' row.recipe.id %}" class="text-reset text-decoration-none">{{ row.recipe.name }}</a></div>
+                <div class="meta">
+                  {% if row.missing %}{% trans "липсва 1 продукт" %}
+                  {% else %}{% if row.recipe.time_to_prepare %}{{ row.recipe.time_to_prepare }} {% trans "мин" %} · {% endif %}{{ row.cost|floatformat:2 }} € · {{ row.recipe.total_calories }} kcal{% endif %}
+                </div>
+              </div>
+              {% if row.missing %}
+                <form action="{% url 'generate_recipe_shopping_list' row.recipe.id %}" method="post">{% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary">{% trans "Списък" %}</button></form>
+              {% else %}
+                <form action="{% url 'cook_recipe' row.recipe.id %}" method="post">{% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'home' %}">
+                  <button class="btn btn-sm btn-outline-primary">{% trans "Приготви" %}</button></form>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="mt-3"><a href="{% url 'cooking_home' %}" class="small">{% trans "Още рецепти" %} <i class="bi bi-arrow-right"></i></a></div>
+        {% else %}
+          {% url 'recipe_list' as recipes_url %}
+          {% include "includes/empty_state.html" with icon="bi-egg-fried" text=_("Няма рецепти, за които да имате всички продукти.") link_url=recipes_url link_text=_("Всички рецепти") %}
+        {% endif %}
+      </div>
+    </div>
+
+    {# ---------- stock + weather ---------- #}
+    <div class="col-lg-5">
+      <div class="hrp-card">
+        <h2>{% trans "Наличности под минимума" %}</h2>
+        <div class="hint">{% trans "Продукти, които свършват" %}</div>
+        {% if low_stock %}
+          <ul class="hrp-list">
+            {% for item in low_stock %}
+            <li>
+              <span class="ico"><i class="bi bi-box-seam"></i></span>
+              <div class="flex-grow-1"><div class="fw-medium">{{ item.product.name }}</div>
+                <div class="meta">{% blocktrans with have=item.quantity|floatformat:"-2" minimum=item.minimum_quantity|floatformat:"-2" %}налични {{ have }} · минимум {{ minimum }}{% endblocktrans %}</div></div>
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="mt-3"><a href="{% url 'inventory' %}" class="small">{% trans "Към наличностите" %} <i class="bi bi-arrow-right"></i></a></div>
+        {% else %}
+          {% url 'inventory' as inventory_url %}
+          {% include "includes/empty_state.html" with icon="bi-box-seam" text=_("Всичко е налично.") link_url=inventory_url link_text=_("Към наличностите") %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+{% else %}
+  {# ---------- visitor (not logged in) ---------- #}
+  <div class="hrp-page-header">
+    <div>
+      <h1>Home Resource Planner</h1>
+      <p class="sub">{% trans "Разходи, приходи, бюджет, наличности, готвене и задачи на домакинството — на едно място." %}</p>
+    </div>
+    <div class="actions">
+      <a class="btn btn-primary" href="{% url 'register' %}">{% trans "Регистрирай се" %}</a>
+      <a class="btn btn-outline-primary" href="{% url 'login' %}">{% trans "Влез" %}</a>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-4"><div class="hrp-card"><h2><i class="bi bi-bar-chart-line me-2"></i>{% trans "Отчети и анализи" %}</h2>
+      <p class="mb-0 text-body-secondary">{% trans "Вижте къде отиват парите по категории, магазини и месеци." %}</p></div></div>
+    <div class="col-md-4"><div class="hrp-card"><h2><i class="bi bi-box-seam me-2"></i>{% trans "Наличности" %}</h2>
+      <p class="mb-0 text-body-secondary">{% trans "Следете какво има вкъщи и получавайте списък за пазаруване." %}</p></div></div>
+    <div class="col-md-4"><div class="hrp-card"><h2><i class="bi bi-egg-fried me-2"></i>{% trans "Сготви" %}</h2>
+      <p class="mb-0 text-body-secondary">{% trans "Рецепти според продуктите, които имате." %}</p>
+      <a href="{% url 'recipe_list' %}" class="small">{% trans "Всички рецепти" %} <i class="bi bi-arrow-right"></i></a></div></div>
+  </div>
+{% endif %}
+
+{# ---------- weather (everyone) ---------- #}
+{% if weather_data %}
+  <div class="hrp-card mt-3" style="height:auto">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h2>{{ weather_data.location.name }}{% if weather_data.location.region %} ({{ weather_data.location.region }}){% endif %}</h2>
+        <div class="hint mb-2">{{ now|date:"d M, H:i" }} · {{ weather_data.current.temp_c }}°C, {{ weather_data.current.condition.text }}
+          {% if rate %} · {{ rate.base_currency }} / {{ rate.target_currency }}: {{ rate.rate|floatformat:4 }}{% endif %}</div>
+        <form method="get" action="{% url 'set_location' %}" class="d-flex align-items-center" style="max-width: 300px;">
+          <input type="text" name="location" class="form-control form-control-sm me-2"
+                 placeholder="{% trans 'Въведи град...' %}" aria-label="{% trans 'Град' %}" required>
+          <button type="submit" class="btn btn-outline-primary btn-sm">{% trans "Промени" %}</button>
+        </form>
+      </div>
+      <div class="hrp-weather-days">
+        {% for day in weather_data.forecast.forecastday|slice:":3" %}
+          <a href="{% url 'detailed-forecast' day.parsed_date|date:'Y-m-d' %}">
+            <strong>{{ day.parsed_date|date:"d M" }}</strong><br>
+            <img src="{{ day.day.condition.icon }}" alt="{{ day.day.condition.text }}" width="36" height="36" loading="lazy"><br>
+            {{ day.day.maxtemp_c|floatformat:"0" }}° / {{ day.day.mintemp_c|floatformat:"0" }}°<br>
+            <span class="text-body-secondary"><i class="bi bi-cloud-rain"></i> {{ day.day.daily_chance_of_rain }}%</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% elif weather_error and not user.is_authenticated %}
+  <div class="alert alert-warning mt-3"><i class="bi bi-exclamation-triangle me-1"></i>{{ weather_error }}</div>
+{% endif %}
 
 {% endblock %}
