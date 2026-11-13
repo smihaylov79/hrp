@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 3 (steps 1–3)**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 3**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -28,7 +28,19 @@ Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.vi
 ---------------------------------------------------------------------------------------------------
 ## 2. Python packages (requirements)
 
-- [ ] No changes yet. (Pruning unused packages and adding `pytesseract` is Phase 3 step 4 — behind the GATE.)
+`requirements.txt` changed in Phase 3 — the production virtualenv **must** be updated:
+
+- [ ] `pip install -r requirements.txt` (inside the production virtualenv, before reloading the web app).
+      This installs the one new package, **`pytesseract`** (the reading app imports it; without it the site
+      does not start). The OCR feature also needs the `tesseract` binary and `TESSERACT_CMD` in `.env`.
+- Removed from the file because nothing imports them: plotly, pyppeteer, requests-html, peewee, psycopg2,
+  curl_cffi, fake-useragent, frozendict, multitasking, protobuf, contourpy, kiwisolver, fonttools, cycler.
+  `pip install -r` does not uninstall them; they are harmless. Optional clean-up:
+  `pip uninstall -y plotly pyppeteer requests-html peewee psycopg2 curl_cffi fake-useragent frozendict multitasking protobuf contourpy kiwisolver fonttools cycler`
+- Still listed although only `finance/` uses them (kept until that folder is deleted): djangorestframework,
+  django-multiselectfield (also still in `INSTALLED_APPS`), numpy, pytz.
+- `yfinance` and `scikit-learn` were never in `requirements.txt`; the unplugged `finance/` code needs them, the
+  site does not.
 
 ---------------------------------------------------------------------------------------------------
 ## 3. `.env` on the server
@@ -123,3 +135,4 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 1 | `DEBUG` parsing, secure cookies, Force HTTPS, static/media mappings, migration `reports.0004` |
 | 2 | Migration `reports.0005`, `audit_rates`, `fetch_rates --backfill`, daily `fetch_rates` task |
 | 3 (steps 1–3) | Finance unplugged (no migration), finance backups, user-deletion caveat |
+| 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
