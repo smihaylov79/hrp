@@ -3,6 +3,32 @@ from unittest import mock
 from django.test import SimpleTestCase
 
 from hrp.settings import env_bool
+from hrp.testing import HrpTestCase
+
+
+class FinanceUnpluggedTests(HrpTestCase):
+    """The finance app is unplugged: no URL, no nav item, no home card, no HTTP ping on every page."""
+
+    def test_finance_is_not_installed_or_routed(self):
+        from django.apps import apps
+        self.assertFalse(apps.is_installed('finance'))
+        self.assertEqual(self.client.get('/finance/').status_code, 404)
+
+    def test_home_and_navbar_have_no_finance_links(self):
+        for user in (None, self.alice):
+            with self.subTest(user=user):
+                if user:
+                    self.client.force_login(user)
+                response = self.client.get('/')
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, '/finance/')
+                self.assertNotIn('server_status', response.context)
+
+    def test_pages_render_without_any_outbound_request_from_context_processors(self):
+        self.client.force_login(self.alice)
+        with mock.patch('requests.sessions.Session.request') as request:
+            self.assertEqual(self.client.get('/reports/').status_code, 200)
+        request.assert_not_called()
 
 
 class EnvBoolTests(SimpleTestCase):

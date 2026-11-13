@@ -64,7 +64,8 @@ PROJECT_APPS = [
     'users',
     'cooking',
     'entertainment',
-    'finance',
+    # 'finance' is unplugged (moving to its own project). Its folder and its finance_* tables stay untouched;
+    # do not create a migration that removes its models.
     'inventory',
     'shopping',
     'forum',
@@ -116,7 +117,6 @@ TEMPLATES = [
                 'shopping.context_processors.current_datetime',
                 'forum.views.get_categories',
                 'taskmanager.context_processor.incomplete_tasks',
-                'finance.context_processors.fastapi_url',
                 "fastapps.context_processor_fastapps.fastapps_list",
             ],
         },

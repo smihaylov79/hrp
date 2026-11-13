@@ -40,7 +40,6 @@ urlpatterns = [
     path('inventory/', include('inventory.urls')),
     path('cooking/', include('cooking.urls')),
     path('entertainment/', include('entertainment.urls')),
-    path('finance/', include('finance.urls')),
     path('forum/', include('forum.urls')),
     path('weather/', include('weather.urls')),
     path('reports/', include('reports.urls')),
