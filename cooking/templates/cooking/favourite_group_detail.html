@@ -3,22 +3,12 @@
 
 {% block content %}
 <div class="container mt-4">
- <h2 class="text-center mb-4">
-  ⭐ Група: <span id="groupNameDisplay">{{ group.name }}</span>
-  <button type="button" class="btn btn-sm btn-outline-primary ms-2"
-          data-bs-toggle="modal" data-bs-target="#editGroupNameModal">✏️ Промени име</button>
-  <form id="deleteGroupForm" class="d-inline">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-sm btn-outline-danger ms-2">🗑️ Изтрий меню</button>
-  </form>
-     <a href="{% url 'recipe_list' %}" class="btn btn-sm btn-outline-primary ms-2">📖 Разгледай всички рецепти</a>
-     <a href="{% url 'all_shopping_lists' %}" class="btn btn-sm btn-outline-warning ms-2">📖 Списъци за пазаруване</a>
-</h2>
+ <div class="hrp-page-header"><div><h1><i class="bi bi-star"></i> Група: <span id="groupNameDisplay">{{ group.name }}</span> <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#editGroupNameModal"><i class="bi bi-pencil"></i> Промени име</button> <form id="deleteGroupForm" class="d-inline"> {% csrf_token %} <button type="submit" class="btn btn-sm btn-outline-danger ms-2"><i class="bi bi-trash"></i> Изтрий меню</button> </form> <a href="{% url 'recipe_list' %}" class="btn btn-sm btn-outline-primary ms-2"><i class="bi bi-book"></i> Разгледай всички рецепти</a> <a href="{% url 'all_shopping_lists' %}" class="btn btn-sm btn-outline-secondary ms-2"><i class="bi bi-book"></i> Списъци за пазаруване</a></h1></div></div>
 
 <div class="text-center mb-3">
   <form action="{% url 'generate_group_shopping_list' group.id %}" method="POST">
     {% csrf_token %}
-    <button type="submit" class="btn btn-warning">🛒 Генерирай списък за цялото меню</button>
+    <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-cart"></i> Генерирай списък за цялото меню</button>
   </form>
 </div>
 
@@ -35,14 +25,14 @@
   </div>
 
   <div class="flex-grow-1 mb-3">
-    <label for="recipe-search" class="form-label">🔍 Търси рецепта:</label>
+    <label for="recipe-search" class="form-label"><i class="bi bi-search"></i> Търси рецепта:</label>
     <input type="text" id="recipe-search" class="form-control" placeholder="Име..." onkeyup="filterRecipeByName()">
   </div>
 
   <div class="products-scroll-wrapper" style="max-height: 70vh; overflow-y: auto;">
     {% if recipes %}
       {% for recipe in recipes %}
-        <div class="card h-100 border-light shadow-sm recipe-card"
+        <div class="card h-100 shadow-sm recipe-card"
              data-category="{{ recipe.category.name|lower }}"
              data-name="{{ recipe.name|lower }}">
           <div class="row g-0 align-items-center">
@@ -50,29 +40,29 @@
               {% if recipe.image %}
                 <img loading="lazy" decoding="async" src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
               {% else %}
-                <img loading="lazy" decoding="async" src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+                <div class="hrp-noimage" role="img" aria-label="Няма снимка"><i class="bi bi-egg-fried"></i></div>
               {% endif %}
             </div>
             <div class="col-md-5">
               <div class="card-body">
                 <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
-                <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
-                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} €</p>
-                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.total_calories }} kcal</p>
-                <p class="card-text mb-1"><strong>📂:</strong> {{ recipe.category.name }}</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-stopwatch"></i>:</strong> {{ recipe.time_to_prepare }} мин</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-piggy-bank"></i>:</strong> {{ recipe.user_cost }} €</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-fire"></i>:</strong> {{ recipe.total_calories }} kcal</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-folder2-open"></i>:</strong> {{ recipe.category.name }}</p>
               </div>
             </div>
             <div class="col-md-3 text-center px-3">
               <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
                 {% csrf_token %}
                   <input type="hidden" name="next" value="{% url 'favourite_group_detail' group.id %}">
-                <button type="submit" class="btn btn-success btn-sm w-100">🍳 Приготви</button>
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-egg-fried"></i> Приготви</button>
               </form>
 
                 <div class="card-footer text-end">
   <form class="removeRecipeForm d-inline" data-recipe-id="{{ recipe.id }}">
     {% csrf_token %}
-    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Премахни</button>
+    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> Премахни</button>
   </form>
 </div>
 
@@ -102,7 +92,7 @@
           <div id="editGroupError" class="text-danger small mt-2"></div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Запази</button>
+          <button type="submit" class="btn btn-primary">Запази</button>
         </div>
       </form>
     </div>

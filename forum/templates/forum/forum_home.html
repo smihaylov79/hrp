@@ -4,11 +4,11 @@
 
 <div class="container my-4">
   <div class="text-center mb-4">
-    <h1 class="fw-bold">📢 Форум</h1>
+    <div class="hrp-page-header"><div><h1><i class="bi bi-megaphone"></i> Форум</h1></div></div>
     <p class="lead">Свържи се, споделяй идеи и търси съвети от други потребители.</p>
     {% if user.is_superuser %}
       <a href="{% url 'create_category' %}" class="btn btn-outline-primary mt-2">
-        ➕ Създай нова категория
+        <i class="bi bi-plus-lg"></i> Създай нова категория
       </a>
     {% endif %}
   </div>
@@ -20,8 +20,8 @@
         <div class="card-body">
           <h5 class="card-title">{{ category.name }}</h5>
           <p class="card-text">{{ category.description }}</p>
-          <a href="{% url 'category_threads' category.id %}" class="btn btn-sm btn-success">
-            💬 Виж теми →
+          <a href="{% url 'category_threads' category.id %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-chat-dots"></i> Виж теми →
           </a>
         </div>
       </div>

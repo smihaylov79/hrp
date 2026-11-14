@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container py-5">
-    <h2 class="mb-4 text-center">📋 Създай нова задача</h2>
+    <div class="hrp-page-header"><div><h1><i class="bi bi-clipboard"></i> Създай нова задача</h1></div></div>
 
     <form method="POST" class="card p-4 shadow-sm">
         {% csrf_token %}
@@ -21,7 +21,7 @@
         {% endfor %}
 
         <button type="submit" class="btn btn-primary w-100">
-            💾 Запази
+            <i class="bi bi-floppy"></i> Запази
         </button>
     </form>
 </div>

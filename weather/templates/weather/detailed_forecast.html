@@ -1,57 +1,48 @@
 {% extends 'base.html' %}
-
+{% load i18n %}
 
 {% block content %}
+<div class="hrp-page-header">
+  <div>
+    <h1>Прогноза за {{ location.name|default:"–" }}</h1>
+    <p class="sub">{{ formated_day.date|date:'l, j F Y' }}{% if forecast_day %} · {{ forecast_day.day.condition.text }}{% endif %}</p>
+  </div>
+  <div class="actions"><a href="{% url 'home' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>{% trans "Начало" %}</a></div>
+</div>
 
-    <h2>Прогноза за {{ location.name }} {{ formated_day.date|date:'d M Y' }}</h2>
-    <div class="forecast-summary-cards">
-        <div class="summary-card">t° max: {{ forecast_day.day.maxtemp_c }}°C</div>
-        <div class="summary-card">t° min: {{ forecast_day.day.mintemp_c }}°C</div>
-        <div class="summary-card">Вятър: {{ forecast_day.day.maxwind_kph }} км/ч</div>
-        <div class="summary-card">Влажност: {{ forecast_day.day.avghumidity }}%</div>
-        <div class="summary-card">UV: {{ forecast_day.day.uv }}</div>
-        <div class="summary-card">Изгрев: {{ forecast_day.astro.sunrise }}</div>
-        <div class="summary-card">Залез: {{ forecast_day.astro.sunset }}</div>
-        <div class="summary-card">Изгрев Луна: {{ forecast_day.astro.moonrise }}</div>
-        <div class="summary-card">Залез Луна: {{ forecast_day.astro.moonset }}</div>
+{% if forecast_day %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="hrp-card kpi"><div class="label"><i class="bi bi-thermometer-high"></i>t° max</div>
+    <div class="value">{{ forecast_day.day.maxtemp_c }} <small>°C</small></div><div class="foot"><span class="note">t° min: {{ forecast_day.day.mintemp_c }} °C</span></div></div></div>
+  <div class="col-6 col-md-3"><div class="hrp-card kpi"><div class="label"><i class="bi bi-wind"></i>Вятър</div>
+    <div class="value">{{ forecast_day.day.maxwind_kph }} <small>км/ч</small></div><div class="foot"><span class="note">Влажност: {{ forecast_day.day.avghumidity }}%</span></div></div></div>
+  <div class="col-6 col-md-3"><div class="hrp-card kpi"><div class="label"><i class="bi bi-sunrise"></i>Изгрев</div>
+    <div class="value">{{ forecast_day.astro.sunrise }}</div><div class="foot"><span class="note">Залез: {{ forecast_day.astro.sunset }}</span></div></div></div>
+  <div class="col-6 col-md-3"><div class="hrp-card kpi"><div class="label"><i class="bi bi-moon"></i>Изгрев Луна</div>
+    <div class="value">{{ forecast_day.astro.moonrise }}</div><div class="foot"><span class="note">Залез Луна: {{ forecast_day.astro.moonset }} · UV: {{ forecast_day.day.uv }}</span></div></div></div>
+</div>
 
-    </div>
+<div class="hrp-card" style="height:auto">
+  <h2>Темп. по часове (°C)</h2>
+  <div class="hint">{{ forecast_day.day.mintemp_c }} – {{ forecast_day.day.maxtemp_c }} °C</div>
+  <div id="hourlyTempChart" style="height:300px"></div>
+</div>
+{% else %}
+<div class="hrp-card" style="height:auto">
+  {% include "includes/empty_state.html" with icon="bi-cloud-slash" text=_("Няма прогноза за този ден.") %}
+</div>
+{% endif %}
+{% endblock %}
 
-    <canvas id="hourlyTempChart" width="100%" height="60"></canvas>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx = document.getElementById('hourlyTempChart').getContext('2d');
-        const tempChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [
-                    {% for hour in forecast_day.hour %}
-                        "{{ hour.time|slice:'11:' }}"{% if not forloop.last %},{% endif %}
-                    {% endfor %}
-                ],
-                datasets: [{
-                    label: "Темп. по часове (°C)",
-                    data: [
-                        {% for hour in forecast_day.hour %}
-                            {{ hour.temp_c }}{% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    ],
-                    borderColor: 'rgba(75,192,192,1)',
-                    backgroundColor: 'rgba(75,192,192,0.1)',
-                    borderWidth: 2,
-                    tension: 0.3,
-                    pointRadius: 2
-                }]
-            },
-            options: {
-                scales: {
-                    x: {ticks: {autoSkip: true, maxTicksLimit: 12}},
-                    y: {beginAtZero: false}
-                }
-            }
-        });
-    </script>
-
-
-
+{% block extra_js %}
+{% if forecast_day %}
+{% include "includes/charts_js.html" %}
+<script>
+  hrpCharts.lines('hourlyTempChart', {
+    categories: [{% for hour in forecast_day.hour %}"{{ hour.time|slice:'11:' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+    series: [{ name: "Темп. по часове (°C)", data: [{% for hour in forecast_day.hour %}{{ hour.temp_c|stringformat:'s' }}{% if not forloop.last %},{% endif %}{% endfor %}] }],
+    unit: '°C', decimals: 1, fromZero: false, endLabels: false
+  });
+</script>
+{% endif %}
 {% endblock %}

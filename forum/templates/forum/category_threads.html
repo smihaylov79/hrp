@@ -2,11 +2,11 @@
 
 {% block forum_content %}
 <div class="container mt-4">
-    <h2 class="mb-4">{{ category.name }}</h2>
+    <div class="hrp-page-header"><div><h1>{{ category.name }}</h1></div></div>
 
     {% if user.is_authenticated %}
-        <a href="{% url 'create_thread' category.id %}" class="btn btn-success mb-3">
-            ➕ Отвори тема
+        <a href="{% url 'create_thread' category.id %}" class="btn btn-primary mb-3">
+            <i class="bi bi-plus-lg"></i> Отвори тема
         </a>
     {% endif %}
 
@@ -25,15 +25,15 @@
                         </p>
                     </div>
                     <div class="card-footer d-flex justify-content-between align-items-center">
-                        <small class="text-muted">Последна активност: {{ thread.last_activity }}</small>
-                        <span class="badge bg-primary">
-                            👁️ {{ thread.views }} преглеждания
+                        <small class="text-body-secondary">Последна активност: {{ thread.last_activity }}</small>
+                        <span class="badge text-bg-primary">
+                            <i class="bi bi-eye"></i> {{ thread.views }} преглеждания
                         </span>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <p class="text-muted">Няма теми в тази категория все още.</p>
+            <p class="text-body-secondary">Няма теми в тази категория все още.</p>
         {% endfor %}
     </div>
 </div>

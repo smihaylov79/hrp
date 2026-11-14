@@ -2,12 +2,16 @@
 
 {% block content %}
     <div class="container my-5">
-        <h2 class="mb-4">🗓️ Списък със задачи</h2>
-        <a href="{% url 'create_task' %}" class="btn btn-success mb-3">➕ Нова задача</a>
-
-    <button onclick="toggleFilter()" class="btn btn-outline-warning mb-3" id="filter-toggle-btn">
-        📝 Покажи неизпълнени
-    </button>
+        <div class="hrp-page-header">
+            <div><h1>Списък със задачи</h1></div>
+            <div class="actions">
+                <button onclick="toggleFilter()" class="btn btn-outline-secondary" id="filter-toggle-btn">
+                    <i class="bi bi-pencil-square"></i> Покажи неизпълнени
+                </button>
+                <a href="{% url 'calendar' %}" class="btn btn-outline-secondary"><i class="bi bi-calendar3 me-1"></i>Календар</a>
+                <a href="{% url 'create_task' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Нова задача</a>
+            </div>
+        </div>
 
         <div class="list-group">
             {% for task in tasks %}
@@ -21,7 +25,7 @@
     </form>
     <div class="d-flex flex-column text-truncate">
       <a href="{% url 'update_task' task.pk %}"
-         class="{% if task.completed %}text-decoration-line-through text-muted{% endif %}">
+         class="{% if task.completed %}text-decoration-line-through text-body-secondary{% endif %}">
         {{ task.title }}
       </a>
       <small class="text-secondary">{{ task.due_date }}</small>
@@ -31,18 +35,18 @@
   <!-- Right side: badges -->
   <div class="col-auto d-flex justify-content-end flex-wrap gap-2">
     {% if task.priority == 'Висок' %}
-      <span class="badge bg-danger">{{ task.priority }}</span>
+      <span class="badge text-bg-danger">{{ task.priority }}</span>
     {% elif task.priority == 'Нормален' %}
-      <span class="badge bg-warning text-dark">{{ task.priority }}</span>
+      <span class="badge text-bg-warning text-body">{{ task.priority }}</span>
     {% else %}
-      <span class="badge bg-success">{{ task.priority }}</span>
+      <span class="badge text-bg-success">{{ task.priority }}</span>
     {% endif %}
     {% if task.completed %}
-      <span class="badge bg-success">Изпълнена</span>
+      <span class="badge text-bg-success">Изпълнена</span>
     {% else %}
-      <span class="badge bg-warning text-dark">В процес</span>
+      <span class="badge text-bg-warning text-body">В процес</span>
       {% if task.due_date < today %}
-        <span class="badge bg-danger">Просрочена</span>
+        <span class="badge text-bg-danger">Просрочена</span>
       {% endif %}
     {% endif %}
   </div>

@@ -2,28 +2,15 @@
 {% load custom_filters_reading %}
 
 {% block content %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="{% url 'reading_home' %}">📚 Четене</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'reading_home' %}">Всички книги</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'user_library' %}">Моите книги</a>
-        </li>
-      </ul>
-    </div>
-  </div>
+<nav class="hrp-tabs" aria-label="Четене">
+  {% url 'reading_home' as all_books_url %}{% url 'user_library' as my_books_url %}
+  <a href="{{ all_books_url }}" class="{% if request.path == all_books_url %}active{% endif %}"><i class="bi bi-journals"></i>Всички книги</a>
+  <a href="{{ my_books_url }}" class="{% if request.path != all_books_url %}active{% endif %}"><i class="bi bi-bookmark-heart"></i>Моите книги</a>
 </nav>
 
 <div class="container">
   {% block reading_content %}
-  <h2 class="mb-4 fw-bold text-primary">📖 Всички книги</h2>
+  <div class="hrp-page-header"><div><h1>Всички книги</h1><p class="sub">Книги, споделени от потребителите</p></div></div>
 
   <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
     {% for book in books %}
@@ -38,14 +25,14 @@
         {% endif %}
         <div class="card-body d-flex flex-column">
           <h5 class="card-title fw-semibold">
-            <a href="{% url 'book_detail' source='shared' book_id=book.id %}" class="text-decoration-none text-dark">
+            <a href="{% url 'book_detail' source='shared' book_id=book.id %}" class="text-decoration-none text-body">
               {{ book.title }}
             </a>
           </h5>
-          <p class="card-text text-muted small">{{ book.description|truncatewords:20 }}</p>
+          <p class="card-text text-body-secondary small">{{ book.description|truncatewords:20 }}</p>
           <div class="mt-auto">
-            <p class="mb-1"><strong>⭐ Рейтинг:</strong> {{ book.avg_rating|default_if_none:'-' }}</p>
-            <p class="mb-0"><strong>👤 Споделена от:</strong> {{ book.shared_from.first_name }}</p>
+            <p class="mb-1"><strong><i class="bi bi-star"></i> Рейтинг:</strong> {{ book.avg_rating|default_if_none:'-' }}</p>
+            <p class="mb-0"><strong><i class="bi bi-person"></i> Споделена от:</strong> {{ book.shared_from.first_name }}</p>
           </div>
         </div>
       </div>

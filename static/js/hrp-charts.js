@@ -99,6 +99,21 @@
       });
     },
 
+    /* Two (or one) series side by side per category, as horizontal bars - for long category names.
+       options: {categories, series: [{name, data}], unit} */
+    grouped: function (id, options) {
+      register(id, function (c) {
+        var config = base(c, { type: 'bar', unit: options.unit, decimals: options.decimals,
+                               series: options.series.map(function (s, i) {
+                                 return { name: s.name, data: s.data, color: c.series[i % c.series.length] };
+                               }),
+                               xAxis: { categories: options.categories, crosshair: false },
+                               yAxis: { min: 0 } });
+        config.plotOptions.bar = { borderWidth: 0, borderRadius: 4, maxPointWidth: 14, groupPadding: 0.12, pointPadding: 0.08 };
+        return config;
+      });
+    },
+
     /* Price over real dates. options: {name, unit, points: [{date: 'YYYY-MM-DD', price, shop}]} */
     timeline: function (id, options) {
       register(id, function (c) {

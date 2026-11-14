@@ -4,8 +4,8 @@
 {% block reading_content %}
 <div class="container my-5">
   <div class="card shadow-lg border-0">
-    <div class="card-header bg-primary text-white">
-      <h5 class="mb-0">📘 Детайли за книгата</h5>
+    <div class="card-header">
+      <h5 class="mb-0"><i class="bi bi-journal"></i> Детайли за книгата</h5>
     </div>
     <div class="card-body">
       <form method="POST" enctype="multipart/form-data">
@@ -17,7 +17,7 @@
               <input type="text" name="title" class="form-control form-control-lg" placeholder="Въведи заглавие..." value="{{ book.title }}" required>
             {% else %}
               <label for="title" class="form-label fw-bold fs-5">Заглавие:</label>
-<p class="form-control-plaintext fs-4 text-dark fw-semibold">{{ book.title }}</p>
+<p class="form-control-plaintext fs-4 text-body fw-semibold">{{ book.title }}</p>
 
             {% endif %}
           </div>
@@ -33,7 +33,7 @@
                 {% endfor %}
               </select>
               <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addLibraryModal">
-                ➕
+                <i class="bi bi-plus-lg"></i>
               </button>
             </div>
           </div>
@@ -45,7 +45,7 @@
           <label for="notes" class="form-label fw-bold fs-5">Лични бележки (видими само от теб)</label>
 
             <button type="button" class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#uploadNoteModal">
-  📷 Качи изображение за бележки
+  <i class="bi bi-camera"></i> Качи изображение за бележки
 </button>
 
 
@@ -103,40 +103,40 @@
 
         <div class="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-2">
           {% if source == 'user' %}
-            <button type="submit" class="btn btn-success">
-              💾 Запази промените
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-floppy"></i> Запази промените
             </button>
           {% else %}
             {% if book.title|check_book_in_user_books_name == book.title %}
               {% if user_book_id %}
-  <a href="{% url 'book_detail' source='user' book_id=user_book_id %}" class="btn btn-success">
+  <a href="{% url 'book_detail' source='user' book_id=user_book_id %}" class="btn btn-primary">
     Лични детайли
   </a>
 {% else %}
-  <button type="submit" class="btn btn-success">Добави в мои книги</button>
+  <button type="submit" class="btn btn-primary">Добави в мои книги</button>
 {% endif %}
             {% endif %}
           {% endif %}
 
           {% if library_id %}
-            <a href="{% url 'library_detail' library_id=library_id %}" class="btn btn-outline-danger">⛔ Отказ</a>
+            <a href="{% url 'library_detail' library_id=library_id %}" class="btn btn-outline-danger"><i class="bi bi-slash-circle"></i> Отказ</a>
           {% else %}
-            <a href="{% url 'reading_home' %}" class="btn btn-outline-danger">⛔ Отказ</a>
+            <a href="{% url 'reading_home' %}" class="btn btn-outline-danger"><i class="bi bi-slash-circle"></i> Отказ</a>
           {% endif %}
         </div>
       </form>
 
 
       <div class="mt-5">
-        <h6 class="text-muted fs-5">💬 Коментари от други потребители</h6>
+        <h6 class="text-body-secondary fs-5"><i class="bi bi-chat-dots"></i> Коментари от други потребители</h6>
         <ul class="list-group list-group-flush">
   {% for user, comment in comments.items %}
     <li class="list-group-item">
       <div class="fw-bold text-primary">{{ user }}</div>
-      <div class="text-muted">{{ comment }}</div>
+      <div class="text-body-secondary">{{ comment }}</div>
     </li>
   {% empty %}
-    <li class="list-group-item text-muted">Няма коментари.</li>
+    <li class="list-group-item text-body-secondary">Няма коментари.</li>
   {% endfor %}
 </ul>
 
@@ -152,7 +152,7 @@
     <div class="modal-content">
       <form method="POST" action="{% url 'add_library_ajax' %}" id="libraryForm">
         {% csrf_token %}
-        <div class="modal-header bg-light">
+        <div class="modal-header bg-body-tertiary">
           <h5 class="modal-title" id="addLibraryModalLabel">Нова библиотека</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
         </div>
@@ -179,11 +179,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="image" class="form-label">📷 Качи изображение</label>
+            <label for="image" class="form-label"><i class="bi bi-camera"></i> Качи изображение</label>
             <input type="file" name="image" accept="image/*" class="form-control" required>
           </div>
           <div class="mb-3">
-            <label for="language" class="form-label">🌐 Избери език</label>
+            <label for="language" class="form-label"><i class="bi bi-globe"></i> Избери език</label>
             <select name="language" class="form-select" required>
               <option value="bul">Български</option>
               <option value="eng">Английски</option>
@@ -191,7 +191,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">🔍 Извлечи</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Извлечи</button>
         </div>
       </form>
     </div>

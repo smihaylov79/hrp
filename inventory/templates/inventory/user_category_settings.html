@@ -2,16 +2,16 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Настройка на категории</h2>
+    <div class="hrp-page-header"><div><h1>Настройка на категории</h1></div></div>
 
     <form method="POST">
         {% csrf_token %}
-    <button type="submit" class="btn btn-success mb-3">💾 Запази промени</button>
+    <button type="submit" class="btn btn-primary mb-3"><i class="bi bi-floppy"></i> Запази промени</button>
 {% load l10n %}
         {% localize off %}
         <div class="table-scroll-wrapper" style="max-height: 800px; overflow-y: auto;">
-            <table class="table table-bordered table-striped align-middle">
-                <thead class="table-light">
+            <table class="table align-middle">
+                <thead>
                     <tr>
                         <th>Категория</th>
                         <th>Общо планиране</th>
@@ -49,7 +49,7 @@
 
     </form>
 <div class="text-center">
-<a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към наличности</a>
+<a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4"><i class="bi bi-arrow-left"></i> Обратно към наличности</a>
 </div>
 </div>
 {% endblock %}

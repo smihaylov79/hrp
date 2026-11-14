@@ -2,31 +2,35 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2 class="text-center mb-4">⭐ Моите менюта</h2>
-
+  <div class="hrp-page-header">
+    <div>
+      <h1>Моите менюта</h1>
+      <p class="sub">Групи от рецепти с общо време, цена и калории</p>
     </div>
-      <div class="text-center mb-3">
-  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createGroupModal">
-    ➕ Създай ново меню
-  </button>
-</div>
+    <div class="actions">
+      <a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary"><i class="bi bi-book me-1"></i>Рецепти</a>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+        <i class="bi bi-plus-lg me-1"></i>Създай ново меню
+      </button>
+    </div>
+  </div>
 
   {% if favourite_groups %}
     <div class="row">
       {% for group in favourite_groups %}
         <div class="col-md-6 mb-3">
-          <div class="card shadow-sm h-100 border-info">
+          <div class="card shadow-sm h-100">
             <div class="card-body">
               <h5 class="card-title">
                 <a href="{% url 'favourite_group_detail' group.id %}">{{ group.name }}</a>
               </h5>
               <p class="card-text">
-                📖 Рецепти: {{ group.recipes_count }}<br>
-                ⏱️ Общо време: {{ group.total_time }} мин<br>
-                💰 Обща цена: {{ group.total_cost }} €<br>
-                🔥 Калории: {{ group.total_calories }} kcal
+                <i class="bi bi-book"></i> Рецепти: {{ group.recipes_count }}<br>
+                <i class="bi bi-stopwatch"></i> Общо време: {{ group.total_time }} мин<br>
+                <i class="bi bi-piggy-bank"></i> Обща цена: {{ group.total_cost }} €<br>
+                <i class="bi bi-fire"></i> Калории: {{ group.total_calories }} kcal
               </p>
-              <a href="{% url 'favourite_group_detail' group.id %}" class="btn btn-info btn-sm">➡️ Виж рецепти в менюто</a>
+              <a href="{% url 'favourite_group_detail' group.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-right"></i> Виж рецепти в менюто</a>
             </div>
           </div>
         </div>
@@ -35,7 +39,7 @@
   {% else %}
     <div class="alert alert-info text-center">
       Нямаш създадени менюта. <br>
-      <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-sm mt-2">📖 Разгледай рецепти</a>
+      <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-sm mt-2"><i class="bi bi-book"></i> Разгледай рецепти</a>
 
 
   {% endif %}
@@ -59,8 +63,8 @@
           <div id="createGroupError" class="text-danger small"></div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
-          <button type="submit" class="btn btn-success">Създай</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отказ</button>
+          <button type="submit" class="btn btn-primary">Създай</button>
         </div>
       </form>
     </div>
@@ -95,7 +99,7 @@ document.getElementById("createGroupForm").addEventListener("submit", function(e
             const newCard = document.createElement("div");
             newCard.className = "col-md-6 mb-3";
             newCard.innerHTML = `
-              <div class="card shadow-sm h-100 border-info">
+              <div class="card shadow-sm h-100">
                 <div class="card-body">
                   <h5 class="card-title">
                     <a href="/cooking/favourites/${data.id}/">${data.name}</a>

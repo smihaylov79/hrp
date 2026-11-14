@@ -2,9 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4 text-center">
-        🛍️ Лист за пазаруване за: <span class="text-primary">{{ recipe_list.recipe_name }}</span>
-    </h2>
+    <div class="hrp-page-header"><div><h1><i class="bi bi-bag"></i> Лист за пазаруване за: <span class="text-primary">{{ recipe_list.recipe_name }}</span></h1></div></div>
 
     <ul class="list-group mb-4">
         {% for item in recipe_list.items %}
@@ -16,12 +14,12 @@
     </ul>
 
     {% if not recipe_list.executed %}
-    <a href="{% url 'execute_recipe_shopping_list' recipe_list.id %}" class="btn btn-primary w-100 mb-3">✅ Изпълни</a>
+    <a href="{% url 'execute_recipe_shopping_list' recipe_list.id %}" class="btn btn-primary w-100 mb-3"><i class="bi bi-check-circle"></i> Изпълни</a>
     {% endif %}
 
     <div class="text-center">
-        <a href="{% url 'all_shopping_lists' %}" class="btn btn-outline-secondary me-2">🔙 Обратно към списъци</a>
-        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary">🔙 Обратно към наличности</a>
+        <a href="{% url 'all_shopping_lists' %}" class="btn btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i> Обратно към списъци</a>
+        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Обратно към наличности</a>
     </div>
 </div>
 {% endblock %}

@@ -5,7 +5,7 @@
   {% if user.is_superuser %}
     <div class="card shadow-sm">
       <div class="card-body">
-        <h2 class="card-title mb-4">➕ Създай нова категория</h2>
+        <div class="hrp-page-header"><div><h1><i class="bi bi-plus-lg"></i> Създай нова категория</h1></div></div>
         <form method="POST">
           {% csrf_token %}
           {% for field in form %}
@@ -13,7 +13,7 @@
               <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
               {{ field }}
               {% if field.help_text %}
-                <small class="form-text text-muted">{{ field.help_text }}</small>
+                <small class="form-text text-body-secondary">{{ field.help_text }}</small>
               {% endif %}
               {% for error in field.errors %}
                 <div class="text-danger">{{ error }}</div>
@@ -21,13 +21,13 @@
             </div>
           {% endfor %}
 
-          <button type="submit" class="btn btn-primary">💾 Създай категория</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Създай категория</button>
         </form>
       </div>
     </div>
   {% else %}
     <div class="alert alert-warning" role="alert">
-      ⚠️ Нямате права да създавате категории.
+      <i class="bi bi-exclamation-triangle"></i> Нямате права да създавате категории.
     </div>
   {% endif %}
 </div>

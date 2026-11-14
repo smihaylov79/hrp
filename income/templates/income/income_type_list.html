@@ -2,19 +2,19 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2 class="text-center mb-4">📂 Видове приходи</h2>
+  <div class="hrp-page-header"><div><h1><i class="bi bi-folder2-open"></i> Видове приходи</h1></div></div>
 
   <div class="mb-3 text-end">
     <a href="{% url 'create_income_type' %}" class="btn btn-primary">
-      ➕ Добави нов тип приход
+      <i class="bi bi-plus-lg"></i> Добави нов тип приход
     </a>
   </div>
 
   <div class="card shadow-sm">
     <div class="card-body p-0">
       {% if types %}
-        <table class="table table-striped mb-0">
-          <thead class="table-light">
+        <table class="table mb-0">
+          <thead>
             <tr>
               <th scope="col">Име</th>
             </tr>
@@ -28,7 +28,7 @@
           </tbody>
         </table>
       {% else %}
-        <div class="p-3 text-center text-muted">
+        <div class="p-3 text-center text-body-secondary">
           Няма добавени типове приходи.
         </div>
       {% endif %}

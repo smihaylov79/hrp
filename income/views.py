@@ -15,6 +15,7 @@ def income_home(request):
         # само приходите на потребителя
         incomes = Income.objects.filter(user=user).order_by('-date_received')
 
+    incomes = incomes.select_related('user', 'income_type')    # the list shows both for every row
     return render(request, "income/income_home.html", {"incomes": incomes})
 
 

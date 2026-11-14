@@ -4,45 +4,42 @@
 {% block content %}
 <div class="container mt-4">
 
-  <h2 class="mb-4 text-center">🛒 {% trans "Всички покупки" %}</h2>
-
-  <div class="d-flex justify-content-between align-items-center mb-3">
-
-    <div class="text-end mb-3">
-      <a href="{% url 'utility_bills' %}" class="btn btn-outline-success">
-        ➕ {% trans "Плати битови сметки/вътрешен разход" %}
+  <div class="hrp-page-header">
+    <div>
+      <h1>{% trans "Всички покупки" %}</h1>
+      <p class="sub">{% trans "Покупки и разходи на домакинството, най-новите първи" %}</p>
+    </div>
+    <div class="actions">
+      <a href="{% url 'regular_shopping' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>{% trans "Регистрирай нова покупка/разход" %}
+      </a>
+      <a href="{% url 'utility_bills' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-receipt me-1"></i>{% trans "Плати битови сметки/вътрешен разход" %}
       </a>
     </div>
-
-    <div class="text-end mb-3">
-      <a href="{% url 'regular_shopping' %}" class="btn btn-outline-success">
-        ➕ {% trans "Регистрирай нова покупка/разход" %}
-      </a>
-    </div>
-
   </div>
 
   <form method="get" class="mb-3 d-flex gap-2">
     <select name="product_id" class="form-select" onchange="this.form.submit()">
-      <option value="">🔍 {% trans "Покупки с всички продукти" %}</option>
+      <option value="">{% trans "Покупки с всички продукти" %}</option>
 
       {% for product in products %}
         <option value="{{ product.id }}" {% if product.id|stringformat:"s" == selected_product_id %}selected{% endif %}>
-          {{ product.name }}
-        </option>
+         {{ product.name }}
+       </option>
       {% endfor %}
     </select>
 
     {% if selected_product_id %}
       <a href="{% url 'shopping' %}" class="btn btn-sm btn-outline-secondary">
-        ❌ {% trans "Премахни филтъра" %}
+        <i class="bi bi-x-circle"></i> {% trans "Премахни филтъра" %}
       </a>
     {% endif %}
   </form>
 
   <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-    <table class="table table-bordered table-striped align-middle">
-      <thead class="table-light">
+    <table class="table align-middle">
+      <thead>
         <tr>
           <th>{% trans "Потребител" %}</th>
           <th>{% trans "Дата" %}</th>
@@ -64,14 +61,14 @@
           <td>
             <a href="{% url 'edit_shopping' shopping.id %}?product_id={{ selected_product_id }}"
                class="btn btn-sm btn-outline-primary">
-              ✏️ {% trans "Редактирай" %}
+              <i class="bi bi-pencil"></i> {% trans "Редактирай" %}
             </a>
           </td>
         </tr>
 
         {% empty %}
         <tr>
-          <td colspan="6" class="text-center text-muted">
+          <td colspan="6" class="text-center text-body-secondary">
             {% trans "Няма покупки към момента." %}
           </td>
         </tr>

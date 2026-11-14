@@ -2,6 +2,16 @@
 
 {% block content %}
 
+<div class="hrp-page-header">
+  <div>
+    <h1>Битови сметки и вътрешни разходи</h1>
+    <p class="sub">Сметки, наеми, вноски и други разходи без касова бележка</p>
+  </div>
+  <div class="actions">
+    <a href="{% url 'shopping' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Виж всички покупки</a>
+  </div>
+</div>
+
 <form method="POST" id="bill-form">
   {% csrf_token %}
 
@@ -10,20 +20,20 @@
   <div class="col-md-6">
     <div class="card mb-4">
       <div class="card-body">
-        <h5 class="card-title">💡 Въведи битови сметки</h5>
+        <h5 class="card-title"><i class="bi bi-lightbulb"></i> Въведи битови сметки</h5>
 
         <div class="mb-3">
-          <label class="form-label">🛍️ Доставчик:</label>
+          <label class="form-label"><i class="bi bi-bag"></i> Доставчик:</label>
           {{ form.shop }}
         </div>
 
         <div class="mb-3">
-          <label class="form-label">📅 Дата на сметката:</label>
+          <label class="form-label"><i class="bi bi-calendar3"></i> Дата на сметката:</label>
           {{ form.date }}
         </div>
 
         <div class="mb-3">
-          <label for="currency" class="form-label">💵 Валута:</label>
+          <label for="currency" class="form-label"><i class="bi bi-cash"></i> Валута:</label>
           {{ form.currency }}
         </div>
       </div>
@@ -34,10 +44,10 @@
   <div class="col-md-6">
     <div class="card mb-4">
       <div class="card-body">
-        <h5 class="card-title">📊 Текущи цени</h5>
-        <p>⚡ Електроенергия: <strong>{{ electricity_price }}</strong> € / kWh</p>
-        <p>💧 Студена вода: <strong>{{ cold_water }}</strong>  € / m³</p>
-        <p>♨️ Топлофикация: <strong>{{ heating_price }}</strong> € / мегаватчас</p>
+        <h5 class="card-title"><i class="bi bi-bar-chart-line"></i> Текущи цени</h5>
+        <p><i class="bi bi-lightning-charge"></i> Електроенергия: <strong>{{ electricity_price }}</strong> € / kWh</p>
+        <p><i class="bi bi-droplet"></i> Студена вода: <strong>{{ cold_water }}</strong>  € / m³</p>
+        <p><i class="bi bi-thermometer-half"></i> Топлофикация: <strong>{{ heating_price }}</strong> € / мегаватчас</p>
       </div>
     </div>
   </div>
@@ -81,7 +91,7 @@
   </div>
 
   <input type="hidden" name="selected_products" id="selected-products">
-  <button type="submit" class="btn btn-primary w-100 mt-3">💳 Потвърди плащане</button>
+  <button type="submit" class="btn btn-primary w-100 mt-3"><i class="bi bi-credit-card"></i> Потвърди плащане</button>
 </form>
 
     <script>

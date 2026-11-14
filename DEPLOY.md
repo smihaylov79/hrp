@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 5 and Phase 6 part 1 (new layout + home)**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 6**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -128,6 +128,10 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 - [ ] Top bar: the dark-mode button switches the theme and the choice survives a reload; the language menu works;
       the search box finds one of your products.
 - [ ] On a phone (or a narrow window) the sidebar is replaced by the menu button.
+- [ ] Click through one page of every section (Пазаруване, Приходи, Бюджет, Наличности, Готвене, Задачи,
+      Календар, Четене, Форум): each has a page title with its buttons on the right and no emoji icons;
+      Бюджет → Проследяване and the weather forecast draw their charts.
+- [ ] Switch the language to English: menu, home and Reports are in English.
 - [ ] Reports → each of the six tabs opens (Обзор, Категории, Магазини, Цени и инфлация, Паричен поток,
       Бюджет) and the charts are drawn; the numbers are only your household's.
 - [ ] Reports: change the period, the currency and the scope - the address bar changes and the tabs keep the
@@ -151,12 +155,11 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
   recipe category or product is saved in the app or the admin. A change made directly in MySQL shows up after
   at most 1 hour (or immediately after `python manage.py shell -c "from django.core.cache import cache; cache.clear()"`).
 - Weather is cached 30 minutes per city; electricity / heating prices 24 hours.
-- **Translations:** the new layout and dashboard add Bulgarian texts that have no English / Romanian / Greek
-  translation yet, so those languages show a mix until the `.po` files are updated
-  (`django-admin makemessages -l en -l ro -l el`, translate, `compilemessages`; needs GNU gettext). Planned for
-  the end of Phase 6.
-- Pages other than the home page and Reports still have their old content inside the new frame; they are
-  restyled page by page in the rest of Phase 6.
+- **Translations:** English is complete for the new layout, dashboard and Reports. Romanian and Greek only
+  have the 31 older texts; everything new falls back to Bulgarian there until someone translates
+  `locale/ro/…/django.po` and `locale/el/…/django.po` and runs `python manage.py compilemessages`
+  (needs GNU gettext; Git Bash has it). The compiled `.mo` files are in git, so the server needs no extra step.
+  Pages outside the shell, Home and Reports still have Bulgarian texts that were never marked for translation.
 - **Reports are one hub now** (`/reports/` with six tabs). The addresses of the eight old report pages still
   work: they redirect to the matching tab and carry the period / currency over.
 - **Personal inflation is calculated differently** (Phase 5): it is now a price index of a fixed basket
@@ -178,4 +181,5 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
 | 4 | `createcachetable`, index migrations `shopping.0020` + `income.0003`, `collectstatic` now mandatory (`staticfiles/` untracked), cache notes |
 | 6 (part 1) | `theme.css` via `collectstatic`, CDN assets pinned with SRI, smoke-test steps for the new layout, translation note |
+| 6 (part 2) | all remaining pages restyled (no server step beyond `collectstatic`); translation note updated |
 | 5 | `pip install -r requirements.txt` now also installs `openpyxl`; `static/js/hrp-charts.js` via `collectstatic`; Reports hub smoke-test steps; note on the new inflation method and the redirects |

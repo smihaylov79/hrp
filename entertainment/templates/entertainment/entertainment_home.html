@@ -2,27 +2,27 @@
 
 {% block content %}
 <div class="container my-5">
-    <h2 class="text-center mb-4">🎭 Welcome to Entertainment Hub</h2>
+    <div class="hrp-page-header"><div><h1>Welcome to Entertainment Hub</h1></div></div>
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-2 row-cols-lg-4 g-4">
         <div class="col">
             <a href="{% url 'travel' %}" class="btn btn-outline-primary w-100 py-3 text-start fs-5">
-                🌍 Travel
+                <i class="bi bi-globe"></i> Travel
             </a>
         </div>
         <div class="col">
-            <a href="{% url 'reading_home' %}" class="btn btn-outline-success w-100 py-3 text-start fs-5">
-                📚 Reading
+            <a href="{% url 'reading_home' %}" class="btn btn-outline-primary w-100 py-3 text-start fs-5">
+                <i class="bi bi-journals"></i> Reading
             </a>
         </div>
         <div class="col">
-            <a href="{% url 'movies' %}" class="btn btn-outline-danger w-100 py-3 text-start fs-5">
-                🎬 Movies
+            <a href="{% url 'movies' %}" class="btn btn-outline-primary w-100 py-3 text-start fs-5">
+                <i class="bi bi-film"></i> Movies
             </a>
         </div>
         <div class="col">
-            <a href="{% url 'games' %}" class="btn btn-outline-warning w-100 py-3 text-start fs-5">
-                🎮 Games
+            <a href="{% url 'games' %}" class="btn btn-outline-primary w-100 py-3 text-start fs-5">
+                <i class="bi bi-controller"></i> Games
             </a>
         </div>
     </div>

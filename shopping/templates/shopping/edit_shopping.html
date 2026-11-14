@@ -2,18 +2,26 @@
 
 {% block content %}
 <div class="container my-4">
-  <h2 class="mb-4">🛒 Редактиране на покупка</h2>
+  <div class="hrp-page-header">
+    <div>
+      <h1>Редактиране на покупка</h1>
+      <p class="sub">{{ shopping.shop.name }} · {{ shopping.date|date:"d.m.Y" }}</p>
+    </div>
+    <div class="actions">
+      <a href="{% url 'shopping' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Виж всички покупки</a>
+    </div>
+  </div>
 
   <form method="POST">
     {% csrf_token %}
 
     <div class="row mb-3">
       <div class="col-md-6">
-        <label for="date" class="form-label">📅 Дата на покупка:</label>
+        <label for="date" class="form-label"><i class="bi bi-calendar3"></i> Дата на покупка:</label>
         <input type="date" name="date" class="form-control" value="{{ shopping.date|date:'Y-m-d' }}" required>
       </div>
       <div class="col-md-6">
-        <label for="shop_id" class="form-label">🏬 Избери магазин:</label>
+        <label for="shop_id" class="form-label"><i class="bi bi-shop"></i> Избери магазин:</label>
         <select name="shop_id" class="form-select">
           {% for shop in shops %}
             <option value="{{ shop.id }}" {% if shop.id == shopping.shop.id %}selected{% endif %}>{{ shop.name }}</option>
@@ -22,7 +30,7 @@
       </div>
 
      <div class="col-md-6">
-        <label for="currency" class="form-label">💵 Валута:</label>
+        <label for="currency" class="form-label"><i class="bi bi-cash"></i> Валута:</label>
         <select name="currency" class="form-select">
           {% for currency in currencies %}
             <option value="{{ currency }}" {% if shopping.currency == currency %}selected{% endif %}>{{ currency }}</option>
@@ -33,10 +41,10 @@
     </div>
 {% load l10n %}
         {% localize off %}
-    <h4 class="mb-3">📦 Продукти в покупката</h4>
+    <h4 class="mb-3"><i class="bi bi-box-seam"></i> Продукти в покупката</h4>
     <div class="table-responsive">
-      <table class="table table-bordered align-middle">
-        <thead class="table-light">
+      <table class="table align-middle">
+        <thead>
           <tr>
             <th>Продукт</th>
             <th>Количество</th>
@@ -67,15 +75,15 @@
                  <input type="checkbox" name="not_for_household_{{ item.id }}" {% if item.not_for_household %}checked{% endif %}>
 </td>
               <td>
-                <button type="submit" name="delete_product" value="{{ item.id }}" class="btn btn-sm btn-danger">
-                  ❌ Премахни
+                <button type="submit" name="delete_product" value="{{ item.id }}" class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-x-circle"></i> Премахни
                 </button>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       <tfoot>
-      <tr class="table-secondary">
+      <tr>
         <td colspan="4" class="text-end fw-bold">Общо:</td>
         <td class="fw-bold text-success">{{ shopping.total_amount|floatformat:2 }} {{ shopping.currency }}</td>
       </tr>
@@ -86,9 +94,9 @@
 {% endlocalize %}
 
     <div class="d-flex justify-content-between mt-4">
-      <button type="submit" class="btn btn-success">💾 Запази промените</button>
+      <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Запази промените</button>
 
-      <a href="{% url 'shopping' %}" class="btn btn-secondary">⛔ Отказ</a>
+      <a href="{% url 'shopping' %}" class="btn btn-outline-secondary"><i class="bi bi-slash-circle"></i> Отказ</a>
     </div>
   </form>
 </div>

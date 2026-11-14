@@ -1,12 +1,19 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-4">
-  <h2>💰 Бюджетиране</h2>
-  <p class="text-muted">Създавай, одобрявай и следи бюджети.</p>
+  <div class="hrp-page-header">
+    <div>
+      <h1>Бюджетиране</h1>
+      <p class="sub">Създавай, одобрявай и следи бюджети.</p>
+    </div>
+    <div class="actions">
+      <a href="{% url 'propose_budget' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Създай нов бюджет</a>
+      <a href="{% url 'reports_budget' %}" class="btn btn-outline-secondary"><i class="bi bi-bar-chart-line me-1"></i>Бюджет спрямо реално</a>
+    </div>
+  </div>
 
-  <a href="{% url 'propose_budget' %}" class="btn btn-primary mb-3">➕ Създай нов бюджет</a>
-
-  <table class="table table-striped">
+  <div class="table-responsive">
+  <table class="table align-middle">
     <thead>
       <tr>
           <th>Име</th>
@@ -26,24 +33,25 @@
         <td>{{ budget.amount }}</td>
           <td>
             {% if budget.approved %}
-              <span class="badge bg-success">Одобрен</span>
+              <span class="badge text-bg-success">Одобрен</span>
             {% elif budget.submitted %}
-              <span class="badge bg-warning">Чака одобрение</span>
+              <span class="badge text-bg-warning">Чака одобрение</span>
             {% else %}
-              <span class="badge bg-secondary">Чернова</span>
+              <span class="badge text-bg-secondary">Чернова</span>
             {% endif %}
           </td>
-          <td>
+          <td class="text-end">
             <a href="{% url 'budget_detail' budget.pk %}" class="btn btn-sm btn-outline-primary">Детайли</a>
               {% if budget.can_be_tracked %}
-            <a href="{% url 'track_budget' budget.pk %}" class="btn btn-sm btn-outline-success">Проследяване</a>
+            <a href="{% url 'track_budget' budget.pk %}" class="btn btn-sm btn-outline-primary">Проследяване</a>
               {% endif %}
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="4" class="text-center text-muted">Няма създадени бюджети.</td></tr>
+        <tr><td colspan="6" class="text-center text-body-secondary py-4">Няма създадени бюджети.</td></tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endblock %}

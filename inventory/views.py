@@ -111,6 +111,7 @@ def user_category_settings(request):
         user_categories = HouseholdProductCategory.objects.filter(household=household)
     else:
         user_categories = UserProductCategory.objects.filter(user=user)
+    user_categories = user_categories.select_related('product_category')
     if request.method == "POST":
         for category in user_categories:
             category.direct_planning = request.POST.get(f"direct_planning_{category.id}") == "on"

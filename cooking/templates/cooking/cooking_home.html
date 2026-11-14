@@ -2,21 +2,24 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2 class="text-center mb-4">👨‍🍳 Добре дошъл в Кулинарния Център</h2>
-
-  <div class="text-center mb-4">
-    <p class="lead">Открий рецепти, които можеш да приготвиш с наличните си продукти.</p>
-    <a href="{% url 'recipe_list' %}" class="btn btn-primary btn-lg">📖 Разгледай всички рецепти</a>
-      <a href="{% url 'favourite_recipes' %}" class="btn btn-primary btn-lg">📖 Менюта</a>
+  <div class="hrp-page-header">
+    <div>
+      <h1>Добре дошъл в Кулинарния Център</h1>
+      <p class="sub">Открий рецепти, които можеш да приготвиш с наличните си продукти.</p>
+    </div>
+    <div class="actions">
+      <a href="{% url 'recipe_list' %}" class="btn btn-primary"><i class="bi bi-book me-1"></i>Разгледай всички рецепти</a>
+      <a href="{% url 'favourite_recipes' %}" class="btn btn-outline-secondary"><i class="bi bi-star me-1"></i>Менюта</a>
+    </div>
   </div>
 
 
   {% if ready_by_category %}
-    <h4 class="text-center mb-4">🍽️ Готови за приготвяне</h4>
+    <h2 class="mb-3">Готови за приготвяне</h2>
     {% for category, recipes in ready_by_category.items %}
-      <h5 class="text-muted mt-4">{{ category }}</h5>
+      <h5 class="text-body-secondary mt-4">{{ category }}</h5>
       {% for recipe in recipes %}
-        <div class="card h-100 border-success shadow-sm recipe-card mb-3"
+        <div class="card h-100 shadow-sm recipe-card mb-3"
              data-category="{{ recipe.category.name|lower }}"
              data-name="{{ recipe.name|lower }}">
           <div class="row g-0 align-items-center">
@@ -24,22 +27,22 @@
               {% if recipe.image %}
                 <img loading="lazy" decoding="async" src="{{ recipe.image.url }}" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="{{ recipe.name }}">
               {% else %}
-                <img loading="lazy" decoding="async" src="/media/recipe_images/no_image.png" class="img-fluid mh-100 w-100 object-fit-cover rounded-start" alt="Default Image">
+                <div class="hrp-noimage" role="img" aria-label="Няма снимка"><i class="bi bi-egg-fried"></i></div>
               {% endif %}
             </div>
             <div class="col-md-5">
               <div class="card-body">
                 <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
-                <p class="card-text mb-1"><strong>⏱️:</strong> {{ recipe.time_to_prepare }} мин</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-stopwatch"></i>:</strong> {{ recipe.time_to_prepare }} мин</p>
 {#                <p class="card-text mb-1"><strong>💰:</strong> {{ recipe.user_cost }} €</p>#}
-                <p class="card-text mb-1"><strong>🔥:</strong> {{ recipe.total_calories }} kcal</p>
-                <p class="text-success small">✅ Всички продукти налични</p>
+                <p class="card-text mb-1"><strong><i class="bi bi-fire"></i>:</strong> {{ recipe.total_calories }} kcal</p>
+                <p class="text-success small"><i class="bi bi-check-circle"></i> Всички продукти налични</p>
               </div>
             </div>
             <div class="col-md-3 text-center px-3">
               <form action="{% url 'cook_recipe' recipe.id %}" method="POST">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm w-100">🍳 Приготви</button>
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-egg-fried"></i> Приготви</button>
               </form>
             </div>
           </div>
@@ -49,18 +52,18 @@
   {% endif %}
 
   {% if almost_ready %}
-    <h4 class="text-center mt-5 mb-4">🛒 Почти готови (липсват ≤ 3 продукта)</h4>
+    <h4 class="text-center mt-5 mb-4"><i class="bi bi-cart"></i> Почти готови (липсват ≤ 3 продукта)</h4>
     <div class="row">
       {% for recipe, missing_count in almost_ready %}
         <div class="col-md-6 mb-3">
-          <div class="card border-warning shadow-sm h-100">
+          <div class="card shadow-sm h-100">
             <div class="card-body">
               <h5 class="card-title"><a href="{% url 'recipe_view' recipe.id %}">{{ recipe.name }}</a></h5>
-              <p class="card-text"><strong>📂:</strong> {{ recipe.category.name }}</p>
-              <p class="card-text text-danger">❌ Липсват {{ missing_count }} продукта</p>
+              <p class="card-text"><strong><i class="bi bi-folder2-open"></i>:</strong> {{ recipe.category.name }}</p>
+              <p class="card-text text-danger"><i class="bi bi-x-circle"></i> Липсват {{ missing_count }} продукта</p>
               <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-warning btn-sm">🛒 Списък</button>
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-cart"></i> Списък</button>
               </form>
             </div>
           </div>

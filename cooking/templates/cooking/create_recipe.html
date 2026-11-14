@@ -2,14 +2,17 @@
 
 {% block content %}
 <div class="container my-4">
+  <div class="hrp-page-header">
+    <div><h1>Създай нова рецепта</h1></div>
+    <div class="actions"><a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Рецепти</a></div>
+  </div>
   <div class="card shadow-sm">
     <div class="card-body">
-      <h2 class="card-title mb-4">👨‍🍳 Създай нова рецепта</h2>
 
       <form method="post" action="{% url 'save_recipe' %}">
         {% csrf_token %}
 
-        <h4 class="mb-3">📋 Детайли</h4>
+        <h4 class="mb-3"><i class="bi bi-clipboard"></i> Детайли</h4>
 
         <div class="mb-3">
           <label for="name" class="form-label">Име:</label>
@@ -26,24 +29,24 @@
         </div>
 
         <div class="mb-3">
-          <label for="time_to_prepare" class="form-label">⏱️ Време (мин):</label>
+          <label for="time_to_prepare" class="form-label"><i class="bi bi-stopwatch"></i> Време (мин):</label>
           <input type="number" name="time_to_prepare" class="form-control" required>
         </div>
 
         <div class="mb-3">
-          <label for="instructions" class="form-label">📖 Инструкции:</label>
+          <label for="instructions" class="form-label"><i class="bi bi-book"></i> Инструкции:</label>
           <textarea name="instructions" class="form-control" rows="5"></textarea>
         </div>
 
         <div class="mb-3">
-          <label for="url_link" class="form-label">🔗 URL (по желание):</label>
+          <label for="url_link" class="form-label"><i class="bi bi-link-45deg"></i> URL (по желание):</label>
           <input type="url" name="url_link" class="form-control">
         </div>
 
-        <h4 class="mt-4 mb-3">🧪 Съставки</h4>
+        <h4 class="mt-4 mb-3"><i class="bi bi-droplet"></i> Съставки</h4>
         <div class="table-responsive">
-          <table class="table table-bordered align-middle" id="ingredientTable">
-            <thead class="table-light">
+          <table class="table align-middle" id="ingredientTable">
+            <thead>
               <tr>
                 <th>Продукт</th>
                 <th>Количество</th>
@@ -57,7 +60,7 @@
     <td>
       <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
         <option value="" disabled>Избери продукт</option>
-        <option value="new">➕ Добави нов продукт</option>
+        <option value="new">Добави нов продукт</option>
         {% for product in products %}
           <option value="{{ product.id }}" {% if product.name == "Сол" %}selected{% endif %}>{{ product.name }}</option>
         {% endfor %}
@@ -65,14 +68,14 @@
     </td>
     <td><input type="number" name="quantity[]" class="form-control" step="0.001" value="0.01" required></td>
     <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
-    <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
+    <td><button type="button" class="removeRow btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></td>
   </tr>
 
   <tr>
     <td>
       <select name="product_id[]" class="form-select" onchange="checkNewProduct(this)">
         <option value="" disabled>Избери продукт</option>
-        <option value="new">➕ Добави нов продукт</option>
+        <option value="new">Добави нов продукт</option>
         {% for product in products %}
           <option value="{{ product.id }}" {% if product.name == "Олио" %}selected{% endif %}>{{ product.name }}</option>
         {% endfor %}
@@ -80,7 +83,7 @@
     </td>
     <td><input type="number" name="quantity[]" class="form-control" step="0.001" value="0.01" required></td>
     <td><input type="text" name="unit[]" class="form-control" placeholder="по желание"></td>
-    <td><button type="button" class="removeRow btn btn-sm btn-danger">✖</button></td>
+    <td><button type="button" class="removeRow btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></button></td>
   </tr>
 </tbody>
 
@@ -88,8 +91,8 @@
         </div>
 
         <div class="d-flex gap-2 mt-3">
-          <button type="button" id="addRow" class="btn btn-outline-primary">➕ Добави съставка</button>
-          <button type="submit" class="btn btn-success">💾 Запази рецепта</button>
+          <button type="button" id="addRow" class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i> Добави съставка</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-floppy"></i> Запази рецепта</button>
         </div>
       </form>
     </div>
@@ -104,15 +107,15 @@
         {% csrf_token %}
 
         <div class="modal-header">
-          <h5 class="modal-title" id="productModalLabel">➕ Добави нов продукт</h5>
+          <h5 class="modal-title" id="productModalLabel"><i class="bi bi-plus-lg"></i> Добави нов продукт</h5>
           <button type="button" class="btn-close" onclick="closeModal()"></button>
         </div>
 
-       <div class="p-3 rounded shadow-sm bg-light border">
+       <div class="p-3 rounded shadow-sm bg-body-tertiary border">
     {{ create_product_form.as_p }}
   </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Затвори</button>
+          <button type="button" class="btn btn-outline-secondary" onclick="closeModal()">Затвори</button>
           <button type="submit" class="btn btn-primary">Запази продукта</button>
         </div>
       </form>

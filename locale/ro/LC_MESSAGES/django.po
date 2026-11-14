@@ -2,13 +2,13 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-07 19:02+0200\n"
+"POT-Creation-Date: 2026-11-14 09:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,173 +19,945 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
 "2:1));\n"
 
-#: .\shopping\templates\shopping\shopping.html:7
-msgid "Всички покупки"
-msgstr "Toate cumpărăturile"
+#, python-format
+msgid ""
+"Липсва валутен курс %(base)s → %(target)s: %(rows)s записа не са включени в "
+"сумите."
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:13
-msgid "Плати битови сметки/вътрешен разход"
-msgstr "Plătește facturi / cheltuială internă"
+#, python-format
+msgid ""
+"Няма курс %(base)s → %(target)s към датата на %(rows)s записа: използван е "
+"най-ранният наличен курс."
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:19
-msgid "Регистрирай нова покупка/разход"
-msgstr "Înregistrează o nouă achiziție / cheltuială"
+msgid "Този месец"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:27
-msgid "Покупки с всички продукти"
-msgstr "Cumpărături cu toate produsele"
+msgid "Миналия месец"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:38
-msgid "Премахни филтъра"
-msgstr "Elimină filtrul"
+msgid "3 м"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:47
-msgid "Потребител"
-msgstr "Utilizator"
+msgid "6 м"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:48
-msgid "Дата"
-msgstr "Dată"
+msgid "12 м"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:49
+msgid "От началото на годината"
+msgstr ""
+
+msgid "Всички разходи"
+msgstr ""
+
+msgid "За домакинството"
+msgstr ""
+
+msgid "Извън домакинството"
+msgstr ""
+
+msgid "Само моите"
+msgstr ""
+
+#, python-format
+msgid "%(period)s · %(scope)s · %(currency)s"
+msgstr ""
+
+msgid "Най-големи покупки"
+msgstr ""
+
+msgid "Продукт"
+msgstr ""
+
 msgid "Магазин"
 msgstr "Magazin"
 
-#: .\shopping\templates\shopping\shopping.html:50
-msgid "Общо"
-msgstr "Total"
+msgid "Дата"
+msgstr "Dată"
 
-#: .\shopping\templates\shopping\shopping.html:51
-msgid "Валута"
-msgstr "Monedă"
+msgid "Сума"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:52
-msgid "Действия"
-msgstr "Acțiuni"
+msgid "Приходи и разходи по месеци"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:67
-msgid "Редактирай"
-msgstr "Editează"
+msgid "Месец"
+msgstr ""
 
-#: .\shopping\templates\shopping\shopping.html:75
-msgid "Няма покупки към момента."
-msgstr "Nu există cumpărături momentan."
-
-#: .\templates\base.html:20
-msgid "Начало"
-msgstr "Acasă"
-
-#: .\templates\base.html:30
-msgid "Отчети/Анализи"
-msgstr "Rapoarte / Analize"
-
-#: .\templates\base.html:31 .\templates\home.html:121
-msgid "Пазаруване/Разходи"
-msgstr "Cumpărături / Cheltuieli"
-
-#: .\templates\base.html:32 .\templates\home.html:131
 msgid "Приходи"
 msgstr "Venituri"
 
-#: .\templates\base.html:33 .\templates\home.html:141
-msgid "Наличности"
-msgstr "Stocuri"
-
-#: .\templates\base.html:36 .\templates\base.html:38 .\templates\home.html:155
-msgid "Сготви"
-msgstr "Gătește"
-
-#: .\templates\base.html:41 .\templates\home.html:165
-msgid "Пари"
-msgstr "Finanțe"
-
-#: .\templates\base.html:42 .\templates\home.html:175
-msgid "Забавление"
-msgstr "Divertisment"
-
-#: .\templates\base.html:43 .\templates\home.html:185
-msgid "Форум"
-msgstr "Forum"
-
-#: .\templates\base.html:48
-msgid "Приложения"
+msgid "Разходи"
 msgstr ""
 
-#: .\templates\base.html:61 .\templates\home.html:195
-msgid "Задачи"
-msgstr "Sarcini"
+msgid "Нетно"
+msgstr ""
 
-#: .\templates\base.html:94
-msgid "Изход"
-msgstr "Ieșire"
+msgid "Спрямо същия период на предходната година"
+msgstr ""
 
-#: .\templates\base.html:98
-msgid "Влез"
-msgstr "Autentificare"
+msgid "Категория"
+msgstr ""
 
-#: .\templates\base.html:101
-msgid "Регистрирай се"
-msgstr "Înregistrare"
+msgid "Избран период"
+msgstr ""
 
-#: .\templates\home.html:21
-msgid "Въведи град..."
-msgstr "Introdu orașul..."
+msgid "Година по-рано"
+msgstr ""
 
-#: .\templates\home.html:23
+msgid "Разлика"
+msgstr ""
+
+msgid "Промяна"
+msgstr ""
+
+msgid "Общо"
+msgstr "Total"
+
+msgid "Продукти"
+msgstr ""
+
+msgid "Количество"
+msgstr ""
+
+msgid "Покупки"
+msgstr ""
+
+msgid "Средна цена"
+msgstr ""
+
+msgid "Магазини"
+msgstr ""
+
+msgid "Средно на покупка"
+msgstr ""
+
+msgid "Дял"
+msgstr ""
+
+msgid "Цени по магазини"
+msgstr ""
+
+msgid "Редовно купувани продукти"
+msgstr ""
+
+msgid "Купувани в поне 3 месеца, с устойчива единична цена"
+msgstr ""
+
+msgid "Ваша кошница"
+msgstr ""
+
+msgid "Промяна на цените"
+msgstr ""
+
+msgid "Първа цена"
+msgstr ""
+
+msgid "Последна цена"
+msgstr ""
+
+msgid "Движение на цената"
+msgstr ""
+
+msgid "Единична цена"
+msgstr ""
+
+msgid "Паричен поток по месеци"
+msgstr ""
+
+msgid "С натрупване"
+msgstr ""
+
+msgid "Спестявания"
+msgstr ""
+
+msgid "Приходи по вид"
+msgstr ""
+
+msgid "Вид приход"
+msgstr ""
+
+msgid "Бюджет спрямо реално"
+msgstr ""
+
+msgid "Планирано"
+msgstr ""
+
+msgid "Реално"
+msgstr ""
+
+msgid "Изпълнение"
+msgstr ""
+
+msgid ""
+"Кошницата е набор от продукти, чиито цени следите във времето (раздел „Цени "
+"и инфлация“)."
+msgstr ""
+
+msgid "Име на кошницата"
+msgstr ""
+
+msgid "Филтрирай продуктите…"
+msgstr ""
+
+msgid "Нямате продукти в наличностите."
+msgstr ""
+
+msgid "Към наличностите"
+msgstr ""
+
+msgid "Отказ"
+msgstr ""
+
+msgid "Експорт"
+msgstr ""
+
+msgid "Внимание: непълни валутни курсове"
+msgstr ""
+
+msgid "най-ниска цена"
+msgstr ""
+
+#, python-format
+msgid "Още %(n)s реда са в експортирания файл."
+msgstr ""
+
+msgid "Няма данни за избрания период."
+msgstr ""
+
+msgid "Отчети"
+msgstr ""
+
+msgid "Раздели на отчетите"
+msgstr ""
+
+msgid "Филтри"
+msgstr ""
+
+msgid "Период"
+msgstr ""
+
+msgid "Период…"
+msgstr ""
+
+msgid "Обхват"
+msgstr ""
+
+msgid "Валута"
+msgstr "Monedă"
+
+msgid "От"
+msgstr ""
+
+msgid "До"
+msgstr ""
+
+msgid "Приложи"
+msgstr ""
+
+msgid "Планирани разходи"
+msgstr ""
+
+msgid "частта от бюджета за периода"
+msgstr ""
+
+msgid "Реални разходи"
+msgstr ""
+
+#, python-format
+msgid "%(amount)s над плана"
+msgstr ""
+
+msgid "в рамките на плана"
+msgstr ""
+
+msgid "реално спрямо планирано"
+msgstr ""
+
+msgid "Приходи: реално / план"
+msgstr ""
+
+msgid "под плана"
+msgstr ""
+
+msgid "по план"
+msgstr ""
+
+msgid "Бюджет"
+msgstr ""
+
+msgid "Към бюджета"
+msgstr ""
+
+#, python-format
+msgid "%(spent)s от %(planned)s"
+msgstr ""
+
+msgid "в плана"
+msgstr ""
+
+msgid ""
+"Планираното е частта от бюджета, която се пада на избрания период; категория "
+"без план е разход извън бюджета"
+msgstr ""
+
+msgid "Няма подаден бюджет, който да покрива избрания период."
+msgstr ""
+
+msgid "Към бюджетите"
+msgstr ""
+
+msgid "период на минус"
+msgstr ""
+
+msgid "период на плюс"
+msgstr ""
+
+msgid "нетно като дял от приходите"
+msgstr ""
+
+#, python-format
+msgid "В %(currency)s"
+msgstr ""
+
+msgid "Нетно по месеци"
+msgstr ""
+
+msgid "Приходи минус разходи; под нулата = месец на минус"
+msgstr ""
+
+msgid "С натрупване = сбор на нетното от началото на периода"
+msgstr ""
+
+msgid "Дял от приходите за периода"
+msgstr ""
+
+msgid "Няма приходи за избрания период."
+msgstr ""
+
+msgid "Добави приход"
+msgstr ""
+
+msgid "Няма приходи и разходи за избрания период."
+msgstr ""
+
+msgid "Ниво"
+msgstr ""
+
+msgid "Всички категории"
+msgstr ""
+
+msgid "Разходи по основна категория"
+msgstr ""
+
+msgid "Разходи по подкатегория"
+msgstr ""
+
+msgid "Разходи по продукт"
+msgstr ""
+
+#, python-format
+msgid "Общо %(total)s %(currency)s · %(per_day)s на ден"
+msgstr ""
+
+msgid "изберете ред за детайли"
+msgstr ""
+
+#, python-format
+msgid "Още %(n)s са в таблицата отдясно."
+msgstr ""
+
+msgid "Няма разходи за избрания период."
+msgstr ""
+
+msgid "Същите дати една година по-рано; без категория също се брои"
+msgstr ""
+
+msgid "Количество, брой покупки и средна цена за избраното ниво"
+msgstr ""
+
+msgid "Нова кошница"
+msgstr ""
+
+msgid "Създай"
+msgstr ""
+
+msgid "Редактирай кошница"
+msgstr ""
+
+msgid "Запази промените"
+msgstr ""
+
+msgid "Похарчено"
+msgstr ""
+
+#, python-format
+msgid "%(n)s покупка"
+msgid_plural "%(n)s покупки"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "Разходи, последни 12 месеца"
+msgstr ""
+
+msgid "Спрямо предходния период"
+msgstr ""
+
+#, python-format
+msgid "тогава: %(amount)s"
+msgstr ""
+
+msgid "Спрямо година по-рано"
+msgstr ""
+
+msgid "няма данни за сравнение"
+msgstr ""
+
+msgid "Приходи, последни 12 месеца"
+msgstr ""
+
+msgid "Нетно (приходи − разходи)"
+msgstr ""
+
+#, python-format
+msgid "средно за 12 м: %(rate)s %%"
+msgstr ""
+
+msgid "няма приходи за периода"
+msgstr ""
+
+msgid "Средно на ден"
+msgstr ""
+
+#, python-format
+msgid "най-скъп ден: %(day)s · %(amount)s"
+msgstr ""
+
+msgid "Изпълнение на бюджета"
+msgstr ""
+
+msgid "няма бюджет за периода"
+msgstr ""
+
+#, python-format
+msgid "Последните 12 месеца, в %(currency)s"
+msgstr ""
+
+msgid "Изглед"
+msgstr ""
+
+msgid "Графика"
+msgstr ""
+
+msgid "Таблица"
+msgstr ""
+
+msgid "Топ 5 категории"
+msgstr ""
+
+msgid "Дял от разходите за периода"
+msgstr ""
+
+#, python-format
+msgid "Останалата %(n)s категория"
+msgid_plural "Останалите %(n)s категории"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "По основна категория за избрания период"
+msgstr ""
+
+msgid "Целият бюджет"
+msgstr ""
+
+msgid "Няма подаден бюджет, който да покрива този период."
+msgstr ""
+
+msgid "За избрания период"
+msgstr ""
+
+msgid "Няма покупки за избрания период."
+msgstr ""
+
+msgid "Лична инфлация"
+msgstr ""
+
+msgid ""
+"Индекс на цените: една и съща кошница (средните ви месечни количества) се "
+"оценява по медианната цена за всеки месец; първият месец = 100. Колко "
+"купувате не влияе - само цените."
+msgstr ""
+
+#, python-format
+msgid "%(n)s продукт"
+msgid_plural "%(n)s продукта"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 msgid "Промени"
 msgstr "Modifică"
 
-#: .\templates\home.html:35
-msgid "Weather icon"
-msgstr "Iconiță meteo"
+msgid "промяна на цените за периода"
+msgstr ""
 
-#: .\templates\home.html:49
-msgid "min"
-msgstr "min"
+msgid ""
+"Нужни са покупки на продуктите от кошницата в поне два месеца от периода."
+msgstr ""
 
-#: .\templates\home.html:50
-msgid "max"
-msgstr "max"
+msgid ""
+"Няма достатъчно покупки за индекс. Изберете по-дълъг период или създайте "
+"кошница."
+msgstr ""
 
-#: .\templates\home.html:53
-msgid "Icon"
-msgstr "Iconiță"
+msgid "Най-голямо поскъпване"
+msgstr ""
 
-#: .\templates\home.html:71
+msgid "Първа спрямо последна единична цена в периода"
+msgstr ""
+
+msgid "Няма продукт с поне две покупки в периода."
+msgstr ""
+
+msgid "Най-голямо поевтиняване"
+msgstr ""
+
+msgid "Няма поевтинели продукти в периода."
+msgstr ""
+
+msgid "Движение на цената на продукт"
+msgstr ""
+
 #, python-format
-msgid "Имаш %(tasks_today)s задачи за днес"
-msgstr "Ai %(tasks_today)s sarcini pentru azi"
+msgid "най-ниска %(low)s, най-висока %(high)s, последна %(last)s %(currency)s"
+msgstr ""
 
-#: .\templates\home.html:73 .\templates\home.html:86
+msgid "Изберете продукт"
+msgstr ""
+
+msgid "-- Изберете продукт --"
+msgstr ""
+
+msgid "Няма покупки на този продукт в избрания период."
+msgstr ""
+
+msgid "Всички продукти с поне две покупки в различни дни"
+msgstr ""
+
+msgid "празно = всички; задръжте Ctrl за няколко"
+msgstr ""
+
+msgid "Покажи"
+msgstr ""
+
+msgid "Всички"
+msgstr ""
+
+msgid "Разходи по магазин"
+msgstr ""
+
+#, python-format
+msgid "Общо %(total)s %(currency)s"
+msgstr ""
+
+msgid "Брой покупки и средна стойност на една покупка"
+msgstr ""
+
+msgid "Една и съща кошница в различни магазини"
+msgstr ""
+
+#, python-format
+msgid ""
+"%(n)s продукт, купуван във всеки от тези магазини, в обичайното количество"
+msgid_plural ""
+"%(n)s продукта, купувани във всеки от тези магазини, в обичайните количества"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "най-евтино"
+msgstr ""
+
+msgid ""
+"Средна единична цена (с отстъпките) на продукти, купувани в поне два "
+"магазина; най-ниската е отбелязана"
+msgstr ""
+
+msgid "Няма продукт, купуван в поне два магазина за периода."
+msgstr ""
+
+msgid "Без категория"
+msgstr ""
+
+msgid "Без магазин"
+msgstr ""
+
+msgid "Обзор"
+msgstr ""
+
+msgid "Категории"
+msgstr ""
+
+msgid "Цени и инфлация"
+msgstr ""
+
+msgid "Паричен поток"
+msgstr ""
+
+msgid "Името на кошницата е задължително."
+msgstr ""
+
+msgid "Вече имате кошница с това име."
+msgstr ""
+
+msgid "Кошницата е създадена."
+msgstr ""
+
+msgid "Кошницата е записана."
+msgstr ""
+
+msgid "Всички покупки"
+msgstr "Toate cumpărăturile"
+
+msgid "Покупки и разходи на домакинството, най-новите първи"
+msgstr ""
+
+msgid "Регистрирай нова покупка/разход"
+msgstr "Înregistrează o nouă achiziție / cheltuială"
+
+msgid "Плати битови сметки/вътрешен разход"
+msgstr "Plătește facturi / cheltuială internă"
+
+msgid "Покупки с всички продукти"
+msgstr "Cumpărături cu toate produsele"
+
+msgid "Премахни филтъра"
+msgstr "Elimină filtrul"
+
+msgid "Потребител"
+msgstr "Utilizator"
+
+msgid "Действия"
+msgstr "Acțiuni"
+
+msgid "Редактирай"
+msgstr "Editează"
+
+msgid "Няма покупки към момента."
+msgstr "Nu există cumpărături momentan."
+
+msgid "Меню"
+msgstr ""
+
+msgid "Търси продукт, рецепта, задача…"
+msgstr ""
+
+msgid "Търсене"
+msgstr ""
+
+msgid "Език"
+msgstr ""
+
+msgid "Тъмен режим"
+msgstr ""
+
+msgid "Профил"
+msgstr ""
+
+msgid "Домакинство"
+msgstr ""
+
+msgid "Изход"
+msgstr "Ieșire"
+
+msgid "Влез"
+msgstr "Autentificare"
+
+msgid "Регистрирай се"
+msgstr "Înregistrare"
+
+msgid "Всички права запазени."
+msgstr ""
+
+msgid "Основно меню"
+msgstr ""
+
+msgid "Затвори"
+msgstr ""
+
+#, python-format
+msgid "Здравей, %(name)s"
+msgstr ""
+
+msgid "домакинство"
+msgstr ""
+
+msgid "Нова покупка"
+msgstr ""
+
+msgid "Сметка"
+msgstr ""
+
+msgid "Приход"
+msgstr ""
+
+msgid "Задачи за днес"
+msgstr ""
+
+#, python-format
+msgid "%(n)s просрочена"
+msgid_plural "%(n)s просрочени"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "няма просрочени"
+msgstr ""
+
 msgid "Няма задачи за днес!"
 msgstr "Nu există sarcini pentru azi!"
 
-#: .\templates\home.html:77
-#, python-format
-msgid "и %(tasks_overdue)s просрочени!"
-msgstr "și %(tasks_overdue)s întârziate!"
+msgid "Виж всички"
+msgstr ""
 
-#: .\templates\home.html:81
+msgid "Похарчено този месец"
+msgstr ""
+
+#, python-format
+msgid "%(days)s ден · %(per_day)s € на ден"
+msgid_plural "%(days)s дни · %(per_day)s € на ден"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#, python-format
+msgid "Бюджет за %(month)s"
+msgstr ""
+
+#, python-format
+msgid "%(points)s пункта над темпото"
+msgstr ""
+
+msgid "в график"
+msgstr ""
+
+msgid "няма активен бюджет"
+msgstr ""
+
+msgid "Бюджети"
+msgstr ""
+
+msgid "Време"
+msgstr ""
+
+msgid "Няма данни за времето"
+msgstr ""
+
+msgid "Бюджет за месеца"
+msgstr ""
+
+#, python-format
+msgid ""
+"Реално спрямо планирано; чертата показва къде трябва да сте днес (%(pace)s "
+"%% от месеца)"
+msgstr ""
+
+#, python-format
+msgid "%(spent)s от %(planned)s €"
+msgstr ""
+
+msgid "надхвърлен"
+msgstr ""
+
+msgid "над темпото"
+msgstr ""
+
+msgid "Планирано спрямо реално по категории"
+msgstr ""
+
+msgid "Няма активен бюджет в евро за този месец."
+msgstr ""
+
+msgid "Днес"
+msgstr ""
+
+msgid "Задачи и събития"
+msgstr ""
+
+#, python-format
+msgid "Просрочена от %(date)s"
+msgstr ""
+
+msgid "За днес"
+msgstr ""
+
+msgid "просрочена"
+msgstr ""
+
+msgid "Цял ден"
+msgstr ""
+
 msgid "Виж всички задачи"
 msgstr "Vezi toate sarcinile"
 
-#: .\templates\home.html:92
-#, python-format
-msgid "Имаш %(events_today|length)s събития за днес"
-msgstr "Ai %(events_today|length)s evenimente azi"
-
-#: .\templates\home.html:94
 msgid "Виж календар"
 msgstr "Vezi calendarul"
 
-#: .\templates\home.html:99
-msgid "Няма събития за деня!"
-msgstr "Nu există evenimente pentru azi!"
+msgid "Няма задачи и събития за днес."
+msgstr ""
 
-#: .\templates\home.html:111
+msgid "Готови за готвене"
+msgstr ""
+
+msgid "Рецепти, за които имате всички продукти"
+msgstr ""
+
+msgid "липсва 1 продукт"
+msgstr ""
+
+msgid "мин"
+msgstr ""
+
+msgid "Списък"
+msgstr ""
+
+msgid "Приготви"
+msgstr ""
+
+msgid "Още рецепти"
+msgstr ""
+
+msgid "Няма рецепти, за които да имате всички продукти."
+msgstr ""
+
+msgid "Всички рецепти"
+msgstr ""
+
+msgid "Наличности под минимума"
+msgstr ""
+
+msgid "Продукти, които свършват"
+msgstr ""
+
+#, python-format
+msgid "налични %(have)s · минимум %(minimum)s"
+msgstr ""
+
+msgid "Всичко е налично."
+msgstr ""
+
+msgid ""
+"Разходи, приходи, бюджет, наличности, готвене и задачи на домакинството — на "
+"едно място."
+msgstr ""
+
 msgid "Отчети и анализи"
 msgstr "Rapoarte și analize"
 
-#: .\templates\home.html:205
+msgid "Вижте къде отиват парите по категории, магазини и месеци."
+msgstr ""
+
+msgid "Наличности"
+msgstr "Stocuri"
+
+msgid "Следете какво има вкъщи и получавайте списък за пазаруване."
+msgstr ""
+
+msgid "Сготви"
+msgstr "Gătește"
+
+msgid "Рецепти според продуктите, които имате."
+msgstr ""
+
+msgid "Въведи град..."
+msgstr "Introdu orașul..."
+
+msgid "Град"
+msgstr ""
+
+msgid "Начало"
+msgstr "Acasă"
+
+msgid "Пари"
+msgstr "Finanțe"
+
+msgid "Пазаруване"
+msgstr ""
+
+msgid "Дом"
+msgstr ""
+
+msgid "Готвене"
+msgstr ""
+
+msgid "Задачи"
+msgstr "Sarcini"
+
 msgid "Календар"
 msgstr "Calendar"
+
+msgid "Свободно време"
+msgstr ""
+
+msgid "Четене"
+msgstr ""
+
+msgid "Забавление"
+msgstr "Divertisment"
+
+msgid "Форум"
+msgstr "Forum"
+
+msgid "Приложения"
+msgstr ""
+
+#, python-format
+msgid "%(n)s резултат"
+msgid_plural "%(n)s резултата"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "Въведете поне 2 символа в полето горе."
+msgstr ""
+
+msgid "Купувани от вас"
+msgstr ""
+
+msgid "Рецепти"
+msgstr ""
+
+msgid "изпълнена"
+msgstr ""
+
+msgid "Нищо не е намерено."
+msgstr ""
+
+msgid "Няма прогноза за този ден."
+msgstr ""
+
+#~ msgid "Weather icon"
+#~ msgstr "Iconiță meteo"
+
+#~ msgid "min"
+#~ msgstr "min"
+
+#~ msgid "max"
+#~ msgstr "max"
+
+#~ msgid "Icon"
+#~ msgstr "Iconiță"
+
+#, python-format
+#~ msgid "Имаш %(tasks_today)s задачи за днес"
+#~ msgstr "Ai %(tasks_today)s sarcini pentru azi"
+
+#, python-format
+#~ msgid "Имаш %(events_today|length)s събития за днес"
+#~ msgstr "Ai %(events_today|length)s evenimente azi"
+
+#~ msgid "Няма събития за деня!"
+#~ msgstr "Nu există evenimente pentru azi!"

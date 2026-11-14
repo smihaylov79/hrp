@@ -61,9 +61,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts.js"
-        integrity="sha384-XxsZMNol0nU0LnC2cYsyhRNbfyK7CPmF7WrlFvZDdlCKn9hzVkXsHxCHVaKwkl76" crossorigin="anonymous"></script>
-<script src="{% static 'js/hrp-charts.js' %}"></script>
+{% include "includes/charts_js.html" %}
 <script>
   // the custom date inputs only take part in the form once the "Period…" panel is opened
   (function () {

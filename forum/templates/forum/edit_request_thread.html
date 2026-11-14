@@ -3,14 +3,14 @@
 {% block forum_content %}
 <div class="container mt-4">
     <div class="card shadow">
-        <div class="card-header bg-info text-white">
+        <div class="card-header">
             <h5 class="mb-0">Преглед и промяна на искане: <strong>{{ requested_thread.title }}</strong></h5>
         </div>
         <div class="card-body">
             <form method="POST">
                 {% csrf_token %}
                 {{ form }}
-                <button type="submit" class="btn btn-warning">🔄 Обнови статус</button>
+                <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-arrow-repeat"></i> Обнови статус</button>
             </form>
         </div>
     </div>

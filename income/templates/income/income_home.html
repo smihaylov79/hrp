@@ -2,27 +2,24 @@
 
 {% block content %}
 <div class="container mt-4">
-  <h2 class="text-center mb-4">💶 Всички приходи</h2>
-
-<div class="mb-3 text-end">
-      <a href="{% url 'create_income_type' %}" class="btn btn-primary">
-        ➕ Добави нов тип приход
-      </a>
+  <div class="hrp-page-header">
+    <div>
+      <h1>Всички приходи</h1>
+      <p class="sub">Приходи на домакинството, най-новите първи</p>
     </div>
-
-
-  <div class="mb-3 text-end">
-    <a href="{% url 'register_income' %}" class="btn btn-success">
-      ➕ Регистрирай нов приход
-    </a>
+    <div class="actions">
+      <a href="{% url 'register_income' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Регистрирай нов приход</a>
+      <a href="{% url 'income_type_list' %}" class="btn btn-outline-secondary"><i class="bi bi-folder2-open me-1"></i>Видове приходи</a>
+      <a href="{% url 'reports_cash_flow' %}" class="btn btn-outline-secondary"><i class="bi bi-cash-stack me-1"></i>Паричен поток</a>
+    </div>
   </div>
 
 
   <div class="card shadow-sm">
     <div class="card-body p-0">
       {% if incomes %}
-        <table class="table table-striped mb-0">
-          <thead class="table-light">
+        <table class="table mb-0">
+          <thead>
             <tr>
                 <th scope="col">Потребител</th>
               <th scope="col">Тип</th>
@@ -46,7 +43,7 @@
           </tbody>
         </table>
       {% else %}
-        <div class="p-3 text-center text-muted">
+        <div class="p-3 text-center text-body-secondary">
           Няма регистрирани приходи.
         </div>
       {% endif %}

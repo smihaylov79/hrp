@@ -1,18 +1,15 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="alert alert-info text-center p-4 shadow-sm">
-                <h2 class="mb-3">Само за регистрирани потребители</h2>
-                <p>
-                    Това съдържание е само за регистрирани потребители. Моля
-                    <a href="{% url 'login' %}?next={{ request.GET.next }}" class="btn btn-outline-primary mx-1">влез</a>
-                    или се
-                    <a href="{% url 'register' %}?next={{ request.GET.next }}" class="btn btn-outline-success mx-1">регистрирай</a>
-                    за да продължиш.
-                </p>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="hrp-card text-center" style="height:auto">
+            <div class="hrp-empty pb-2"><i class="bi bi-lock"></i></div>
+            <h1 class="h4">Само за регистрирани потребители</h1>
+            <p class="text-body-secondary">Това съдържание е само за регистрирани потребители. Моля влез или се регистрирай, за да продължиш.</p>
+            <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'login' %}?next={{ request.GET.next|urlencode }}" class="btn btn-primary">Вход</a>
+                <a href="{% url 'register' %}?next={{ request.GET.next|urlencode }}" class="btn btn-outline-primary">Регистрация</a>
             </div>
         </div>
     </div>

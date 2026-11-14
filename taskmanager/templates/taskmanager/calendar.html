@@ -8,7 +8,13 @@
 
 
 <div class="container py-5">
-  <h2 class="mb-4 text-center">📅 Календар със събития</h2>
+  <div class="hrp-page-header">
+    <div><h1>Календар със събития</h1></div>
+    <div class="actions">
+      <a href="{% url 'task_list' %}" class="btn btn-outline-secondary"><i class="bi bi-check2-square me-1"></i>Задачи</a>
+      <a href="{% url 'create_event' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Добави събитие</a>
+    </div>
+  </div>
 
   <div id="calendar"></div>
 </div>

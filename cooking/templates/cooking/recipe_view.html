@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-4">{{ recipe.name }}</h2>
+    <div class="hrp-page-header"><div><h1>{{ recipe.name }}</h1></div></div>
 
     {% if recipe.image %}
     <div class="mb-3 text-center" style="max-width: 400px; margin: auto;">
@@ -18,16 +18,11 @@
         <p><strong>Стойност:</strong> {{ recipe.user_cost }} €</p>
     </div>
 
-    <h4 class="mt-4">🥣 Съставки:</h4>
+    <h4 class="mt-4"><i class="bi bi-cup-hot"></i> Съставки:</h4>
     <ul class="list-group mb-4">
         {% for ingredient in recipe.ingredients_list %}
             {% with available_quantity=user_inventory|dict_lookup:ingredient.product.id %}
-            <li class="list-group-item d-flex justify-content-between
-                {% if available_quantity is not None and available_quantity < ingredient.quantity %}
-                    text-danger
-                {% else %}
-                    text-success
-                {% endif %}">
+            <li class="list-group-item d-flex justify-content-between {% if available_quantity is not None and available_quantity < ingredient.quantity %} text-danger {% else %} text-success {% endif %}">
                 <span>{{ ingredient.product.name }} - {{ ingredient.quantity }}</span>
                 <span>(наличност: {{ available_quantity|default_if_none:0 }})</span>
             </li>
@@ -35,8 +30,8 @@
         {% endfor %}
     </ul>
 
-    <h4 class="mt-4">📜 Инструкции:</h4>
-    <div class="border rounded p-3 bg-light mb-4">
+    <h4 class="mt-4"><i class="bi bi-file-text"></i> Инструкции:</h4>
+    <div class="border rounded p-3 bg-body-tertiary mb-4">
         {{ recipe.instructions|safe }}
     </div>
 
@@ -47,20 +42,20 @@
     {% if not recipe.user_availability %}
     <form action="{% url 'generate_recipe_shopping_list' recipe.id %}" method="POST" class="mb-3">
         {% csrf_token %}
-        <button type="submit" class="btn btn-warning">🛒 Генерирай списък за пазаруване</button>
+        <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-cart"></i> Генерирай списък за пазаруване</button>
     </form>
     {% endif %}
 
     <form action="{% url 'cook_recipe' recipe.id %}" method="POST" class="d-flex justify-content-between align-items-center">
         {% csrf_token %}
-        <button type="submit" class="btn btn-success">👨‍🍳 Приготви</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-egg-fried"></i> Приготви</button>
         <div>
-            <span class="text-muted me-3">Приготвяна <strong>{{ times_cooked }}</strong> пъти</span>
-            <span class="text-muted">Последно на: <strong>{{ last_cooked }}</strong></span>
+            <span class="text-body-secondary me-3">Приготвяна <strong>{{ times_cooked }}</strong> пъти</span>
+            <span class="text-body-secondary">Последно на: <strong>{{ last_cooked }}</strong></span>
         </div>
     </form>
 <div class="text-center">
-<a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към рецепти</a>
+<a href="{% url 'recipe_list' %}" class="btn btn-outline-secondary mt-4"><i class="bi bi-arrow-left"></i> Обратно към рецепти</a>
 </div>
 </div>
 {% endblock %}

@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h2>Домакинство: {{ household.nickname }}</h2>
+<div class="hrp-page-header"><div><h1>Домакинство: {{ household.nickname }}</h1></div></div>
 <p><strong>Адрес:</strong> {{ household.address }}</p>
 <p><strong>Собственик:</strong> {{ household.owner.get_full_name }}</p>
 

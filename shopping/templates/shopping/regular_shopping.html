@@ -3,29 +3,33 @@
 {% block content %}
 
 <div class="my-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="{% url 'shopping' %}" class="btn btn-outline-primary">🛒 Виж всички покупки</a>
+  <div class="hrp-page-header">
+    <div>
+      <h1>Създай нова покупка</h1>
+      <p class="sub">Добавете продуктите, изберете магазин и дата и запишете</p>
+    </div>
+    <div class="actions align-items-center">
+    <a href="{% url 'shopping' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Виж всички покупки</a>
 
     <form method="get" class="d-flex align-items-center">
-      <label for="list-select" class="me-2 mb-0">Зареди от списък:</label>
+      <label for="list-select" class="me-2 mb-0 text-nowrap">Зареди от списък:</label>
       <select name="list" id="list-select" class="form-select" onchange="this.form.submit()">
         <option value="">-- избери --</option>
         {% for sl in shopping_lists %}
           <option value="{{ sl.id }}" {% if request.GET.list == sl.id|stringformat:"s" %}selected{% endif %}>
-            {{ sl.date_generated }}
-          </option>
+           {{ sl.date_generated }}
+         </option>
         {% endfor %}
       </select>
     </form>
+    </div>
   </div>
-
-  <h2 class="mb-4">🆕 Създай нова покупка</h2>
 
   <form id="shopping-form" action="{% url 'regular_shopping' %}" method="POST">
     {% csrf_token %}
 
-  <button class="btn btn-info mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterCard" aria-expanded="false" aria-controls="filterCard">
-  🔍 Покажи/Скрий бързи филтри
+  <button class="btn btn-outline-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterCard" aria-expanded="false" aria-controls="filterCard">
+  <i class="bi bi-search"></i> Покажи/Скрий бързи филтри
 </button>
 
 <div class="collapse" id="filterCard">
@@ -33,7 +37,7 @@
 
       <div class="row g-3 mb-3">
   <div class="col-md-4">
-    <h5>🗂️ Основна категория:</h5>
+    <h5><i class="bi bi-folder"></i> Основна категория:</h5>
     <div class="btn-group flex-wrap" role="group" id="main-category-buttons">
       <button type="button" class="btn btn-outline-primary active" onclick="filterMain('all')">Всички</button>
       {% for main in main_categories %}
@@ -42,7 +46,7 @@
     </div>
   </div>
   <div class="col-md-8">
-    <h5>📂 Подкатегория:</h5>
+    <h5><i class="bi bi-folder2-open"></i> Подкатегория:</h5>
     <div class="btn-group flex-wrap" role="group" id="subcategory-buttons">
       <button type="button" class="btn btn-outline-secondary active" onclick="filterSubcategory('all')" data-main="all">Всички</button>
       {% for category in categories %}
@@ -61,13 +65,13 @@
 
   <div class="mb-3 d-flex align-items-end gap-2">
   <div class="flex-grow-1">
-    <label for="product-search" class="form-label">🔍 Търсене на продукт:</label>
+    <label for="product-search" class="form-label"><i class="bi bi-search"></i> Търсене на продукт:</label>
     <input type="text" id="product-search" class="form-control" placeholder="Въведи име на продукта..." onkeyup="filterProductsByName()">
   </div>
   <div class="mb-1">
     <label class="form-label invisible">Добави</label>
       <button type="button" class="btn btn-outline-secondary btn-sm" onclick="checkNewProduct({ value: 'new' })">
-  ➕ Добави нов продукт
+  <i class="bi bi-plus-lg"></i> Добави нов продукт
 </button>
   </div>
 </div>
@@ -97,8 +101,8 @@
           </div>
         </div>
 
-        <button type="button" class="btn btn-sm btn-success w-100 add-to-shopping" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}">
-          ➕ Добави
+        <button type="button" class="btn btn-sm btn-primary w-100 add-to-shopping" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}">
+          <i class="bi bi-plus-lg"></i> Добави
         </button>
       </div>
     </div>
@@ -109,22 +113,22 @@
 
 <p></p>
     <div class="mb-3">
-      <label for="shop" class="form-label">🛍️ Избери магазин:</label>
+      <label for="shop" class="form-label"><i class="bi bi-bag"></i> Избери магазин:</label>
         {{ form.shop }}
     </div>
 
     <div class="mb-3">
-      <label for="date" class="form-label">📅 Дата на покупка:</label>
+      <label for="date" class="form-label"><i class="bi bi-calendar3"></i> Дата на покупка:</label>
         {{ form.date }}
     </div>
   <div class="mb-3">
-      <label for="currency" class="form-label">💵 Валута:</label>
+      <label for="currency" class="form-label"><i class="bi bi-cash"></i> Валута:</label>
         {{ form.currency }}
     </div>
 
-    <h4 class="mt-4">🧺 Преглед на покупката</h4>
-  <table class="table table-bordered table-sm mt-3">
-  <thead class="table-light">
+    <h4 class="mt-4"><i class="bi bi-basket"></i> Преглед на покупката</h4>
+  <table class="table table-sm mt-3">
+  <thead>
     <tr>
       <th>Продукт</th>
       <th>Количество</th>
@@ -142,7 +146,7 @@
     <p id="total-amount" class="fw-bold">Общо: 0.00</p>
 
     <input type="hidden" id="selected-products" name="selected_products">
-    <button type="button" id="submit-shopping" class="btn btn-primary">💾 Запази покупката</button>
+    <button type="button" id="submit-shopping" class="btn btn-primary"><i class="bi bi-floppy"></i> Запази покупката</button>
   </form>
 </div>
 
@@ -282,15 +286,15 @@ notForHouseholdCheckbox.addEventListener("change", function () {
         {% csrf_token %}
 
         <div class="modal-header">
-          <h5 class="modal-title" id="productModalLabel">➕ Добави нов продукт</h5>
+          <h5 class="modal-title" id="productModalLabel"><i class="bi bi-plus-lg"></i> Добави нов продукт</h5>
           <button type="button" class="btn-close" onclick="closeModal()"></button>
         </div>
 
-       <div class="p-3 rounded shadow-sm bg-light border">
+       <div class="p-3 rounded shadow-sm bg-body-tertiary border">
     {{ create_product_form.as_p }}
   </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">Затвори</button>
+          <button type="button" class="btn btn-outline-secondary" onclick="closeModal()">Затвори</button>
           <button type="submit" class="btn btn-primary">Запази продукта</button>
         </div>
       </form>

@@ -3,15 +3,15 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">🛍️ Списъци за пазаруване</h2>
+    <div class="hrp-page-header"><div><h1><i class="bi bi-bag"></i> Списъци за пазаруване</h1></div></div>
 
-    <button onclick="toggleFilter()" class="btn btn-outline-warning mb-3" id="filter-toggle-btn">
-        🚫 Покажи неизпълнени
+    <button onclick="toggleFilter()" class="btn btn-outline-secondary mb-3" id="filter-toggle-btn">
+        <i class="bi bi-slash-circle"></i> Покажи неизпълнени
     </button>
 
     <div class="table-scroll-wrapper table-responsive" style="max-height: 500px; overflow-y: auto;">
-        <table class="table table-bordered table-striped align-middle">
-            <thead class="table-light">
+        <table class="table align-middle">
+            <thead>
                 <tr>
                     <th>Дата / Рецепта</th>
                     <th>Статус</th>
@@ -22,11 +22,11 @@
                 {% for shopping_list in shopping_lists %}
                 <tr class="list-row {% if shopping_list.executed %}executed{% else %}unexecuted{% endif %}">
                     <td>{{ shopping_list.date_generated }}</td>
-                    <td>{% if shopping_list.executed %}✅ Изпълнен{% else %}❌ Неизпълнен{% endif %}</td>
+                    <td>{% if shopping_list.executed %}<i class="bi bi-check-circle"></i> Изпълнен{% else %}<i class="bi bi-x-circle"></i> Неизпълнен{% endif %}</td>
                     <td>
-                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="btn btn-sm btn-outline-info">🔍 Преглед</a>
+                        <a href="{% url 'shopping_list_view' shopping_list.id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i> Преглед</a>
                         {% if not shopping_list.executed %}
-                        <a href="{% url 'execute_shopping_list' shopping_list.id %}" class="btn btn-sm btn-outline-success">✅ Изпълни</a>
+                        <a href="{% url 'execute_shopping_list' shopping_list.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-check-circle"></i> Изпълни</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -34,11 +34,11 @@
                 {% for recipe_list in recipe_shopping_lists %}
                 <tr class="list-row {% if recipe_list.executed %}executed{% else %}unexecuted{% endif %}">
                     <td>{{ recipe_list.recipe_name }}</td>
-                    <td>{% if recipe_list.executed %}✅ Изпълнен{% else %}❌ Неизпълнен{% endif %}</td>
+                    <td>{% if recipe_list.executed %}<i class="bi bi-check-circle"></i> Изпълнен{% else %}<i class="bi bi-x-circle"></i> Неизпълнен{% endif %}</td>
                     <td>
-                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="btn btn-sm btn-outline-info">🔍 Преглед</a>
+                        <a href="{% url 'recipe_shopping_list_view' recipe_list.id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i> Преглед</a>
                         {% if not recipe_list.executed %}
-                        <a href="{% url 'execute_recipe_shopping_list' recipe_list.id %}" class="btn btn-sm btn-outline-success">✅ Изпълни</a>
+                        <a href="{% url 'execute_recipe_shopping_list' recipe_list.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-check-circle"></i> Изпълни</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -48,7 +48,7 @@
     </div>
 
     <div class="text-center">
-        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4">🔙 Обратно към наличности</a>
+        <a href="{% url 'inventory' %}" class="btn btn-outline-secondary mt-4"><i class="bi bi-arrow-left"></i> Обратно към наличности</a>
     </div>
 
 

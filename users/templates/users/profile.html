@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-5 text-center">Профил</h2>
+    <div class="hrp-page-header"><div><h1>Профил</h1></div></div>
 
     <div class="row">
         <!-- Left Column: Profile & Password -->
         <div class="col-md-6">
             <div class="mb-4">
                 <h4 class="mb-3">Редактиране на профил</h4>
-                <form method="post" class="p-3 bg-light rounded shadow-sm">
+                <form method="post" class="p-3 bg-body-tertiary rounded shadow-sm">
                     {% csrf_token %}
                     {% for field in profile_form %}
                         <div class="row mb-3 align-items-center">
                             {{ field.label_tag }}
                             {{ field }}
                             {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text }}</small>
+                                <small class="form-text text-body-secondary">{{ field.help_text }}</small>
                             {% endif %}
                             {% for error in field.errors %}
                                 <div class="text-danger">{{ error }}</div>
@@ -28,7 +28,7 @@
 
             <div>
                 <h4 class="mb-3">Смяна на парола</h4>
-                <form method="post" class="p-3 bg-light rounded shadow-sm">
+                <form method="post" class="p-3 bg-body-tertiary rounded shadow-sm">
                     {% csrf_token %}
                     {% for field in password_form %}
                         <div class="row mb-3 align-items-center">
@@ -39,7 +39,7 @@
                             {% endfor %}
                         </div>
                     {% endfor %}
-                    <button type="submit" name="change_password" class="btn btn-warning w-100">Смени паролата</button>
+                    <button type="submit" name="change_password" class="btn btn-outline-secondary w-100">Смени паролата</button>
                 </form>
             </div>
         </div>
@@ -54,8 +54,8 @@
             <form method="post" class="d-inline">
                 {% csrf_token %}
                 <input type="hidden" name="membership_id" value="{{ req.id }}">
-                <button type="submit" name="approve_request" class="btn btn-sm btn-success">Одобри</button>
-                <button type="submit" name="reject_request" class="btn btn-sm btn-danger">Откажи</button>
+                <button type="submit" name="approve_request" class="btn btn-sm btn-primary">Одобри</button>
+                <button type="submit" name="reject_request" class="btn btn-sm btn-outline-danger">Откажи</button>
             </form>
         {% endfor %}
     </div>
@@ -78,12 +78,12 @@
         <p><strong>Псевдоним:</strong> {{ user_household.nickname }}</p>
         <p><strong>Адрес:</strong> {{ user_household.address }}</p>
         <p><strong>Собственик:</strong> {{ user_household.owner.get_full_name }}</p>
-        <a href="{% url 'household' user_household.pk %}" class="btn btn-outline-success mt-2">Преглед на домакинството</a>
+        <a href="{% url 'household' user_household.pk %}" class="btn btn-outline-primary mt-2">Преглед на домакинството</a>
 
     {% if user_household.owner != request.user %}
 <form method="POST" action="{% url 'leave_household' %}">
     {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Напусни домакинството</button>
+    <button type="submit" class="btn btn-outline-danger">Напусни домакинството</button>
 </form>
 {% endif %}
 
@@ -93,7 +93,7 @@
             <div class="col-md-6">
     <div class="mb-4">
         <h4 class="mb-3">Създай домакинство</h4>
-        <form method="post" class="p-3 bg-light rounded shadow-sm">
+        <form method="post" class="p-3 bg-body-tertiary rounded shadow-sm">
             {% csrf_token %}
             {% for field in household_form %}
                 <div class="mb-3">
@@ -101,7 +101,7 @@
                     {{ field }}
                 </div>
             {% endfor %}
-            <button type="submit" name="create_household" class="btn btn-success w-100">Създай</button>
+            <button type="submit" name="create_household" class="btn btn-primary w-100">Създай</button>
         </form>
     </div>
             </div>
@@ -109,7 +109,7 @@
     <div>
     <div class="col-md-6">
         <h4 class="mb-3">Присъедини се към домакинство</h4>
-        <form method="post" class="p-3 bg-light rounded shadow-sm">
+        <form method="post" class="p-3 bg-body-tertiary rounded shadow-sm">
             {% csrf_token %}
             {% for field in join_form %}
                 <div class="mb-3">
@@ -117,7 +117,7 @@
                     {{ field }}
                 </div>
             {% endfor %}
-            <button type="submit" name="join_household" class="btn btn-info w-100">Изпрати заявка</button>
+            <button type="submit" name="join_household" class="btn btn-outline-primary w-100">Изпрати заявка</button>
         </form>
     </div>
     </div>
