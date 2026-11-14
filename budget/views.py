@@ -268,8 +268,8 @@ def track_budget(request, pk):
     income_items = BudgetIncomeItem.objects.filter(budget=budget)
     today = date.today()
     total_days = (budget.date_to - budget.date_from).days + 1
-    # days_passed = max(0, min((today - budget.date_from).days + 1, total_days))
-    days_passed = (today - budget.date_from).days + 1
+    # a budget that has not started yet has 0 days behind it; a finished one has all of them
+    days_passed = max(0, min((today - budget.date_from).days + 1, total_days))
 
     time_percent = round(days_passed / total_days * 100, 2)
 
@@ -283,7 +283,7 @@ def track_budget(request, pk):
     income_qs = Income.objects.filter(user__in=users_scope, date_received__range=(budget.date_from, budget.date_to))
     income_df = income_db_to_df(income_qs, budget.currency)
     actual_income = income_df['total'].sum()
-    planned_income = float(income_items.aggregate(Sum('planned_amount'))['planned_amount__sum'])
+    planned_income = float(income_items.aggregate(Sum('planned_amount'))['planned_amount__sum'] or 0)
 
     tracking = []
     for item in items:
@@ -291,7 +291,7 @@ def track_budget(request, pk):
         actual = actual_by_category.get(item.category.name, 0)
         ytd_planned = (planned  / total_days) * days_passed
         percent_ytd = 0
-        if planned > 0:
+        if planned > 0 and ytd_planned > 0:
             percent_ytd = round((float(actual) / float(ytd_planned) * 100), 2)
         tracking.append({
             "category": item.category.name,

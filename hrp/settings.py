@@ -77,7 +77,6 @@ PROJECT_APPS = [
     'budget',
     'fastapps',
     "fastapps.change_calculator",
-    # 'help_pages',
 ]
 
 INSTALLED_APPS = [
@@ -129,27 +128,6 @@ WSGI_APPLICATION = 'hrp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': os.getenv('DB_HOST'),
-#         'PORT': '5432',
-#     }
-# }
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.getenv('DB_NAME'),
-#         'USER': os.getenv('DB_USER'),
-#         'PASSWORD': os.getenv('DB_PASSWORD'),
-#         'HOST': '127.0.0.1',
-#         'PORT': '3306',
-#     }
-# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -237,9 +215,6 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 
 FAST_API_URL = os.getenv('NGROK_URL')
 
-# WAGTAIL_ADMIN_BASE_URL = 'admin'
-#
-# WAGTAIL_SITE_NAME = "Hoseholdiq"
 LANGUAGES = [
     ('bg', 'Bulgarian'),
     ('en', 'English'),

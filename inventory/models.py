@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 from shopping.models import Product, ProductCategory
@@ -19,11 +21,13 @@ class BaseInventoryProduct(models.Model):
     class Meta:
         abstract = True
 
+    def average_price_now(self):
+        """amount / quantity, rounded to cents; 0 when there is no stock."""
+        quantity, amount = Decimal(str(self.quantity)), Decimal(str(self.amount))
+        return (amount / quantity).quantize(Decimal('0.01')) if quantity > 0 else Decimal('0.00')
+
     def calculate_average_price(self):
-        if self.quantity > 0:
-            self.average_price = round(self.amount / self.quantity, 2)
-        else:
-            self.average_price = 0.00
+        self.average_price = self.average_price_now()
         self.save()
 
 
@@ -44,7 +48,7 @@ class InventoryProduct(BaseInventoryProduct):
     @staticmethod
     def bulk_update_inventory(data, user):
         """Update the given rows ({id: {field: value}}) - only rows that belong to `user`."""
-        products = InventoryProduct.objects.filter(id__in=data.keys(), user=user)
+        products = list(InventoryProduct.objects.filter(id__in=data.keys(), user=user))
         for product in products:
             updates = data[str(product.id)]
             product.quantity = updates.get("quantity", product.quantity)
@@ -52,9 +56,7 @@ class InventoryProduct(BaseInventoryProduct):
             product.daily_consumption = updates.get("daily_consumption", product.daily_consumption)
             product.minimum_quantity = updates.get("minimum_quantity", product.minimum_quantity)
             product.inventory_related = updates.get("inventory_related", product.inventory_related)
-
-            # Recalculate average price before saving
-            product.calculate_average_price()
+            product.average_price = product.average_price_now()      # saved once, by bulk_update below
 
         InventoryProduct.objects.bulk_update(products, ["quantity", "amount", "average_price", "daily_consumption",
                                                         "minimum_quantity", "inventory_related"])
@@ -80,7 +82,7 @@ class HouseholdInventoryProduct(BaseInventoryProduct):
     @staticmethod
     def bulk_update_inventory(data, household):
         """Update the given rows ({id: {field: value}}) - only rows that belong to `household`."""
-        products = HouseholdInventoryProduct.objects.filter(id__in=data.keys(), household=household)
+        products = list(HouseholdInventoryProduct.objects.filter(id__in=data.keys(), household=household))
         for product in products:
             updates = data[str(product.id)]
             product.quantity = updates.get("quantity", product.quantity)
@@ -88,7 +90,7 @@ class HouseholdInventoryProduct(BaseInventoryProduct):
             product.daily_consumption = updates.get("daily_consumption", product.daily_consumption)
             product.minimum_quantity = updates.get("minimum_quantity", product.minimum_quantity)
             product.inventory_related = updates.get("inventory_related", product.inventory_related)
-            product.calculate_average_price()
+            product.average_price = product.average_price_now()      # saved once, by bulk_update below
 
         HouseholdInventoryProduct.objects.bulk_update(
             products,

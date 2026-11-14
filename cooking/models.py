@@ -26,35 +26,16 @@ class Recipe(models.Model):
     total_calories = models.IntegerField(default=0)
 
     def check_availability(self, user):
-        household = None
-        if user:
-            household = user.household
-        if household:
-            user_inventory = HouseholdInventoryProduct.objects.filter(household=household,
-                                                             product__in=[ingredient.product for ingredient in
-                                                                          self.recipe_ingredients.all()])
-        else:
-            user_inventory = InventoryProduct.objects.filter(user=user,
-                product__in=[ingredient.product for ingredient in self.recipe_ingredients.all()])
-        product_quantity_map = {item.product.id: item.quantity for item in user_inventory}
-
-        for ingredient in self.recipe_ingredients.all():
-            if product_quantity_map.get(ingredient.product.id, 0) < ingredient.quantity:
-                return "Липсващи продукти"
-        return "OK"
+        """"OK" when the user has enough of every ingredient (see cooking/services.py)."""
+        from .services import inventory_maps, missing_ingredients
+        _prices, quantities = inventory_maps(user)
+        return "OK" if missing_ingredients(self, quantities) == 0 else "Липсващи продукти"
 
     def calculate_cost(self, user):
-        household = user.household
-        if household:
-            user_products = HouseholdInventoryProduct.objects.filter(household=household)
-        else:
-            user_products = InventoryProduct.objects.filter(user=user)
-
-        product_price_map = {up.product.id: up.average_price for up in user_products}
-        total_cost = sum(product_price_map.get(ingredient.product.id, 0) * ingredient.quantity
-                         for ingredient in self.recipe_ingredients.all()
-                         )
-        return round(total_cost, 2)
+        """Cost of the recipe at the user's average prices (see cooking/services.py)."""
+        from .services import inventory_maps, recipe_cost
+        prices, _quantities = inventory_maps(user)
+        return recipe_cost(self, prices)
 
     def update_total_calories(self):
         ingredients = self.recipe_ingredients.select_related("product")

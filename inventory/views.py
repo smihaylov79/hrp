@@ -1,10 +1,12 @@
 from datetime import date
+from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.views.decorators.http import require_POST
 
 import pandas as pd
 
@@ -88,9 +90,11 @@ def update_inventory(request):
                     data[product_id][field] = value == "true"
                 else:
                     try:
-                        data[product_id][field] = float(value)
-                    except ValueError:
-                        data[product_id][field] = 0.0
+                        number = Decimal(value.strip().replace(",", "."))
+                    except (InvalidOperation, ValueError):
+                        continue        # not a number: leave the stored value as it is
+                    if number.is_finite() and number >= 0:
+                        data[product_id][field] = number
 
         if household:
             HouseholdInventoryProduct.bulk_update_inventory(data, household)
@@ -130,6 +134,7 @@ def user_category_settings(request):
 
 
 @login_required
+@require_POST
 def generate_shopping_list(request):
     user = request.user
     household = user.household

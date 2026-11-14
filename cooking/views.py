@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from cooking.models import Recipe, RecipeCategory, RecipeIngredient, HouseholdRecipeTimesCooked, RecipeTimesCooked, \
     UserFavouriteRecipe, UserFavoriteRecipeData
@@ -169,10 +170,11 @@ def save_recipe(request):
 
 
 @login_required
+@require_POST
 def cook_recipe(request, recipe_id):
     user = request.user
     household = user.household
-    recipe = Recipe.objects.get(id=recipe_id)
+    recipe = get_object_or_404(Recipe, id=recipe_id)
     if household:
         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
     else:
@@ -207,10 +209,11 @@ def cook_recipe(request, recipe_id):
 
 
 @login_required
+@require_POST
 def generate_recipe_shopping_list(request, recipe_id):
     user = request.user
     household = user.household
-    recipe = Recipe.objects.get(id=recipe_id)
+    recipe = get_object_or_404(Recipe, id=recipe_id)
     if household:
         user_inventory = HouseholdInventoryProduct.objects.filter(household=household)
     else:
@@ -454,6 +457,7 @@ def delete_group_ajax(request, group_id):
 
 
 @login_required
+@require_POST
 def generate_group_shopping_list(request, group_id):
     user = request.user
     household = user.household

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 
-from hrp.testing import HrpTestCase, known_bug, make_income, make_purchase
+from hrp.testing import HrpTestCase, make_income, make_purchase
 from income.models import IncomeType
 
 from .models import Budget, BudgetApproval, BudgetIncomeItem, BudgetItem
@@ -71,7 +71,6 @@ class BudgetOwnershipTests(HrpTestCase):
         self.home_budget.refresh_from_db()
         self.assertTrue(self.home_budget.approved)
 
-    @known_bug('Phase 7: Budget.scope_users() returns a list for solo budgets -> detail page crashes')
     def test_solo_user_can_open_own_budget(self):
         self.client.force_login(self.alice)
         self.assertEqual(self.client.get(self.url('budget_detail', self.alice_budget)).status_code, 200)
@@ -117,3 +116,22 @@ class BudgetOwnershipTests(HrpTestCase):
         self.assertRedirects(response, self.url('budget_detail', self.home_budget), fetch_redirect_response=False)
         self.assertEqual(self.home_budget.items.get().planned_amount, Decimal('250'))
         self.assertEqual(self.home_budget.income_items.get().planned_amount, Decimal('900'))
+
+    def test_tracking_a_budget_without_planned_income_or_before_it_starts(self):
+        from datetime import timedelta
+        future = Budget.objects.create(name='Догодина', creator=self.alice, currency='EUR', submitted=True,
+                                       date_from=date.today() + timedelta(days=30),
+                                       date_to=date.today() + timedelta(days=394))
+        BudgetItem.objects.create(budget=future, category=self.main_food, planned_amount=1000)
+        self.client.force_login(self.alice)
+        response = self.client.get(self.url('track_budget', future))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['planned_income'], 0)
+        self.assertEqual(response.context['time_percent'], 0)
+
+    def test_solo_budget_is_approved_by_its_creator_only(self):
+        self.assertEqual(list(self.alice_budget.scope_users()), [self.alice])
+        self.assertEqual(set(self.home_budget.scope_users()), {self.carol, self.dave})
+        self.assertFalse(self.alice_budget.check_all_approved())
+        BudgetApproval.objects.create(budget=self.alice_budget, user=self.alice, approved=True)
+        self.assertTrue(self.alice_budget.check_all_approved())

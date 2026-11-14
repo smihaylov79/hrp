@@ -8,7 +8,11 @@
                 <p class="sub">{% if household %}Продукти на домакинство {{ household.name }} · {{ total_amount|default:0 }} €{% else %}Твоите продукти{% endif %}</p>
             </div>
             <div class="actions">
-                <a href="{% url 'generate_shopping_list' %}" class="btn btn-primary"><i class="bi bi-cart me-1"></i>Генерирай списък</a>
+                <form method="post" action="{% url 'generate_shopping_list' %}" class="d-inline"
+                      onsubmit="return confirm('Ще се създаде нов списък за пазаруване и наличностите ще се намалят с изразходваното от последния списък. Продължавате ли?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-cart me-1"></i>Генерирай списък</button>
+                </form>
                 <a href="{% url 'all_shopping_lists' %}" class="btn btn-outline-secondary"><i class="bi bi-list-check me-1"></i>Преглед на списъци</a>
                 <a href="{% url 'user_category_settings' %}" class="btn btn-outline-secondary"><i class="bi bi-gear me-1"></i>Управление на категории</a>
             </div>

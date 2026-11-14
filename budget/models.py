@@ -37,7 +37,7 @@ class Budget(models.Model):
         """Връща потребителите, за които важи бюджетът"""
         if self.household:
             return CustomUser.objects.filter(household=self.household)
-        return [self.creator]
+        return CustomUser.objects.filter(pk=self.creator_id)      # always a queryset
 
     def check_all_approved(self):
         required_users = set(self.scope_users().values_list("id", flat=True))

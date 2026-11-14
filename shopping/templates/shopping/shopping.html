@@ -44,7 +44,7 @@
           <th>{% trans "Потребител" %}</th>
           <th>{% trans "Дата" %}</th>
           <th>{% trans "Магазин" %}</th>
-          <th>{% trans "Общо" %}</th>
+          <th class="num">{% trans "Общо" %}</th>
           <th>{% trans "Валута" %}</th>
           <th>{% trans "Действия" %}</th>
         </tr>
@@ -56,7 +56,7 @@
           <td>{{ shopping.user.first_name }}</td>
           <td>{{ shopping.date }}</td>
           <td>{{ shopping.shop.name }}</td>
-          <td>{{ shopping.total_amount }}</td>
+          <td class="num">{{ shopping.total|default:0|floatformat:2 }}</td>
           <td>{{ shopping.currency }}</td>
           <td>
             <a href="{% url 'edit_shopping' shopping.id %}?product_id={{ selected_product_id }}"

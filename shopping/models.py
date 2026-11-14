@@ -1,4 +1,7 @@
+from decimal import Decimal
+
 from django.db import models
+from django.db.models import Sum
 from django.db.models import TextChoices
 
 from users.models import *
@@ -66,10 +69,11 @@ class Shopping(models.Model):
         ]
 
     def total_amount(self):
-        return sum(sp.amount for sp in self.shopping_products.all())
+        """Sum of the purchase's lines (after discounts). One query; lists annotate ``total`` instead."""
+        return self.shopping_products.aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
     def total_discount(self):
-        return sum(sp.discount for sp in self.shopping_products.all())
+        return self.shopping_products.aggregate(total=Sum('discount'))['total'] or Decimal('0')
 
     def __str__(self):
         return f"{self.shop.name} : {self.date}"
@@ -91,7 +95,8 @@ class ShoppingProduct(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        self.amount = self.quantity * self.price - self.discount
+        # the field defaults are floats: convert so that a line saved without e.g. a discount still adds up
+        self.amount = (Decimal(str(self.quantity)) * Decimal(str(self.price)) - Decimal(str(self.discount or 0)))
         super().save(*args, **kwargs)
 
     def __str__(self):

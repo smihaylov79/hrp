@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 6**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 7**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -70,6 +70,7 @@ Run: `python manage.py migrate`
 | `reports.0005_exchange_rate_keeps_given_date` (Phase 2) | `ExchangeRate.date_extracted` default = today instead of forced "now" | No |
 | `shopping.0020_user_date_index` (Phase 4) | Adds index (user, date) on purchases | No |
 | `income.0003_user_date_index` (Phase 4) | Adds index (user, date_received) on incomes | No |
+| `taskmanager.0004_task_due_date_local_today` (Phase 7) | Default due date of a new task = today in Sofia time (was UTC "now") | No |
 
 - [ ] `python manage.py migrate`
 - [ ] `python manage.py makemigrations --check` must print "No changes detected".
@@ -142,6 +143,9 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 - [ ] Pages have their styling (proves `collectstatic` ran) and recipe / book images load (media mapping).
 - [ ] Inventory: change a quantity and save. Cooking → Favourites: create/rename/delete a group (CSRF check).
 - [ ] Log out and open `/reports/price-changes/` — you are redirected to the login page.
+- [ ] Inventory → "Генерирай списък" asks for confirmation and then opens the new list (it is a button now:
+      opening the old address directly no longer creates a list or changes stock).
+- [ ] Register a purchase of a product you already have in stock: its row in Inventory grows, no second row appears.
 - [ ] An error page shows the plain "Server Error (500)" text, not the yellow debug page (proves DEBUG is off).
 
 ---------------------------------------------------------------------------------------------------
@@ -155,6 +159,12 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
   recipe category or product is saved in the app or the admin. A change made directly in MySQL shows up after
   at most 1 hour (or immediately after `python manage.py shell -c "from django.core.cache import cache; cache.clear()"`).
 - Weather is cached 30 minutes per city; electricity / heating prices 24 hours.
+- **Duplicate inventory rows (found in Phase 7):** the local copy of the data has 4 products with two inventory
+  rows in the household (created by the old "category changed" bug). New purchases now always use the oldest
+  row and no new duplicates are created; merging the existing ones is a data change and is part of Phase 8
+  (with the owner). Until then those products show twice in Inventory.
+- Actions that change data are POST-only now: generate shopping list, cook recipe, recipe / menu shopping list,
+  add product. All buttons in the site already use POST; only a hand-typed address would get "405".
 - **Translations:** English is complete for the new layout, dashboard and Reports. Romanian and Greek only
   have the 31 older texts; everything new falls back to Bulgarian there until someone translates
   `locale/ro/…/django.po` and `locale/el/…/django.po` and runs `python manage.py compilemessages`
@@ -181,5 +191,6 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
 | 4 | `createcachetable`, index migrations `shopping.0020` + `income.0003`, `collectstatic` now mandatory (`staticfiles/` untracked), cache notes |
 | 6 (part 1) | `theme.css` via `collectstatic`, CDN assets pinned with SRI, smoke-test steps for the new layout, translation note |
+| 7 | migration `taskmanager.0004` (no data change); notes on duplicate inventory rows and POST-only actions; two smoke-test steps |
 | 6 (part 2) | all remaining pages restyled (no server step beyond `collectstatic`); translation note updated |
 | 5 | `pip install -r requirements.txt` now also installs `openpyxl`; `static/js/hrp-charts.js` via `collectstatic`; Reports hub smoke-test steps; note on the new inflation method and the redirects |

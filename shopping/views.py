@@ -5,9 +5,11 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import IntegrityError
+from django.db.models import OuterRef, Subquery, Sum
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.urls import reverse
 from .forms import CreateProductForm, UtilityBillForm, RegularShoppingForm
 from users.models import CustomUser
@@ -38,8 +40,11 @@ def shopping_list(request):
     shoppings = (
         shoppings
         .select_related("user", "shop")
-        .prefetch_related("shopping_products__product")
-        .order_by("-date")
+        # total of the whole purchase in SQL (a subquery, so the product filter above does not shrink it)
+        .annotate(total=Subquery(
+            ShoppingProduct.objects.filter(shopping=OuterRef("pk")).values("shopping")
+            .annotate(total=Sum("amount")).values("total")))
+        .order_by("-date", "-id")
         .distinct()
     )
 
@@ -192,16 +197,15 @@ def edit_shopping(request, shopping_id):
 
 
 @login_required
+@require_POST
 def add_product(request):
-    if request.method == "POST":
-        form = CreateProductForm(request.POST)
-        if form.is_valid():
-            try:
-                new_product = form.save()
-                return JsonResponse({"id": new_product.id, "name": new_product.name})
-            except IntegrityError:
-                return JsonResponse({'error': "Продукт с това име вече е наличен! Въведи името в търсачката!"},
-                                    status=400)
-        else:
-            error_msg = next(iter(form.errors.values()))[0]
-            return JsonResponse({'error': error_msg}, status=400)
+    form = CreateProductForm(request.POST)
+    if form.is_valid():
+        try:
+            new_product = form.save()
+            return JsonResponse({"id": new_product.id, "name": new_product.name})
+        except IntegrityError:
+            return JsonResponse({'error': "Продукт с това име вече е наличен! Въведи името в търсачката!"},
+                                status=400)
+    error_msg = next(iter(form.errors.values()))[0]
+    return JsonResponse({'error': error_msg}, status=400)

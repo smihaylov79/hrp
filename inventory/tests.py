@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.test import TestCase, RequestFactory
 from django.urls import reverse
 
-from hrp.testing import HrpTestCase, known_bug, make_purchase
+from hrp.testing import HrpTestCase, make_purchase
 from shopping.models import HouseholdShoppingList, ShoppingList
 from taskmanager.models import Task
 from users.models import CustomUser
@@ -20,7 +20,7 @@ class ShoppingListGenerationTest(TestCase):
         self.user = CustomUser.objects.create_user(email='test@user.com', password='Ineedstrongpassord123!@', first_name='test', last_name='user')
 
     def test_task_created(self):
-        request = self.factory.get(reverse('shopping_list_view', args=[1]))
+        request = self.factory.post(reverse('generate_shopping_list'))
         request.user = self.user
         response = generate_shopping_list(request)
         task = Task.objects.filter(user=self.user).first()
@@ -33,7 +33,10 @@ class ShoppingListGenerationWithHistoryTest(HrpTestCase):
     def test_task_and_list_created_for_user_with_purchases(self):
         make_purchase(self.alice, self.milk, price=2)
         self.client.force_login(self.alice)
-        response = self.client.get(reverse('generate_shopping_list'))
+        # opening the address must not create a list or use up stock: only the button (POST) does
+        self.assertEqual(self.client.get(reverse('generate_shopping_list')).status_code, 405)
+        self.assertFalse(ShoppingList.objects.filter(user=self.alice).exists())
+        response = self.client.post(reverse('generate_shopping_list'))
         shopping_list = ShoppingList.objects.get(user=self.alice)
         self.assertRedirects(response, reverse('shopping_list_view', args=[shopping_list.id]),
                              fetch_redirect_response=False)
@@ -131,6 +134,17 @@ class InventoryOwnershipTests(HrpTestCase):
         self.assertFalse(bobs.direct_planning)
         self.assertEqual(bobs.daily_consumption, Decimal('0'))
         self.assertFalse(home.direct_planning)
+
+    def test_updating_a_single_field_keeps_the_others_and_the_average_price(self):
+        self.client.force_login(self.alice)
+        self.client.post(reverse('update_inventory'), {f'quantity_{self.alice_milk.pk}': '4'})
+        self.alice_milk.refresh_from_db()
+        self.assertEqual((self.alice_milk.quantity, self.alice_milk.amount, self.alice_milk.average_price),
+                         (Decimal('4'), Decimal('10'), Decimal('2.50')))
+        self.client.post(reverse('update_inventory'), {f'quantity_{self.alice_milk.pk}': 'abc',
+                                                       f'minimum_quantity_{self.alice_milk.pk}': '1,5'})
+        self.alice_milk.refresh_from_db()
+        self.assertEqual((self.alice_milk.quantity, self.alice_milk.minimum_quantity), (Decimal('4'), Decimal('1.5')))
 
     # -- shopping lists ----------------------------------------------------------------------------
     def test_foreign_shopping_list_is_404(self):

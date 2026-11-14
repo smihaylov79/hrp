@@ -1,7 +1,6 @@
 """Phase 0 safety net for reports: currency conversion and per-user / per-household data isolation.
 
-Tests marked @known_bug describe the correct behaviour for a bug listed in IMPROVEMENT_PLAN.md and are
-expected to fail until that phase is done.
+(The @known_bug marker in hrp/testing.py is for tests that describe a bug that is not fixed yet; none are left.)
 """
 from datetime import date, timedelta
 from decimal import Decimal

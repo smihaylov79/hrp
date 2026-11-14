@@ -6,47 +6,75 @@ from django.core.cache import cache
 from bs4 import BeautifulSoup
 import re
 from inventory.models import HouseholdInventoryProduct, HouseholdProductCategory, InventoryProduct, UserProductCategory
-from shopping.models import HouseholdShoppingList, ShoppingList, Product, ShoppingProduct, Shopping
+from shopping.models import HouseholdShoppingList, ShoppingList, Product, ShoppingProduct
 
 
 def load_prefill_data(request, user, household):
+    """Rows for the "new purchase" form from a generated shopping list, with the last price paid.
+
+    The last price is the household's (or the user's) most recent purchase of the product. Three queries in
+    total, however long the list is.
+    """
     selected_list_id = request.GET.get("list")
-    prefill_data = []
+    if not selected_list_id or not str(selected_list_id).isdigit():
+        return []
 
-    if not selected_list_id:
-        return prefill_data
-
+    if household:
+        shopping_list = HouseholdShoppingList.objects.filter(id=selected_list_id, household=household).first()
+        purchases = ShoppingProduct.objects.filter(shopping__user__household=household)
     else:
-        try:
-            if household:
-                shopping_list = HouseholdShoppingList.objects.get(id=selected_list_id, household=household)
-            else:
-                shopping_list = ShoppingList.objects.get(id=selected_list_id, user=user)
-            for item_name in shopping_list.items:
-                item_name = item_name.split('(')[0].strip()
-                product = Product.objects.filter(name=item_name).first()
-                if product:
-                    last_price = 0.00
-                    shoppings = Shopping.objects.filter(user=user)
-                    shoppings_ids = [sh.id for sh in shoppings]
-                    shopping_product = ShoppingProduct.objects.filter(product=product.id,
-                                                                      shopping__in=shoppings_ids).order_by('id').last()
-                    if shopping_product:
-                        last_price = shopping_product.price
-                    prefill_data.append({
-                        "product_id": product.id,
-                        "name": product.name,
-                        "quantity": 1,
-                        "price": last_price,
-                        "discount": 0,
-                        "not_for_household": False,
-                    })
-        except ShoppingList.DoesNotExist:
-            pass
-        return prefill_data
+        shopping_list = ShoppingList.objects.filter(id=selected_list_id, user=user).first()
+        purchases = ShoppingProduct.objects.filter(shopping__user=user)
+    if shopping_list is None:
+        return []
+
+    # list items look like "Мляко (1.25 €)": the product name is the part before the bracket
+    names = [item_name.split('(')[0].strip() for item_name in shopping_list.items]
+    products = {product.name: product for product in Product.objects.filter(name__in=names).only("id", "name")}
+
+    last_price = {}
+    for product_id, price in (purchases.filter(product__in=[product.id for product in products.values()])
+                              .order_by('product_id', '-shopping__date', '-id').values_list('product_id', 'price')):
+        last_price.setdefault(product_id, price)       # first row per product = the newest purchase
+
+    prefill_data = []
+    for name in names:
+        product = products.get(name)
+        if product:
+            prefill_data.append({
+                "product_id": product.id,
+                "name": product.name,
+                "quantity": 1,
+                "price": last_price.get(product.id, 0.00),
+                "discount": 0,
+                "not_for_household": False,
+            })
+    return prefill_data
+
+
+def inventory_row(model, owner, product):
+    """The inventory row of ``product`` for one owner ({'user': ...} or {'household': ...}).
+
+    There must be one row per owner and product. The row is looked up by owner + product only - not by
+    category - so that moving a product to another category does not create a second row; the row's
+    category then follows the product. If older duplicates exist, the oldest row is used.
+    """
+    row = model.objects.filter(product=product, **owner).order_by('id').first()
+    if row is None:
+        return model.objects.create(product=product, category=product.category, quantity=0, amount=0,
+                                    inventory_related=True, **owner)
+    if row.category_id != product.category_id:
+        row.category = product.category
+        row.save(update_fields=['category'])
+    return row
 
 
 def save_shopping_products(selected_products, shopping, user, household):
+    if household:
+        inventory_model, category_model, owner = HouseholdInventoryProduct, HouseholdProductCategory, {'household': household}
+    else:
+        inventory_model, category_model, owner = InventoryProduct, UserProductCategory, {'user': user}
+
     for product_data in selected_products:
         product = Product.objects.get(id=product_data["product_id"])
         quantity = Decimal(product_data["quantity"])
@@ -60,35 +88,13 @@ def save_shopping_products(selected_products, shopping, user, household):
             shopping=shopping, product=product, quantity=quantity, price=price,
             discount=discount, amount=amount, not_for_household=not_for_household
         )
-        if household:
-            inventory_product, created = HouseholdInventoryProduct.objects.get_or_create(
-                household=household, product=product, category=product.category,
-                defaults={"quantity": 0, "amount": 0, "inventory_related": True}
-            )
-            if inventory_product.inventory_related and not not_for_household:
-                inventory_product.quantity += quantity
-                inventory_product.amount += amount
-                inventory_product.calculate_average_price()
-                inventory_product.save()
+        inventory_product = inventory_row(inventory_model, owner, product)
+        if inventory_product.inventory_related and not not_for_household:
+            inventory_product.quantity += quantity
+            inventory_product.amount += amount
+            inventory_product.calculate_average_price()      # also saves the row
 
-            household_product_category, created = HouseholdProductCategory.objects.get_or_create(household=household,
-                                                                                                 product_category=product.category)
-            household_product_category.save()
-
-        else:
-            inventory_product, created = InventoryProduct.objects.get_or_create(
-                user=user, product=product, category=product.category,
-                defaults={"quantity": 0, "amount": 0, "inventory_related": True}
-            )
-            if inventory_product.inventory_related and not not_for_household:
-                inventory_product.quantity += quantity
-                inventory_product.amount += amount
-                inventory_product.calculate_average_price()
-                inventory_product.save()
-
-            user_product_category, created = UserProductCategory.objects.get_or_create(user=user,
-                                                                                       product_category=product.category)
-            user_product_category.save()
+        category_model.objects.get_or_create(product_category=product.category, **owner)
 
 
 PRICE_CACHE_SECONDS = 24 * 60 * 60

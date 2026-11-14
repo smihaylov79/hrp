@@ -31,7 +31,7 @@ class RecipeTest(TestCase):
 
     def test_cook_recipe_inventory_update(self):
         factory = RequestFactory()
-        request = factory.get(reverse('cook_recipe', args=[self.recipe.id]))
+        request = factory.post(reverse('cook_recipe', args=[self.recipe.id]))
         request.user = self.user
 
         response = cook_recipe(request, self.recipe.id)
@@ -43,7 +43,7 @@ class RecipeTest(TestCase):
 
     def test_recipe_shopping_list_generated(self):
         factory = RequestFactory()
-        request = factory.get(reverse('generate_recipe_shopping_list', args=[self.recipe.id]))
+        request = factory.post(reverse('generate_recipe_shopping_list', args=[self.recipe.id]))
         request.user = self.user
         request._messages = MagicMock()
 
@@ -51,6 +51,28 @@ class RecipeTest(TestCase):
         item_obj = RecipeShoppingList.objects.filter(user=self.user).first()
         self.assertIsNotNone(item_obj)
         self.assertIn('Test Product 2', item_obj.items)
+
+
+class RecipeModelLogicTest(RecipeTest):
+    """Phase 7: one implementation of cost / availability, no state change on GET."""
+
+    def test_model_methods_use_the_shared_service_without_a_query_per_ingredient(self):
+        with self.assertNumQueries(2):          # ingredients + the user's inventory
+            cost = self.recipe.calculate_cost(self.user)
+        self.assertEqual(cost, 2)               # 2 x 1.00 + 3 x 0.00
+        with self.assertNumQueries(2):
+            self.assertEqual(self.recipe.check_availability(self.user), "Липсващи продукти")
+        InventoryProduct.objects.filter(user=self.user, product=self.product_2).update(quantity=3)
+        self.assertEqual(self.recipe.check_availability(self.user), "OK")
+        self.assertEqual(self.recipe.check_availability(None), "Липсващи продукти")
+
+    def test_actions_that_change_data_reject_get(self):
+        self.client.force_login(self.user)
+        for name in ['cook_recipe', 'generate_recipe_shopping_list']:
+            with self.subTest(view=name):
+                self.assertEqual(self.client.get(reverse(name, args=[self.recipe.id])).status_code, 405)
+        self.assertEqual(InventoryProduct.objects.get(user=self.user, product=self.product_1).quantity, 10)
+        self.assertEqual(self.client.post(reverse('cook_recipe', args=[99999])).status_code, 404)
 
 
 class FavouriteGroupCsrfTest(TestCase):
