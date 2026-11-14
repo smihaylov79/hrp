@@ -64,8 +64,6 @@ PROJECT_APPS = [
     'users',
     'cooking',
     'entertainment',
-    # 'finance' is unplugged (moving to its own project). Its folder and its finance_* tables stay untouched;
-    # do not create a migration that removes its models.
     'inventory',
     'shopping',
     'forum',
@@ -86,7 +84,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'multiselectfield',
 ] + PROJECT_APPS
 
 MIDDLEWARE = [
@@ -154,7 +151,6 @@ CACHES = {
 }
 
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -206,14 +202,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.environ.get('MEDIA_ROOT', BASE_DIR / 'media')
 
 
-
 LOGIN_REDIRECT_URL = '/'
 
 LOGIN_URL = '/users/please-login/'
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 100000
 
-FAST_API_URL = os.getenv('NGROK_URL')
 
 LANGUAGES = [
     ('bg', 'Bulgarian'),

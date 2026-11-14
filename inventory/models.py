@@ -44,6 +44,12 @@ class BaseProductCategory(models.Model):
 class InventoryProduct(BaseInventoryProduct):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
+    class Meta:
+        constraints = [
+            # one row per owner and product (see inventory/dedupe.py for the history)
+            models.UniqueConstraint(fields=['user', 'product'], name='one_inventory_row_per_user_product'),
+        ]
+
 
     @staticmethod
     def bulk_update_inventory(data, user):
@@ -78,6 +84,11 @@ class HouseholdInventoryProduct(BaseInventoryProduct):
                                 related_name='household_inventory_product')
     category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL, null=True, blank=True,
                                  related_name='household_inventory_category')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['household', 'product'], name='one_inventory_row_per_household_product'),
+        ]
 
     @staticmethod
     def bulk_update_inventory(data, household):

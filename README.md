@@ -18,8 +18,6 @@ Home Resource Planner is a comprehensive Django-based platform designed to help 
 
 •	Household Collaboration Join or create households to share inventory, expenses, and responsibilities.
 
-•	Finance Integration Connect to external financial data via FastAPI to analyze stocks, fundamentals, and market trends.
-
 ### Technologies Used
 
 •	Backend: Django

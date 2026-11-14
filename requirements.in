@@ -1,0 +1,14 @@
+# The packages the site itself needs. requirements.txt is the full, pinned result of installing exactly these
+# into an empty virtualenv (pip install -r requirements.in && pip freeze). Edit this file, then regenerate.
+Django==5.2.1
+mysqlclient==2.2.7
+pandas==2.2.3
+numpy==2.2.6
+requests==2.32.3
+urllib3==1.26.20
+beautifulsoup4==4.13.4
+python-dotenv==1.1.0
+python-dateutil==2.9.0.post0
+pillow==11.2.1
+pytesseract==0.3.13
+openpyxl==3.1.5

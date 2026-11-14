@@ -102,15 +102,6 @@ class ShoppingLogicTests(HrpTestCase):
                 self.assertEqual((row.quantity, row.amount, row.category), (3, 12, self.cat_clean))
                 self.assertEqual(row.average_price, 4)
 
-    def test_existing_duplicate_rows_do_not_break_saving_a_purchase(self):
-        from inventory.models import InventoryProduct
-        first = self.user_inventory(self.alice, self.milk, quantity=1, amount=1)
-        InventoryProduct.objects.create(user=self.alice, product=self.milk, category=self.cat_clean, quantity=5, amount=5)
-        self.save_purchase(self.alice, self.milk, quantity=2, price=2)
-        first.refresh_from_db()
-        self.assertEqual(first.quantity, 3)                                        # the oldest row is used
-        self.assertEqual(InventoryProduct.objects.filter(user=self.alice, product=self.milk).count(), 2)
-
     def test_purchase_outside_the_household_does_not_touch_stock(self):
         from inventory.models import InventoryProduct
         self.save_purchase(self.alice, self.milk, quantity=2, price=2, not_for_household=True)
