@@ -1,268 +1,188 @@
-from dateutil.relativedelta import relativedelta
+from calendar import monthrange
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q, Sum, F, Avg
-from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
-import json
-from django.views.generic import FormView, TemplateView
+from django.views.generic import RedirectView, TemplateView
 
-from income.models import Income
-from .forms import *
-from .utils import *
-from .currency import DEFAULT_CURRENCY, normalise_currency
-from django.utils import timezone
-from datetime import timedelta, datetime, date
+from inventory.models import HouseholdInventoryProduct, InventoryProduct
 
+from . import services
+from .filters import ReportFilters
+from .models import (HouseholdInflationBasket, HouseholdInflationBasketItem, UserInflationBasket,
+                     UserInflationBasketItem)
 
-# Create your views here.
-
-
-class ReportsHomeView(LoginRequiredMixin, TemplateView):
-    template_name = 'reports/reports_home.html'
-
-
-class SpendingsView(LoginRequiredMixin, FormView):
-    template_name = 'reports/spendings_history.html'
-    form_class = SpendingsReportFilterForm
-
-    def get(self, request, *args, **kwargs):
-        form = self.form_class(self.request.GET or None)
-        context = self.get_context_data(form=form)
-
-        if form.is_valid():
-            user = self.request.user
-            household = user.household
-
-            if household:
-                members = CustomUser.objects.filter(household=household)
-                shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
-
-            else:
-                shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
-
-            main_category = form.cleaned_data.get('main_category')
-            date_from = form.cleaned_data.get('date_from')
-            date_to = form.cleaned_data.get('date_to')
-            currency = normalise_currency(form.cleaned_data.get('currency'))
-            household_filter = form.cleaned_data.get("not_for_household_filter", "all")
-
-            if household_filter == "household":
-                shopping_data = shopping_data.filter(not_for_household=False)
-            elif household_filter == "external":
-                shopping_data = shopping_data.filter(not_for_household=True)
-
-            if main_category:
-                shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
-
-            data_for_monthly_comparison = None
-
-            if date_from and date_to:
-                current_period = Q(shopping__date__range=(date_from, date_to))
-                previous_years_period = Q()
-                for offset in [1, 2]:
-                    prev_from = date_from.replace(year=date_from.year - offset)
-                    prev_to = date_to.replace(year=date_to.year - offset)
-                    previous_years_period |= Q(shopping__date__range=(prev_from, prev_to))
-                data_for_monthly_comparison = shopping_data.filter(current_period | previous_years_period)
-
-                shopping_data = shopping_data.filter(current_period)
-
-            shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
-
-            shoppings_count = shopping_data.aggregate(shoppings_count=Count('shopping', distinct=True))[
-                'shoppings_count']
-            most_purchased = (
-                shopping_data.values('product__name').annotate(purchase_count=Count('id')).order_by('-purchase_count')[
-                :5]
-            )
-            most_purchased_names = ', '.join([entry['product__name'] for entry in most_purchased])
-
-            df = db_to_df(shopping_data, currency)
-
-            if data_for_monthly_comparison is not None:
-                df_monthly_comparison = db_to_df(data_for_monthly_comparison, currency)
-            else:
-                df_monthly_comparison = df
-
-            # Newly added 10.11
-            main_category_monthly = (
-                df.groupby(['month', 'product__category__main_category__name'])['total']
-                .sum()
-                .reset_index()
-            )
-            subcategory_monthly = df.groupby(['month', 'product__category__name'])['total'].sum().reset_index()
-
-            # Prepare Highcharts series
-            # month_labels = sorted(main_category_monthly['month'].unique())
-            # main_categories = main_category_monthly['product__category__main_category__name'].unique()
-            #
-            # main_category_series = []
-            # for category in main_categories:
-            #     data = []
-            #     for month in month_labels:
-            #         value = main_category_monthly[
-            #             (main_category_monthly['month'] == month) &
-            #             (main_category_monthly['product__category__main_category__name'] == category)
-            #             ]['total']
-            #         data.append(round(value.values[0], 2) if not value.empty else 0)
-            #     main_category_series.append({'name': category, 'data': data})
-
-            # end of added 10.11
-
-            context = self.get_context_data(form=form, )
-            context['rate_warnings'] = rate_warnings(df, df_monthly_comparison)
-            context['selected_currency'] = currency
-            if df_monthly_comparison.empty:
-                df_monthly_comparison = df
-            if not df.empty:
-                # each summary is computed once (they used to be recomputed for every value taken from them)
-                monthly_spent, weekly_spent = monthly_weekly_spending(df)
-                main_chart, sub_chart = by_category_spending(df)
-                biggest_spent, lowest_price, highest_price = by_product_statistics(df)
-                top_increase, top_decrease = calculate_price_changes(df)
-                yearly_series, yearly_labels = monthly_compare_chart(df_monthly_comparison)
-                context.update(
-                    {'main_category_monthly_data': json.dumps(main_category_monthly.to_dict(orient='records')),
-                     'subcategory_monthly_data': json.dumps(
-                         subcategory_monthly.to_dict(orient='records')),
-                     'monthly_data': json.dumps(monthly_spent),
-                     'weekly_data': json.dumps(weekly_spent),
-                     'total_spent': round(df['total'].sum(), 2),
-                     'main_category_name': main_category.name if main_category else '',
-                     'main_chart_data': json.dumps(main_chart),
-                     'sub_chart_data': json.dumps(sub_chart),
-                     'shoppings_count': shoppings_count,
-                     'most_purchased_names': most_purchased_names,
-                     'biggest_spent': biggest_spent,
-                     'lowest_price': lowest_price,
-                     'highest_price': highest_price,
-                     'top_increase': top_increase,
-                     'top_decrease': top_decrease,
-                     'yearly_series': json.dumps(yearly_series),
-                     'month_labels': json.dumps(yearly_labels),
-                     # 'main_category_series': json.dumps(main_category_series)
-                     })
-        return self.render_to_response(context)
+# (url name, label, icon) - the tabs of the hub, in display order
+TABS = [
+    ('reports_home', _('Обзор'), 'bi-speedometer2'),
+    ('reports_categories', _('Категории'), 'bi-diagram-3'),
+    ('reports_shops', _('Магазини'), 'bi-shop'),
+    ('reports_prices', _('Цени и инфлация'), 'bi-graph-up-arrow'),
+    ('reports_cash_flow', _('Паричен поток'), 'bi-cash-stack'),
+    ('reports_budget', _('Бюджет'), 'bi-piggy-bank'),
+]
 
 
-class SpendingsByShopView(LoginRequiredMixin, FormView):
-    template_name = 'reports/by_shop.html'
-    form_class = SpendingsReportFilterForm
+def _int(value):
+    return int(value) if value and str(value).isdigit() else None
+
+
+class ReportTabView(LoginRequiredMixin, TemplateView):
+    """One tab of the Reports hub. Subclasses set the tab, its default period and build ``data``."""
+    tab = None
+    default_period = 'this_month'
+
+    def build(self, filters):
+        raise NotImplementedError
 
     def get(self, request, *args, **kwargs):
-        user = self.request.user
-        household = user.household
-        if household:
-            members = CustomUser.objects.filter(household=household)
-            user_shops = Shop.objects.filter(
-                id__in=Shopping.objects.filter(user__in=members).values("shop")).distinct()
-            shopping_data = ShoppingProduct.objects.filter(shopping__user__in=members)
-        else:
-            user_shops = Shop.objects.filter(id__in=Shopping.objects.filter(user=user).values("shop")).distinct()
-            shopping_data = ShoppingProduct.objects.filter(shopping__user=user)
+        self.filters = ReportFilters(request.GET, default_period=self.default_period)
+        self.data = self.build(self.filters)
 
-        form = self.form_class(self.request.GET or None, user_shops=user_shops)
-        context = self.get_context_data(form=form)
+        export = request.GET.get('export')
+        if export:
+            table = self.data.get('tables', {}).get(export)
+            if table is None:
+                raise Http404('Unknown table')
+            return table.response(request.GET.get('format', 'csv'))
+        return super().get(request, *args, **kwargs)
 
-        if form.is_valid():
-            main_category = form.cleaned_data.get('main_category')
-            date_from = form.cleaned_data.get('date_from')
-            date_to = form.cleaned_data.get('date_to')
-            currency = form.cleaned_data.get('currency')
-            household_filter = form.cleaned_data.get("not_for_household_filter", "all")
-            selected_shop_ids = form.cleaned_data.get("shops")
+    def extra_params(self):
+        """Tab-specific parameters (drill-down, selected product ...) that filter and export links must keep."""
+        return {}
 
-            selected_shops = user_shops.filter(id__in=selected_shop_ids)
-
-            if selected_shops:
-                shopping_data = shopping_data.filter(shopping__shop__id__in=selected_shops)
-
-            if household_filter == "household":
-                shopping_data = shopping_data.filter(not_for_household=False)
-            elif household_filter == "external":
-                shopping_data = shopping_data.filter(not_for_household=True)
-
-            if main_category:
-                shopping_data = shopping_data.filter(product__category_id__main_category_id=main_category.id)
-
-            if date_from and date_to:
-                shopping_data = shopping_data.filter(shopping__date__range=(date_from, date_to))
-
-            shopping_data = shopping_data.select_related('shopping', 'product__category__main_category')
-
-            shop_price_changes = None
-            avg_price_changes = None
-            spending_chart_data = None
-            total_for_selection = 0
-
-            df = db_to_df(shopping_data, normalise_currency(currency))
-            context['rate_warnings'] = rate_warnings(df)
-
-            if not df.empty:
-
-                total_for_selection = df['total'].sum()
-
-                avg_price_changes = df.groupby('product__name')['total'].mean()
-
-                shop_spending_totals = df.groupby('shopping__shop__name')['total'].sum()
-
-                spending_chart_data = [{
-                    "name": shop,
-                    "y": total
-                } for shop, total in shop_spending_totals.items()]
-
-                shop_price_changes = df.groupby(['product__name', 'shopping__shop__name'])[
-                    'converted_price'].mean().round(
-                    2).unstack().fillna('-')
-                shop_price_changes['Обща средна цена'] = df.groupby('product__name')['converted_price'].mean().round(2)
-
-            highlighted_table = []
-
-            if selected_shops and shop_price_changes is not None:
-                for product, row in shop_price_changes.iterrows():
-                    prices_only = row.drop('Обща средна цена')
-                    numeric_prices = [price for price in prices_only if isinstance(price, (int, float))]
-                    min_price = min(numeric_prices) if numeric_prices else None
-
-                    row_data = {
-                        'product': product,
-                        'overall_avg': row['Обща средна цена'],
-                        'shops': []
-                    }
-
-                    for shop in prices_only.index:
-                        value = row[shop]
-                        row_data['shops'].append({
-                            'shop': shop,
-                            'price': value if isinstance(value, (int, float)) else None,
-                            'is_lowest': value == min_price
-                        })
-                    highlighted_table.append(row_data)
-
-            context.update({"spending_chart_data": json.dumps(spending_chart_data),
-                            "avg_price_changes": avg_price_changes,
-                            "shop_price_changes": shop_price_changes,
-                            'user_shops': user_shops,
-                            'highlighted_table': highlighted_table if selected_shops else None,
-                            "selected_shop_ids": [str(shop.id) for shop in selected_shop_ids],
-                            'total_for_selection': total_for_selection,
-                            }
-
-                           )
-
-        return self.render_to_response(context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        filters = self.filters
+        carried = filters.carry()
+        extra = {key: value for key, value in self.extra_params().items() if value not in (None, '', [])}
+        context.update({
+            'filters': filters,
+            'data': self.data,
+            'rate_warnings': self.data.get('warnings', []),
+            'tabs': [{'label': label, 'icon': icon, 'active': name == self.tab, 'url': reverse(name) + carried}
+                     for name, label, icon in TABS],
+            'tab_url': reverse(self.tab),
+            'preset_links': [dict(link, query=filters.query(period=link['key'], **extra) or f"?period={link['key']}")
+                             for link in filters.preset_links()],
+            'export_query': filters.query(**extra),
+            'hidden_params': [(key, item) for key, value in extra.items()
+                              for item in (value if isinstance(value, list) else [value])],
+            'show_filters': True,
+        })
+        return context
 
 
-def user_shopping_products(user):
-    """All purchased products the user may see: the household's when in one, else their own."""
-    if user.household:
-        members = CustomUser.objects.filter(household=user.household)
-        return ShoppingProduct.objects.filter(shopping__user__in=members)
-    return ShoppingProduct.objects.filter(shopping__user=user)
+class OverviewView(ReportTabView):
+    tab = 'reports_home'
+    template_name = 'reports/overview.html'
+
+    def build(self, filters):
+        return services.overview(self.request.user, filters)
 
 
+class CategoriesView(ReportTabView):
+    tab = 'reports_categories'
+    template_name = 'reports/categories.html'
+
+    def build(self, filters):
+        self.main_id, self.sub_id = _int(self.request.GET.get('main')), _int(self.request.GET.get('sub'))
+        if not self.main_id:
+            self.sub_id = None
+        return services.categories(self.request.user, filters, self.main_id, self.sub_id)
+
+    def extra_params(self):
+        return {'main': self.main_id, 'sub': self.sub_id}
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['all_query'] = self.filters.query() or '?'
+        context['main_query'] = self.filters.query(main=self.main_id)
+        return context
+
+
+class ShopsView(ReportTabView):
+    tab = 'reports_shops'
+    template_name = 'reports/shops.html'
+    default_period = '3m'
+
+    def build(self, filters):
+        self.shop_ids = [int(value) for value in self.request.GET.getlist('shop') if value.isdigit()]
+        return services.shops(self.request.user, filters, self.shop_ids)
+
+    def extra_params(self):
+        return {'shop': self.shop_ids}
+
+
+class PricesView(ReportTabView):
+    tab = 'reports_prices'
+    template_name = 'reports/prices.html'
+    default_period = '12m'
+
+    def build(self, filters):
+        self.product_id = _int(self.request.GET.get('product'))
+        return services.prices(self.request.user, filters, self.product_id)
+
+    def extra_params(self):
+        return {'product': self.product_id}
+
+
+class CashFlowView(ReportTabView):
+    tab = 'reports_cash_flow'
+    template_name = 'reports/cash_flow.html'
+    default_period = '12m'
+
+    def build(self, filters):
+        return services.cash_flow(self.request.user, filters)
+
+
+class BudgetView(ReportTabView):
+    tab = 'reports_budget'
+    template_name = 'reports/budget.html'
+    default_period = 'ytd'
+
+    def build(self, filters):
+        return services.budget(self.request.user, filters)
+
+
+class LegacyReportRedirect(LoginRequiredMixin, RedirectView):
+    """Old report addresses (bookmarks, links in old tasks) lead to the matching tab of the hub."""
+    target = 'reports_home'
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        old = self.request.GET
+        params = {}
+        if old.get('date_from') and old.get('date_to'):
+            params.update({'period': 'custom', 'from': old['date_from'], 'to': old['date_to']})
+        elif old.get('month'):                       # by_category_table?month=2026-10
+            try:
+                year, month = map(int, old['month'].split('-'))
+                params.update({'period': 'custom', 'from': f'{year:04d}-{month:02d}-01',
+                               'to': f'{year:04d}-{month:02d}-{monthrange(year, month)[1]:02d}'})
+            except (ValueError, TypeError):
+                pass
+        if old.get('currency'):
+            params['currency'] = old['currency']
+        if old.get('not_for_household_filter') in ('household', 'external'):
+            params['scope'] = old['not_for_household_filter']
+        filters = ReportFilters(params)
+        extra = {}
+        if _int(old.get('product')):
+            extra['product'] = _int(old.get('product'))
+        if _int(old.get('main_category')):
+            extra['main'] = _int(old.get('main_category'))
+        return reverse(self.target) + filters.query(**extra)
+
+
+# ------------------------------------------------------------------------------------------------
+# inflation baskets (owned by the household, or by the user when they have no household)
+# ------------------------------------------------------------------------------------------------
 def user_inflation_baskets(user):
     """Inflation baskets owned by the user's household, or by the user when they have no household."""
     if user.household:
@@ -277,76 +197,33 @@ def user_inventory_products(user):
     return InventoryProduct.objects.filter(user=user)
 
 
-@login_required
-def price_changes(request):
-    user = request.user
-    household = user.household
-
-    inflation_baskets = list(user_inflation_baskets(user).order_by('name'))
-    chart_data = {}
-    warnings = []
-    for basket in inflation_baskets:
-        if household:
-            selected_ids = basket.household_basket_items.values_list("product_id", flat=True)
-            shopping_products = user_shopping_products(user).filter(
-                product__household_inventory_product__in=selected_ids)
-        else:
-            selected_ids = basket.user_basket_items.values_list("product_id", flat=True)
-            shopping_products = user_shopping_products(user).filter(product__inventory_product__in=selected_ids)
-
-        basket.total_change = 0
-        chart_data[basket.id] = {'months': [], 'inflation_values': [], 'total_inflation': 0}
-        if not shopping_products.exists():
-            continue  # empty basket or nothing bought yet: show it without a chart instead of crashing
-
-        df = db_to_df(shopping_products, DEFAULT_CURRENCY)
-        warnings.extend(text for text in rate_warnings(df) if text not in warnings)
-        inflation_data = calculate_inflation(monthly_weekly_spending(df)[0])
-        first_total = inflation_data['total'].iloc[0]
-        last_total = inflation_data['total'].iloc[-1]
-        total_change = round((last_total - first_total) / first_total * 100, 2) if first_total else 0
-        basket.total_change = total_change
-        chart_data[basket.id] = {
-            'months': inflation_data['month'].tolist(),
-            'inflation_values': inflation_data['inflation_mom'].fillna(0).round(2).tolist(),
-            'total_inflation': total_change,
-        }
-
-    products, selected_product_id, price_data, currency = product_price_history(request)
-
-    currencies = CurrencyChoice.choices
-
+def _basket_page_context(request, **extra):
+    """Context of the basket forms: they live under the "Prices" tab but have no filter bar."""
     context = {
-        'inflation_baskets': inflation_baskets,
-        'chart_data_json': json.dumps(chart_data),
-        "products": products,
-        "selected_product_id": selected_product_id,
-        "price_data": json.dumps(price_data),
-        'currency': currency,
-        'currencies': currencies,
-        'rate_warnings': warnings,
-
+        'filters': ReportFilters({}, default_period='12m'),
+        'tabs': [{'label': label, 'icon': icon, 'active': name == 'reports_prices', 'url': reverse(name)}
+                 for name, label, icon in TABS],
+        'show_filters': False,
+        'products': user_inventory_products(request.user).select_related('product').order_by('product__name'),
     }
-    return render(request, 'reports/price_changes.html', context)
+    context.update(extra)
+    return context
 
 
 @login_required
 def create_inflation_basket(request):
-    context = {
-        'products': user_inventory_products(request.user).order_by('product__name'),
-    }
-    return render(request, 'reports/create_inflation_basket.html', context)
+    return render(request, 'reports/create_inflation_basket.html', _basket_page_context(request))
 
 
 def _basket_name_error(request, name, exclude_pk=None):
     """Validate a basket name for the current owner; returns an error text or None."""
     if not name:
-        return "Името на кошницата е задължително."
+        return _("Името на кошницата е задължително.")
     same_name = user_inflation_baskets(request.user).filter(name=name)
     if exclude_pk:
         same_name = same_name.exclude(pk=exclude_pk)
     if same_name.exists():
-        return "Вече имате кошница с това име."
+        return _("Вече имате кошница с това име.")
     return None
 
 
@@ -372,7 +249,8 @@ def save_inflation_basket(request):
         basket = UserInflationBasket.objects.create(user=user, name=name)
         UserInflationBasketItem.objects.bulk_create(
             [UserInflationBasketItem(basket=basket, product=product) for product in products])
-    return redirect('price_changes')
+    messages.success(request, _("Кошницата е създадена."))
+    return redirect('reports_prices')
 
 
 @login_required
@@ -380,7 +258,7 @@ def edit_inflation_basket(request, basket_id):
     user = request.user
     household = user.household
     basket = get_object_or_404(user_inflation_baskets(user), id=basket_id)
-    products = user_inventory_products(user).order_by('product__name')
+    products = user_inventory_products(user)
     if household:
         item_model, items = HouseholdInflationBasketItem, basket.household_basket_items
     else:
@@ -400,432 +278,8 @@ def edit_inflation_basket(request, basket_id):
         # replaces the basket's own item rows (same behaviour as before, now limited to the owner's products)
         items.all().delete()
         item_model.objects.bulk_create([item_model(basket=basket, product=product) for product in new_products])
-        return redirect('price_changes')
-
-    context = {
-        'basket': basket,
-        'products': products,
-        'selected_ids': selected_ids,
-    }
-    return render(request, 'reports/edit_inflation_basket.html', context)
-
-
-@login_required
-def income_analysis(request):
-    user = request.user
-
-    # ако има household → взимаме всички приходи на household-а
-    if user.household:
-        incomes_qs = Income.objects.filter(user__household=user.household)
-    else:
-        incomes_qs = Income.objects.filter(user=user)
-
-    # превръщаме в DataFrame
-    data = list(incomes_qs.values("income_type__name", "amount", "currency", "date_received"))
-    df = pd.DataFrame(data)
-
-    analysis = {}
-    if not df.empty:
-        # групиране по тип приход
-        by_type = df.groupby("income_type__name")["amount"].sum().sort_values(ascending=False)
-        analysis["by_type"] = by_type.to_dict()
-
-        # групиране по месец
-        df["month"] = pd.to_datetime(df["date_received"]).dt.to_period("M")
-        by_month = df.groupby("month")["amount"].sum()
-        analysis["by_month"] = by_month.to_dict()
-
-        # обща сума
-        analysis["total_income"] = df["amount"].sum()
-
-    return render(request, "reports/income_analysis.html", {"analysis": analysis})
-
-
-class IncomeView(LoginRequiredMixin, FormView):
-    template_name = 'reports/income_analysis.html'
-    form_class = IncomeReportFilterForm  # подобна на SpendingsReportFilterForm, но за приходи
-
-    def get(self, request, *args, **kwargs):
-        form = self.form_class(self.request.GET or None)
-        context = self.get_context_data(form=form)
-
-        if form.is_valid():
-            user = self.request.user
-            household = user.household
-
-            if household:
-                members = CustomUser.objects.filter(household=household)
-                income_data = Income.objects.filter(user__in=members)
-            else:
-                income_data = Income.objects.filter(user=user)
-
-            income_type = form.cleaned_data.get('income_type')
-            date_from = form.cleaned_data.get('date_from')
-            date_to = form.cleaned_data.get('date_to')
-            currency = form.cleaned_data.get('currency')
-
-            if income_type:
-                income_data = income_data.filter(income_type=income_type)
-
-            if date_from and date_to:
-                current_period = Q(date_received__range=(date_from, date_to))
-                previous_years_period = Q()
-                for offset in [1, 2]:
-                    prev_from = date_from.replace(year=date_from.year - offset)
-                    prev_to = date_to.replace(year=date_to.year - offset)
-                    previous_years_period |= Q(date_received__range=(prev_from, prev_to))
-                data_for_monthly_comparison = income_data.filter(current_period | previous_years_period)
-                income_data = income_data.filter(current_period)
-            else:
-                data_for_monthly_comparison = None
-
-            currency = normalise_currency(currency)
-            df = income_db_to_df(income_data, currency)
-            context['rate_warnings'] = rate_warnings(df)
-
-            if not df.empty:
-                # групиране по тип приход
-                by_type = df.groupby("income_type__name")["total"].sum().reset_index()
-
-                # групиране по месец
-                df["month"] = pd.to_datetime(df["date_received"]).dt.to_period("M")
-                by_month = df.groupby("month")["total"].sum().reset_index()
-
-                # Highcharts series
-                month_labels = sorted(by_month["month"].astype(str).unique())
-                monthly_series = [{"name": "Приходи", "data": by_month["total"].round(2).tolist()}]
-
-                type_series = [{"name": row["income_type__name"], "y": round(row["total"], 2)} for _, row in
-                               by_type.iterrows()]
-                selected_currency = currency
-                context.update({
-                    "total_income": round(df["total"].sum(), 2),
-                    "monthly_series": json.dumps(monthly_series),
-                    "month_labels": json.dumps(month_labels),
-                    "type_series": json.dumps(type_series),
-                    "selected_currency": selected_currency,
-                })
-
-        return self.render_to_response(context)
-
-
-@login_required
-def income_spendings_comparison(request):
-    form = IncomeSpendingsComparisonForm(request.GET or None)
-
-    user = request.user
-    household = user.household
-
-    if household:
-        members = CustomUser.objects.filter(household=household)
-        income_qs = Income.objects.filter(user__in=members)
-        spendings_qs = ShoppingProduct.objects.filter(shopping__user__in=members)
-    else:
-        income_qs = Income.objects.filter(user=user)
-        spendings_qs = ShoppingProduct.objects.filter(shopping__user=user)
-
-    # филтри по период
-    if form.is_valid():
-        date_from = form.cleaned_data.get("date_from")
-        date_to = form.cleaned_data.get("date_to")
-        currency = normalise_currency(form.cleaned_data.get("currency"))
-
-        if date_from and date_to:
-            income_qs = income_qs.filter(date_received__range=(date_from, date_to))
-            spendings_qs = spendings_qs.filter(shopping__date__range=(date_from, date_to))
-
-        comparison_df, warnings = income_vs_spendings(income_qs, spendings_qs, currency)
-        # Convert "MM.YYYY" → datetime for proper sorting
-        comparison_df["month_dt"] = pd.to_datetime(comparison_df["month"], format="%m.%Y")
-
-        # Sort by the new datetime column
-        comparison_df = comparison_df.sort_values("month_dt")
-
-        comparison_df["cumulative_net"] = comparison_df["net_balance"].cumsum()
-
-        month_labels = comparison_df["month"].astype(str).tolist()
-        income_series = [{"name": "Приходи", "data": comparison_df["total_income"].astype(float).round(2).tolist()}]
-        spendings_series = [
-            {"name": "Разходи", "data": comparison_df["total_spendings"].astype(float).round(2).tolist()}]
-        net_series = [{"name": "Нетен баланс", "data": comparison_df["net_balance"].astype(float).round(2).tolist()}]
-
-        cumulative_series = [{
-            "name": "Кумулативен баланс",
-            "type": "line",
-            "data": comparison_df["cumulative_net"].astype(float).round(2).tolist()
-        }]
-
-        context = {
-            "form": form,
-            "month_labels": json.dumps(month_labels),
-            "income_series": json.dumps(income_series),
-            "spendings_series": json.dumps(spendings_series),
-            "net_series": json.dumps(net_series),
-            "selected_currency": currency,
-            "cumulative_series": json.dumps(cumulative_series),
-            "rate_warnings": warnings,
-        }
-
-    else:
-        context = {"form": form}
-
-    return render(request, "reports/income_spendings_comparison.html", context)
-
-
-def get_consumption_queryset(user, date_from=None, date_to=None):
-    # Default: last 12 months
-    if not date_from or not date_to:
-        date_to = timezone.now().date()
-        date_from = date_to - timedelta(days=365)
-
-    household = user.household
-
-    if household:
-        members = CustomUser.objects.filter(household=household)
-        qs = ShoppingProduct.objects.filter(shopping__user__in=members)
-    else:
-        qs = ShoppingProduct.objects.filter(shopping__user=user)
-
-    return qs.filter(shopping__date__range=(date_from, date_to))
-
-
-class ConsumptionSummaryView(LoginRequiredMixin, TemplateView):
-    template_name = "reports/consumption_summary.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # -----------------------------
-        # 1) READ FILTERS
-        # -----------------------------
-        request = self.request
-        user = request.user
-
-        currency = normalise_currency(request.GET.get("currency"))
-        date_from = request.GET.get("date_from")
-        date_to = request.GET.get("date_to")
-        fast = request.GET.get("fast")  # "1", "3", "6", "12"
-
-        # -----------------------------
-        # 2) HANDLE FAST FILTERS
-        # -----------------------------
-        if fast:
-            months = int(fast)
-            date_to = timezone.localdate()
-            date_from = date_to - timedelta(days=30 * months)
-
-        # Convert to date objects if provided
-        if isinstance(date_from, str):
-            date_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-        if isinstance(date_to, str):
-            date_to = datetime.strptime(date_to, "%Y-%m-%d").date()
-
-        # -----------------------------
-        # 3) GET BASE QUERYSET
-        # -----------------------------
-        qs = get_consumption_queryset(user, date_from, date_to)
-
-        qs = db_to_df(qs, currency)
-
-        # -----------------------------
-        # 4) SUMMARIES (with conversion)
-        # -----------------------------
-        product_summary = (
-            qs.groupby("product__name")
-            .agg(quantity=("quantity", "sum"),
-                 total_spent=("converted_amount", "sum"))
-            .reset_index()
-            .sort_values("quantity", ascending=False)
-            .to_dict("records")
-        )
-
-        main_category_summary = (
-            qs.groupby("product__category__main_category__name")
-            .agg(quantity=("quantity", "sum"),
-                total_spent=("converted_amount", "sum"))
-            .reset_index()
-            .to_dict("records")
-        )
-
-        subcategory_summary = (
-            qs.groupby("product__category__name")
-            .agg(quantity=("quantity", "sum"),
-                 total_spent=("converted_amount", "sum"))
-            .reset_index()
-            .to_dict("records")
-        )
-
-        # -----------------------------
-        # 5) TOTAL + AVERAGE DAILY SPENT
-        # -----------------------------
-        # total_spent = sum(p["total_spent"] for p in product_summary)
-        total_spent = qs["converted_amount"].sum()
-
-        if date_from and date_to:
-            days = (date_to - date_from).days + 1
-        else:
-            days = 365
-
-        avg_daily_spent = total_spent / days if days > 0 else 0
-
-        # -----------------------------
-        # 6) UPDATE CONTEXT
-        # -----------------------------
-        context.update({
-            "form": ConsumptionFilterForm(request.GET or None),
-            "product_summary": product_summary,
-            "main_category_summary": main_category_summary,
-            'subcategory_summary': subcategory_summary,
-            "total_spent": total_spent,
-            "avg_daily_spent": avg_daily_spent,
-            "selected_currency": currency,
-            "rate_warnings": rate_warnings(qs),
-            "date_from": date_from,
-            "date_to": date_to,
-            "currency": currency,
-        })
-
-        return context
-
-
-def get_same_month_previous_years(start_date, years_back=3):
-    periods = []
-    for i in range(1, years_back + 1):
-        prev_start = start_date - relativedelta(years=i)
-        prev_end = prev_start.replace(day=1) + relativedelta(months=1) - relativedelta(days=1)
-        periods.append((prev_start, prev_end))
-    return periods
-
-
-@login_required
-def by_category_table(request):
-    month = request.GET.get("month")
-    target_currency = normalise_currency(request.GET.get("currency"), default="BGN")
-
-    context = {
-        "selected_month": month,
-        "selected_currency": target_currency,
-    }
-
-    if not month:
-        return render(request, "reports/by_category_table.html", context)
-
-    # --- 1. Parse selected month ---
-    try:
-        year, m = map(int, month.split("-"))
-        start_date = date(year, m, 1)
-    except (ValueError, TypeError):
-        context["selected_month"] = None
-        return render(request, "reports/by_category_table.html", context)
-    end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
-
-    context["selected_period"] = (start_date, end_date)
-    previous_periods = get_same_month_previous_years(start_date, years_back=1)
-
-    # --- 2. Load only this user's / household's purchases for the compared months ---
-    period_filter = Q(shopping__date__range=(start_date, end_date))
-    for s, e in previous_periods:
-        period_filter |= Q(shopping__date__range=(s, e))
-    db_shopping = user_shopping_products(request.user).filter(period_filter).select_related(
-        "shopping", "product__category__main_category"
-    )
-
-    if not db_shopping.exists():
-        context.update({
-            "previous_years": [s.year for s, e in previous_periods],
-            "comparison_rows": [],
-            "total_current": 0,
-            "total_previous": [{"year": s.year, "value": 0, "diff": 0, "pct": None} for s, e in previous_periods],
-        })
-        return render(request, "reports/by_category_table.html", context)
-
-    df = db_to_df(db_shopping, target_currency)
-    context["rate_warnings"] = rate_warnings(df)
-
-    # --- CRITICAL FIX: ensure date column is Timestamp ---
-    df["shopping__date"] = pd.to_datetime(df["shopping__date"])
-
-    # Convert boundaries to Timestamp
-    start_ts = pd.Timestamp(start_date)
-    end_ts = pd.Timestamp(end_date)
-
-    # --- 3. Filter current period ---
-    df_current = df[
-        (df["shopping__date"] >= start_ts) &
-        (df["shopping__date"] <= end_ts)
-    ]
-
-    # --- 4. Aggregate current totals ---
-    current_totals = (
-        df_current.groupby("product__category__main_category__name")["converted_amount"]
-        .sum()
-        .to_dict()
-    )
-
-    # --- 5. Previous years ---
-    previous_data = []
-    for s, e in previous_periods:
-        s_ts = pd.Timestamp(s)
-        e_ts = pd.Timestamp(e)
-
-        df_prev = df[
-            (df["shopping__date"] >= s_ts) &
-            (df["shopping__date"] <= e_ts)
-        ]
-
-        totals = (
-            df_prev.groupby("product__category__main_category__name")["converted_amount"]
-            .sum()
-            .to_dict()
-        )
-        previous_data.append({"year": s.year, "totals": totals})
-
-    previous_years = [p["year"] for p in previous_data]
-    context["previous_years"] = previous_years
-
-    # --- 6. Build comparison rows ---
-    all_categories = sorted(
-        set(current_totals.keys()) |
-        {cat for p in previous_data for cat in p["totals"].keys()}
-    )
-
-    comparison_rows = []
-    for cat in all_categories:
-        row = {
-            "category": cat,
-            "current": current_totals.get(cat, 0),
-            "previous": []
-        }
-        for p in previous_data:
-            prev_value = p["totals"].get(cat, 0)
-            diff = row["current"] - prev_value
-            pct = (diff / prev_value * 100) if prev_value else None
-            row["previous"].append({
-                "year": p["year"],
-                "value": prev_value,
-                "diff": diff,
-                "pct": pct,
-            })
-        comparison_rows.append(row)
-
-    context["comparison_rows"] = comparison_rows
-
-    # --- 7. Grand totals ---
-    total_current = sum(current_totals.values())
-
-    total_previous = []
-    for p in previous_data:
-        prev_sum = sum(p["totals"].values())
-        diff = total_current - prev_sum
-        pct = (diff / prev_sum * 100) if prev_sum else None
-        total_previous.append({
-            "year": p["year"],
-            "value": prev_sum,
-            "diff": diff,
-            "pct": pct,
-        })
-
-    context["total_current"] = total_current
-    context["total_previous"] = total_previous
-
-    return render(request, "reports/by_category_table.html", context)
+        messages.success(request, _("Кошницата е записана."))
+        return redirect('reports_prices')
+
+    return render(request, 'reports/edit_inflation_basket.html',
+                  _basket_page_context(request, basket=basket, selected_ids=list(selected_ids)))

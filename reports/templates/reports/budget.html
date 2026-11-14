@@ -1,0 +1,53 @@
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
+
+{% block report_body %}
+{% with currency=filters.symbol result=data.result %}
+{% if result %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-clipboard-check"></i>{% trans "Планирани разходи" %}</div>
+    <div class="value">{{ result.planned|floatformat:"0g" }} <small>{{ currency }}</small></div>
+    <div class="foot"><span class="note">{% trans "частта от бюджета за периода" %}</span></div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-bag"></i>{% trans "Реални разходи" %}</div>
+    <div class="value">{{ result.actual|floatformat:"0g" }} <small>{{ currency }}</small></div>
+    <div class="foot">{% if result.variance > 0 %}<span class="status over"><i class="bi bi-exclamation-circle"></i>{% blocktrans with amount=result.variance|floatformat:"0g" %}{{ amount }} над плана{% endblocktrans %}</span>{% else %}<span class="status ok"><i class="bi bi-check-circle"></i>{% trans "в рамките на плана" %}</span>{% endif %}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-percent"></i>{% trans "Изпълнение" %}</div>
+    <div class="value">{% if result.percent is not None %}{{ result.percent }} <small>%</small>{% else %}–{% endif %}</div>
+    <div class="foot"><span class="note">{% trans "реално спрямо планирано" %}</span></div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-wallet2"></i>{% trans "Приходи: реално / план" %}</div>
+    <div class="value">{{ result.actual_income|floatformat:"0g" }} <small>/ {{ result.planned_income|floatformat:"0g" }} {{ currency }}</small></div>
+    <div class="foot">{% if result.actual_income < result.planned_income %}<span class="status over"><i class="bi bi-exclamation-circle"></i>{% trans "под плана" %}</span>{% else %}<span class="status ok"><i class="bi bi-check-circle"></i>{% trans "по план" %}</span>{% endif %}</div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-5">
+    <div class="hrp-card">
+      <h2>{{ result.budget.name|default:_("Бюджет") }}</h2>
+      <div class="hint">{{ result.budget.date_from|date:"d.m.Y" }} – {{ result.budget.date_to|date:"d.m.Y" }} · <a href="{% url 'budget_detail' result.budget.pk %}">{% trans "Към бюджета" %}</a></div>
+      <div class="barlist">
+        {% for row in result.rows %}
+        <div><div class="row-head"><span class="name">{{ row.category }}</span>
+            <span class="val">{% blocktrans with spent=row.actual|floatformat:"0g" planned=row.planned|floatformat:"0g" %}{{ spent }} от {{ planned }}{% endblocktrans %}
+              {% if row.over %}<span class="status over ms-2"><i class="bi bi-exclamation-circle"></i>+{{ row.variance|floatformat:"0g" }}</span>
+              {% else %}<span class="status ok ms-2"><i class="bi bi-check-circle"></i>{% trans "в плана" %}</span>{% endif %}</span></div>
+          <div class="track"><div class="fill {% if row.over %}over{% endif %}" style="width:{{ row.width }}%"></div></div></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-7">
+    {% include "reports/_table.html" with table=data.table hint=_("Планираното е частта от бюджета, която се пада на избрания период; категория без план е разход извън бюджета") %}
+  </div>
+</div>
+{% else %}
+  <div class="hrp-card" style="height:auto">
+    {% url 'budget_home' as budget_url %}
+    {% include "includes/empty_state.html" with icon="bi-piggy-bank" text=_("Няма подаден бюджет, който да покрива избрания период.") link_url=budget_url link_text=_("Към бюджетите") %}
+  </div>
+{% endif %}
+{% endwith %}
+{% endblock %}

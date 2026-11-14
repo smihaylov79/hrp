@@ -3,7 +3,7 @@
 Everything that has to be done on the server when the `improvements` branch is deployed **once, at the end**.
 Kept up to date after every phase of `IMPROVEMENT_PLAN.md`. Nothing here has been done on the server yet.
 
-Status: covers **Phase 0 – Phase 4 and Phase 6 part 1 (new layout + home)**. Last update: 13.11.2026.
+Status: covers **Phase 0 – Phase 5 and Phase 6 part 1 (new layout + home)**. Last update: 13.11.2026.
 
 Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.virtualenvs/hrp/bin/python`
 — replace with the real paths from the PythonAnywhere **Web** tab.
@@ -35,8 +35,11 @@ Paths below assume the project is in `~/hrp` and the virtualenv python is `~/.vi
 `requirements.txt` changed in Phase 3 — the production virtualenv **must** be updated:
 
 - [ ] `pip install -r requirements.txt` (inside the production virtualenv, before reloading the web app).
-      This installs the one new package, **`pytesseract`** (the reading app imports it; without it the site
-      does not start). The OCR feature also needs the `tesseract` binary and `TESSERACT_CMD` in `.env`.
+      This installs the new packages:
+      **`pytesseract`** (the reading app imports it; without it the site does not start; the OCR feature also
+      needs the `tesseract` binary and `TESSERACT_CMD` in `.env`) and
+      **`openpyxl`** + `et_xmlfile` (Phase 5: Excel export of report tables; without it "Excel (XLSX)" gives an
+      error, everything else works).
 - Removed from the file because nothing imports them: plotly, pyppeteer, requests-html, peewee, psycopg2,
   curl_cffi, fake-useragent, frozendict, multitasking, protobuf, contourpy, kiwisolver, fonttools, cycler.
   `pip install -r` does not uninstall them; they are harmless. Optional clean-up:
@@ -125,7 +128,11 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 - [ ] Top bar: the dark-mode button switches the theme and the choice survives a reload; the language menu works;
       the search box finds one of your products.
 - [ ] On a phone (or a narrow window) the sidebar is replaced by the menu button.
-- [ ] Reports → each of the 7 reports opens; "Категории (таблица)" shows only your household's numbers.
+- [ ] Reports → each of the six tabs opens (Обзор, Категории, Магазини, Цени и инфлация, Паричен поток,
+      Бюджет) and the charts are drawn; the numbers are only your household's.
+- [ ] Reports: change the period, the currency and the scope - the address bar changes and the tabs keep the
+      choice; "Експорт" downloads a CSV and an Excel file that open correctly (Cyrillic text readable).
+- [ ] An old bookmark such as `/reports/spending-history/` lands on the new Reports page.
 - [ ] Add a small purchase in EUR — saving is immediate (no 1–2 s wait).
 - [ ] Cooking → recipe list: your own name is in the navbar; log in as a second user and check theirs too.
 - [ ] Pages have their styling (proves `collectstatic` ran) and recipe / book images load (media mapping).
@@ -148,8 +155,16 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
   translation yet, so those languages show a mix until the `.po` files are updated
   (`django-admin makemessages -l en -l ro -l el`, translate, `compilemessages`; needs GNU gettext). Planned for
   the end of Phase 6.
-- Pages other than the home page still have their old content inside the new frame; they are restyled page by
-  page in the rest of Phase 5 / 6.
+- Pages other than the home page and Reports still have their old content inside the new frame; they are
+  restyled page by page in the rest of Phase 6.
+- **Reports are one hub now** (`/reports/` with six tabs). The addresses of the eight old report pages still
+  work: they redirect to the matching tab and carry the period / currency over.
+- **Personal inflation is calculated differently** (Phase 5): it is now a price index of a fixed basket
+  (median unit price per month, first month = 100) instead of the change in the amount spent, so the
+  percentages differ from the old page. The automatic basket only uses products bought in at least 3 months
+  whose unit price stays within a factor of 3 (gifts, rent, trips and similar are left out).
+- Charts: one library, Highcharts 11.4.8 from jsDelivr with an integrity hash (Chart.js and the second
+  Highcharts copy are gone from the report pages).
 
 ---------------------------------------------------------------------------------------------------
 ## Change log of this file
@@ -163,3 +178,4 @@ Finance data backups made locally on 13.11.2026 (folder `backups/`, git-ignored,
 | 3 (step 4) | `pip install -r requirements.txt` (pytesseract added, 14 unused packages removed) |
 | 4 | `createcachetable`, index migrations `shopping.0020` + `income.0003`, `collectstatic` now mandatory (`staticfiles/` untracked), cache notes |
 | 6 (part 1) | `theme.css` via `collectstatic`, CDN assets pinned with SRI, smoke-test steps for the new layout, translation note |
+| 5 | `pip install -r requirements.txt` now also installs `openpyxl`; `static/js/hrp-charts.js` via `collectstatic`; Reports hub smoke-test steps; note on the new inflation method and the redirects |

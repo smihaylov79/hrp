@@ -1,0 +1,67 @@
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
+
+{% block report_body %}
+{% with currency=filters.symbol %}
+{% if data.shop_choices %}
+<form method="get" action="{{ tab_url }}" class="hrp-card mb-3" style="height:auto">
+  <div class="d-flex flex-wrap align-items-end gap-2">
+    <div class="flex-grow-1" style="min-width:240px">
+      <label for="shopSelect" class="form-label mb-1">{% trans "Магазини" %} <span class="text-body-secondary small">({% trans "празно = всички; задръжте Ctrl за няколко" %})</span></label>
+      <select id="shopSelect" name="shop" class="form-select" multiple size="4">
+        {% for shop in data.shop_choices %}<option value="{{ shop.id }}" {% if shop.selected %}selected{% endif %}>{{ shop.name }}</option>{% endfor %}
+      </select>
+    </div>
+    {% for key, value in filters.as_params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+    <button class="btn btn-primary">{% trans "Покажи" %}</button>
+    {% if data.selected_shops %}<a class="btn btn-outline-secondary" href="{{ tab_url }}{{ filters.query }}">{% trans "Всички" %}</a>{% endif %}
+  </div>
+</form>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-xl-5">
+    <div class="hrp-card">
+      <h2>{% trans "Разходи по магазин" %}</h2>
+      <div class="hint">{% blocktrans with total=data.spent|floatformat:"2g" %}Общо {{ total }} {{ currency }}{% endblocktrans %}</div>
+      {% if data.shop_rows %}
+        <div class="barlist">
+          {% for row in data.shop_rows %}
+          <div><div class="row-head"><span class="name">{{ row.shop }}</span><span class="val">{{ row.spent|floatformat:"2g" }} {{ currency }} · {{ row.share|floatformat:1 }} %</span></div>
+            <div class="track"><div class="fill" style="width:{{ row.width|stringformat:'.1f' }}%"></div></div></div>
+          {% endfor %}
+        </div>
+      {% else %}
+        {% include "includes/empty_state.html" with icon="bi-shop" text=_("Няма покупки за избрания период.") %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    {% include "reports/_table.html" with table=data.shops_table hint=_("Брой покупки и средна стойност на една покупка") %}
+  </div>
+
+  {% if data.basket %}
+  <div class="col-12">
+    <div class="hrp-card" style="height:auto">
+      <h2>{% trans "Една и съща кошница в различни магазини" %}</h2>
+      <div class="hint">{% blocktrans count n=data.basket.products %}{{ n }} продукт, купуван във всеки от тези магазини, в обичайното количество{% plural %}{{ n }} продукта, купувани във всеки от тези магазини, в обичайните количества{% endblocktrans %}</div>
+      <div class="row g-3">
+        {% for shop in data.basket.shops %}
+        <div class="col-md-4"><div class="kpi">
+          <div class="label"><i class="bi bi-shop"></i>{{ shop.shop }}</div>
+          <div class="value">{{ shop.cost|floatformat:"2g" }} <small>{{ currency }}</small></div>
+          <div class="foot">{% if shop.cheapest %}<span class="status ok"><i class="bi bi-check-circle"></i>{% trans "най-евтино" %}</span>{% else %}<span class="note">+{{ shop.extra|floatformat:"2g" }} {{ currency }}</span>{% endif %}</div>
+        </div></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="col-12">
+    {% include "reports/_table.html" with table=data.comparison_table hint=_("Средна единична цена (с отстъпките) на продукти, купувани в поне два магазина; най-ниската е отбелязана") empty_text=_("Няма продукт, купуван в поне два магазина за периода.") %}
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% load i18n %}
+{# Shared form of "new basket" and "edit basket": a name and a tick list of the owner's inventory products #}
+<div class="hrp-card" style="height:auto; max-width: 720px">
+  <h2>{{ form_title }}</h2>
+  <div class="hint">{% trans "Кошницата е набор от продукти, чиито цени следите във времето (раздел „Цени и инфлация“)." %}</div>
+  <form method="post" action="{{ form_action }}">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="basketName" class="form-label">{% trans "Име на кошницата" %}</label>
+      <input type="text" id="basketName" name="name" value="{{ basket.name|default:'' }}" class="form-control" maxlength="100" required>
+    </div>
+
+    <label for="basketSearch" class="form-label">{% trans "Продукти" %}</label>
+    {% if products %}
+      <input type="search" id="basketSearch" class="form-control form-control-sm mb-2" placeholder="{% trans 'Филтрирай продуктите…' %}">
+      <div class="border rounded p-2 mb-3" style="max-height: 360px; overflow-y: auto" id="basketProducts">
+        {% for product in products %}
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="product_id[]" value="{{ product.id }}" id="basketProduct{{ product.id }}"
+                 {% if product.id in selected_ids %}checked{% endif %}>
+          <label class="form-check-label" for="basketProduct{{ product.id }}">{{ product.product.name }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      {% url 'inventory' as inventory_url %}
+      {% include "includes/empty_state.html" with icon="bi-box-seam" text=_("Нямате продукти в наличностите.") link_url=inventory_url link_text=_("Към наличностите") %}
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+    <a href="{% url 'reports_prices' %}" class="btn btn-outline-secondary">{% trans "Отказ" %}</a>
+  </form>
+</div>
+<script>
+  (function () {
+    var search = document.getElementById('basketSearch');
+    if (!search) { return; }
+    search.addEventListener('input', function () {
+      var needle = search.value.trim().toLowerCase();
+      document.querySelectorAll('#basketProducts .form-check').forEach(function (row) {
+        row.classList.toggle('d-none', needle && row.textContent.toLowerCase().indexOf(needle) === -1);
+      });
+    });
+  })();
+</script>

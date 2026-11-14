@@ -124,8 +124,8 @@ h1, h2, h3, h4, h5 { letter-spacing: -.01em; font-weight: 650; }
 
 .hrp-card { background: var(--hrp-surface); border: 1px solid var(--hrp-border); border-radius: var(--hrp-radius);
   box-shadow: var(--hrp-shadow); padding: 18px 20px; height: 100%; }
-.hrp-card > h2 { font-size: 1rem; margin: 0 0 2px; }
-.hrp-card > .hint { color: var(--hrp-text-3); font-size: .85rem; margin-bottom: 12px; }
+.hrp-card h2 { font-size: 1rem; margin: 0 0 2px; }
+.hrp-card .hint { color: var(--hrp-text-3); font-size: .85rem; margin-bottom: 12px; }
 
 .kpi { display: flex; flex-direction: column; gap: 4px; }
 .kpi .label { color: var(--hrp-text-2); font-size: .82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; }

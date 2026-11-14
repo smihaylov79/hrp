@@ -3,7 +3,6 @@
 Tests marked @known_bug describe the correct behaviour for a bug listed in IMPROVEMENT_PLAN.md and are
 expected to fail until that phase is done.
 """
-import json
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -16,7 +15,9 @@ from shopping.models import Product, ShoppingProduct
 from .models import (ExchangeRate, HouseholdInflationBasket, HouseholdInflationBasketItem, UserInflationBasket,
                      UserInflationBasketItem)
 from .currency import clear_cache
-from .utils import by_category_spending, by_product_statistics, db_to_df, income_db_to_df, rate_warnings
+from . import services
+from .filters import ReportFilters
+from .utils import db_to_df, income_db_to_df, rate_warnings
 
 
 def make_rate(base, target, rate, on_date=None):
@@ -159,23 +160,15 @@ class CurrencyConversionTests(HrpTestCase):
         rate.refresh_from_db()
         self.assertEqual(rate.date_extracted, past)
 
-    def test_highest_and_lowest_price_compare_converted_prices(self):
-        make_rate('BGN', 'EUR', '0.51129')
-        make_purchase(self.alice, self.milk, price=10, currency='BGN')   # 5.11 EUR
-        make_purchase(self.alice, self.soap, price=6, currency='EUR')    # 6.00 EUR
-        df = db_to_df(ShoppingProduct.objects.all(), 'EUR')
-        _, lowest, highest = by_product_statistics(df)
-        self.assertEqual(highest['product__name'], 'Сапун')
-        self.assertEqual(lowest['product__name'], 'Мляко')
-
     def test_uncategorised_products_stay_in_category_totals(self):
         loose = Product.objects.create(name='Без категория продукт')
         make_purchase(self.alice, self.milk, price=10)
         make_purchase(self.alice, loose, price=5)
-        df = db_to_df(ShoppingProduct.objects.all(), 'EUR')
-        main, sub = by_category_spending(df)
-        self.assertEqual(round(sum(row['y'] for row in main), 2), 15.0)
-        self.assertEqual(round(sum(row['y'] for row in sub), 2), 15.0)
+        data = services.categories(self.alice, ReportFilters({}))
+        self.assertEqual(data['spent'], 15.0)
+        self.assertEqual(round(sum(row['value'] for row in data['bars']), 2), 15.0)
+        self.assertEqual(round(sum(row['current'] for row in data['yoy_table'].rows), 2), 15.0)
+        self.assertIn('Без категория', [row['name'] for row in data['bars']])
 
     def test_empty_queryset_gives_empty_frame(self):
         df = db_to_df(ShoppingProduct.objects.none(), 'EUR')
@@ -250,17 +243,118 @@ class RateCommandTests(HrpTestCase):
         self.assertIn('Every record has an exchange rate', out.getvalue())
 
 
+class ReportFiltersTests(HrpTestCase):
+    """The shared filter bar: presets, comparison periods, bad input, links."""
+    today = date(2026, 3, 31)
+
+    def make(self, **params):
+        return ReportFilters(params, today=self.today)
+
+    def test_presets(self):
+        expected = {
+            'this_month': (date(2026, 3, 1), date(2026, 3, 31)),
+            'last_month': (date(2026, 2, 1), date(2026, 2, 28)),
+            '3m': (date(2026, 1, 1), date(2026, 3, 31)),
+            '12m': (date(2025, 4, 1), date(2026, 3, 31)),
+            'ytd': (date(2026, 1, 1), date(2026, 3, 31)),
+        }
+        for period, (start, end) in expected.items():
+            with self.subTest(period=period):
+                filters = self.make(period=period)
+                self.assertEqual((filters.start, filters.end), (start, end))
+
+    def test_custom_period_and_comparison_periods(self):
+        filters = self.make(period='custom', **{'from': '2024-02-29', 'to': '2024-03-10'})
+        self.assertEqual((filters.start, filters.end, filters.days), (date(2024, 2, 29), date(2024, 3, 10), 11))
+        self.assertEqual(filters.previous, (date(2024, 2, 18), date(2024, 2, 28)))
+        self.assertEqual(filters.last_year, (date(2023, 2, 28), date(2023, 3, 10)))     # 29 February is safe
+        self.assertEqual(self.make(period='last_month').previous, (date(2026, 1, 1), date(2026, 1, 28)))
+
+    def test_bad_input_falls_back_to_defaults(self):
+        for params in [{'period': 'nonsense'}, {'period': 'custom', 'from': 'x', 'to': '2026-01-01'},
+                       {'period': 'custom', 'from': '2026-02-01', 'to': '2026-01-01'},
+                       {'currency': 'XXX', 'scope': 'everyone'}]:
+            with self.subTest(params=params):
+                filters = self.make(**params)
+                self.assertEqual((filters.period, filters.currency, filters.scope), ('this_month', 'EUR', 'all'))
+
+    def test_links_keep_the_filters_and_leave_defaults_out(self):
+        self.assertEqual(self.make().query(), '')
+        filters = self.make(period='6m', currency='BGN', scope='mine')
+        self.assertEqual(filters.query(), '?period=6m&currency=BGN&scope=mine')
+        self.assertEqual(filters.query(main=3), '?period=6m&currency=BGN&scope=mine&main=3')
+        custom = self.make(period='custom', **{'from': '2026-01-05', 'to': '2026-01-20'})
+        self.assertEqual(custom.query(), '?period=custom&from=2026-01-05&to=2026-01-20')
+        self.assertEqual(custom.query(period='3m'), '?period=3m')
+
+
+class BasketIndexTests(HrpTestCase):
+    """Personal inflation is a price index (fixed basket), not the amount spent."""
+
+    def index(self):
+        filters = ReportFilters({'period': 'custom', 'from': '2026-01-01', 'to': '2026-12-31'})
+        frame = services.load_spending(self.alice, filters, filters.start, filters.end)
+        return services.basket_index(frame)
+
+    def test_buying_more_at_the_same_price_is_not_inflation(self):
+        make_purchase(self.alice, self.milk, price=2, quantity=1, on_date=date(2026, 1, 10))
+        make_purchase(self.alice, self.milk, price=2, quantity=10, on_date=date(2026, 2, 10))
+        make_purchase(self.alice, self.milk, price=2, quantity=3, on_date=date(2026, 3, 10))
+        result = self.index()
+        self.assertEqual(result['values'], [100.0, 100.0, 100.0])
+        self.assertEqual(result['change'], 0.0)
+
+    def test_price_changes_move_the_index_weighted_by_quantity(self):
+        # milk: 10 a month, 1.00 -> 1.50 ; soap: 1 a month, 10.00 all the time -> basket 20 -> 25 = +25 %
+        for month, milk_price in [(1, '1.00'), (2, '1.00'), (3, '1.50')]:
+            make_purchase(self.alice, self.milk, price=milk_price, quantity=10, on_date=date(2026, month, 5))
+            make_purchase(self.alice, self.soap, price=10, quantity=1, on_date=date(2026, month, 5))
+        result = self.index()
+        self.assertEqual(result['values'], [100.0, 100.0, 125.0])
+        self.assertEqual((result['change'], result['products']), (25.0, 2))
+
+    def test_month_without_purchase_keeps_the_last_price_and_discounts_count(self):
+        make_purchase(self.alice, self.milk, price=2, quantity=1, on_date=date(2026, 1, 10))
+        item = make_purchase(self.alice, self.milk, price=4, quantity=1, on_date=date(2026, 3, 10))
+        item.discount = Decimal('1')         # paid 3.00
+        item.save()
+        self.assertEqual(self.index()['values'], [100.0, 100.0, 150.0])
+
+    def test_automatic_basket_skips_things_without_a_stable_unit_price(self):
+        gift = Product.objects.create(name='Подарък')
+        for month, gift_price in [(1, 10), (2, 300), (3, 45)]:
+            make_purchase(self.alice, self.milk, price=2, on_date=date(2026, month, 5))
+            make_purchase(self.alice, gift, price=gift_price, on_date=date(2026, month, 5))
+        make_purchase(self.alice, self.soap, price=1, on_date=date(2026, 1, 5))          # only one month
+        filters = ReportFilters({'period': 'custom', 'from': '2026-01-01', 'to': '2026-12-31'})
+        frame = services.load_spending(self.alice, filters, filters.start, filters.end)
+        self.assertEqual(services.regular_products(frame), {self.milk.pk})
+        data = services.prices(self.alice, filters)
+        self.assertEqual([(i['key'], i['products'], i['change']) for i in data['indexes']], [('regular', 1, 0.0)])
+        self.assertEqual(len(data['changes_table'].rows), 2)        # the full table still lists the gift
+        self.assertEqual([row['product'] for row in data['increases']], [])
+
+    def test_one_month_of_data_gives_no_index(self):
+        make_purchase(self.alice, self.milk, price=2, on_date=date(2026, 1, 10))
+        self.assertIsNone(self.index())
+
+
 # ------------------------------------------------------------------------------------------------
-# Data isolation: every report shows only the user's (or their household's) data
+# The Reports hub: every tab shows only the user's (or their household's) data
 # ------------------------------------------------------------------------------------------------
-class ReportIsolationTests(HrpTestCase):
+HUB_TABS = ['reports_home', 'reports_categories', 'reports_shops', 'reports_prices', 'reports_cash_flow',
+            'reports_budget']
+LEGACY_URLS = ['spendings_history', 'by_shop', 'price_changes', 'income_analysis', 'income_spendings_comparison',
+               'consumption_summary', 'by_category_table']
+
+
+class ReportHubTests(HrpTestCase):
     """alice spends 15, bob 100, the household (carol + dave) 3000 — all EUR, all in the current month."""
 
     @classmethod
     def setUpTestData(cls):
         super().setUpTestData()
         cls.day = date.today().replace(day=1)
-        cls.month = cls.day.strftime('%Y-%m')
         make_purchase(cls.alice, cls.milk, price=10, on_date=cls.day)
         make_purchase(cls.alice, cls.soap, price=5, on_date=cls.day)
         make_purchase(cls.bob, cls.milk, price=100, on_date=cls.day)
@@ -279,134 +373,256 @@ class ReportIsolationTests(HrpTestCase):
         self.assertEqual(response.status_code, 200)
         return response
 
-    # -- login required ----------------------------------------------------------------------------
-    def test_login_required_on_protected_reports(self):
-        for name in ['reports_home', 'spendings_history', 'by_shop', 'create_inflation_basket', 'income_analysis',
-                     'consumption_summary']:
+    def data(self, user, url_name, params=None):
+        return self.get_as(user, url_name, params).context['data']
+
+    # -- access ------------------------------------------------------------------------------------
+    def test_login_required_everywhere(self):
+        for name in HUB_TABS + LEGACY_URLS + ['create_inflation_basket']:
             with self.subTest(view=name):
                 self.assertLoginRequired(reverse(name))
         self.assertLoginRequired(reverse('edit_inflation_basket', kwargs={'basket_id': 1}))
-
-    def test_login_required_price_changes(self):
-        self.assertLoginRequired(reverse('price_changes'))
-
-    def test_login_required_save_inflation_basket(self):
         self.assertLoginRequired(reverse('save_inflation_basket'), method='post', data={'name': 'x'})
+        self.assertLoginRequired(reverse('reports_home') + '?export=largest_purchases&format=csv')
 
-    def test_login_required_income_vs_spendings(self):
-        self.assertLoginRequired(reverse('income_spendings_comparison'))
+    def test_every_tab_opens_for_a_user_without_any_data(self):
+        newcomer = make_user('new@example.com', 'New')
+        for name in HUB_TABS:
+            for params in ({}, {'period': '12m', 'currency': 'BGN', 'scope': 'mine'}):
+                with self.subTest(view=name, params=params):
+                    self.get_as(newcomer, name, params)
+        self.get_as(newcomer, 'reports_categories', {'main': 999, 'sub': 999})
+        self.get_as(newcomer, 'reports_prices', {'product': 999})
+        self.get_as(newcomer, 'reports_shops', {'shop': ['999', 'abc']})
 
-    def test_login_required_by_category_table(self):
-        self.assertLoginRequired(reverse('by_category_table'), data={'month': self.month, 'currency': 'EUR'})
+    def test_old_report_addresses_redirect_to_the_matching_tab(self):
+        self.client.force_login(self.alice)
+        cases = [
+            ('spendings_history', {'date_from': '2026-01-05', 'date_to': '2026-01-20', 'currency': 'BGN',
+                                   'not_for_household_filter': 'external'},
+             reverse('reports_home') + '?period=custom&from=2026-01-05&to=2026-01-20&currency=BGN&scope=external'),
+            ('by_category_table', {'month': '2026-02', 'currency': 'EUR'},
+             reverse('reports_categories') + '?period=custom&from=2026-02-01&to=2026-02-28'),
+            ('price_changes', {'product': '7', 'currency': 'EUR'}, reverse('reports_prices') + '?product=7'),
+            ('by_shop', {}, reverse('reports_shops')),
+            ('income_spendings_comparison', {'currency': 'nonsense'}, reverse('reports_cash_flow')),
+            ('consumption_summary', {'fast': '3'}, reverse('reports_categories')),
+        ]
+        for name, params, target in cases:
+            with self.subTest(view=name):
+                response = self.client.get(reverse(name), params)
+                self.assertRedirects(response, target, fetch_redirect_response=False)
 
     # -- totals per user ---------------------------------------------------------------------------
-    def test_spendings_history_shows_only_own_or_household_spending(self):
-        for user, expected in self.expected_spent.items():
-            with self.subTest(user=user.email):
-                response = self.get_as(user, 'spendings_history', {'currency': 'EUR'})
-                self.assertEqual(float(response.context['total_spent']), expected)
-
-    def test_by_shop_shows_only_own_or_household_spending(self):
-        for user, expected in self.expected_spent.items():
-            with self.subTest(user=user.email):
-                response = self.get_as(user, 'by_shop', {'currency': 'EUR'})
-                self.assertEqual(round(float(response.context['total_for_selection']), 2), expected)
-
-    def test_consumption_summary_shows_only_own_or_household_spending(self):
-        for user, expected in self.expected_spent.items():
-            with self.subTest(user=user.email):
-                response = self.get_as(user, 'consumption_summary', {'currency': 'EUR', 'fast': '12'})
-                self.assertEqual(round(float(response.context['total_spent']), 2), expected)
-
-    def test_income_analysis_shows_only_own_or_household_income(self):
-        for user, expected in self.expected_income.items():
-            with self.subTest(user=user.email):
-                response = self.get_as(user, 'income_analysis', {'currency': 'EUR'})
-                self.assertEqual(float(response.context['total_income']), expected)
-
-    def test_income_vs_spendings_shows_only_own_or_household_data(self):
+    def test_overview_shows_only_own_or_household_money(self):
         for user in self.expected_spent:
             with self.subTest(user=user.email):
-                response = self.get_as(user, 'income_spendings_comparison', {'currency': 'EUR'})
-                income = sum(json.loads(response.context['income_series'])[0]['data'])
-                spent = sum(json.loads(response.context['spendings_series'])[0]['data'])
-                self.assertEqual(income, self.expected_income[user])
-                self.assertEqual(spent, self.expected_spent[user])
+                kpi = self.data(user, 'reports_home')['kpi']
+                self.assertEqual(kpi['spent'], self.expected_spent[user])
+                self.assertEqual(kpi['income'], self.expected_income[user])
+                self.assertEqual(kpi['net'], round(self.expected_income[user] - self.expected_spent[user], 2))
 
-    def test_by_category_table_shows_only_own_or_household_spending(self):
+    def test_other_tabs_show_only_own_or_household_money(self):
         for user, expected in self.expected_spent.items():
             with self.subTest(user=user.email):
-                response = self.get_as(user, 'by_category_table', {'month': self.month, 'currency': 'EUR'})
-                self.assertEqual(round(float(response.context['total_current']), 2), expected)
+                self.assertEqual(self.data(user, 'reports_categories')['spent'], expected)
+                self.assertEqual(self.data(user, 'reports_shops')['spent'], expected)
+                flow = self.data(user, 'reports_cash_flow')
+                self.assertEqual((flow['spending'], flow['income']), (expected, self.expected_income[user]))
 
-    def test_price_history_product_picker_lists_only_own_products(self):
-        only_bob = Product.objects.create(name='Само на Боб', category=self.cat_dairy)
-        make_purchase(self.bob, only_bob, price=1, on_date=self.day)
-        # no baskets exist, so the (unscoped) basket loop in price_changes is not reached
-        response = self.get_as(self.alice, 'price_changes')
-        names = [p.name for p in response.context['products']]
-        self.assertEqual(sorted(names), ['Мляко', 'Сапун'])
+    def test_scope_filter(self):
+        make_purchase(self.dave, self.milk, price=7, on_date=self.day, not_for_household=True)
+        expected = {'all': 3007.0, 'household': 3000.0, 'external': 7.0, 'mine': 2007.0}
+        for scope, spent in expected.items():
+            with self.subTest(scope=scope):
+                self.assertEqual(self.data(self.dave, 'reports_home', {'scope': scope})['kpi']['spent'], spent)
+        self.assertEqual(self.data(self.dave, 'reports_home', {'scope': 'mine'})['kpi']['income'], 4000.0)
 
-    def test_reports_do_not_crash_without_data(self):
-        """A new user (no purchases, no income) can open every report."""
-        newcomer = make_user('new@example.com', 'New')
-        for name, params in [('spendings_history', {'currency': 'EUR'}), ('by_shop', {'currency': 'EUR'}),
-                             ('price_changes', {}), ('income_analysis', {'currency': 'EUR'}),
-                             ('income_spendings_comparison', {'currency': 'EUR'}),
-                             ('consumption_summary', {'fast': '3'}),
-                             ('by_category_table', {'month': self.month, 'currency': 'EUR'})]:
-            with self.subTest(view=name):
-                self.get_as(newcomer, name, params)
+    def test_overview_comparisons_and_chart(self):
+        from dateutil.relativedelta import relativedelta
+        make_purchase(self.alice, self.milk, price=30, on_date=self.day - relativedelta(months=1))
+        make_purchase(self.alice, self.milk, price=5, on_date=self.day - relativedelta(years=1))
+        data = self.data(self.alice, 'reports_home')
+        kpi = data['kpi']
+        self.assertEqual((kpi['previous'], kpi['previous_diff'], kpi['previous_pct']), (30.0, -15.0, -50.0))
+        self.assertEqual((kpi['last_year'], kpi['last_year_diff'], kpi['last_year_pct']), (5.0, 10.0, 200.0))
+        self.assertEqual(kpi['purchases'], 2)
+        self.assertEqual(len(data['chart']['months']), 12)
+        self.assertEqual(data['chart']['spending'][-2:], [30.0, 15.0])
+        self.assertEqual(data['chart']['income'][-1], 111.0)
+        self.assertEqual([row['name'] for row in data['top_categories']], ['Храна', 'Дом'])
+        self.assertEqual([row['amount'] for row in data['largest_table'].rows], [10.0, 5.0])
 
-    def test_missing_rate_shows_a_warning_banner(self):
-        make_purchase(self.alice, self.milk, price=7, currency='USD', on_date=self.day)
-        for name, params in [('spendings_history', {'currency': 'EUR'}), ('by_shop', {'currency': 'EUR'}),
-                             ('income_spendings_comparison', {'currency': 'EUR'}),
-                             ('consumption_summary', {'fast': '12'}),
-                             ('by_category_table', {'month': self.month, 'currency': 'EUR'})]:
-            with self.subTest(view=name):
-                response = self.get_as(self.alice, name, params)
-                self.assertContains(response, 'USD → EUR')
-        # the USD purchase is left out, never added 1:1
-        response = self.get_as(self.alice, 'spendings_history', {'currency': 'EUR'})
-        self.assertEqual(float(response.context['total_spent']), 15.0)
-        # no banner when everything can be converted
-        self.assertNotContains(self.get_as(self.bob, 'spendings_history', {'currency': 'EUR'}), 'alert-warning')
+    def test_overview_query_budget(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        self.client.force_login(self.carol)
+        with CaptureQueriesContext(connection) as ctx:
+            self.assertEqual(self.client.get(reverse('reports_home')).status_code, 200)
+        self.assertLessEqual(len(ctx), 15, f'overview ran {len(ctx)} queries')
 
-    def test_category_totals_add_up_to_the_grand_total(self):
-        loose = Product.objects.create(name='Продукт без категория')
-        make_purchase(self.alice, loose, price=4, on_date=self.day)
-        response = self.get_as(self.alice, 'by_category_table', {'month': self.month, 'currency': 'EUR'})
-        rows = response.context['comparison_rows']
-        self.assertEqual(round(sum(row['current'] for row in rows), 2), 19.0)
-        self.assertEqual(round(float(response.context['total_current']), 2), 19.0)
-        self.assertEqual(len(rows), 3)   # Храна, Дом and the uncategorised product
+    # -- categories --------------------------------------------------------------------------------
+    def test_category_drill_down_and_year_over_year(self):
+        from dateutil.relativedelta import relativedelta
+        make_purchase(self.alice, self.milk, price=4, on_date=self.day - relativedelta(years=1))
+        top = self.data(self.alice, 'reports_categories')
+        self.assertEqual(top['level'], 'main')
+        self.assertEqual([(row['name'], row['value']) for row in top['bars']], [('Храна', 10.0), ('Дом', 5.0)])
+        food = next(row for row in top['yoy_table'].rows if row['name'] == 'Храна')
+        self.assertEqual((food['current'], food['previous'], food['diff'], food['pct']), (10.0, 4.0, 6.0, 150.0))
+        self.assertEqual(top['yoy_table'].total['current'], 15.0)
 
-    # -- inflation baskets -------------------------------------------------------------------------
+        sub = self.data(self.alice, 'reports_categories', {'main': self.main_food.pk})
+        self.assertEqual((sub['level'], sub['main_name'], sub['spent']), ('sub', 'Храна', 10.0))
+        self.assertEqual([row['name'] for row in sub['bars']], ['Млечни'])
+
+        products = self.data(self.alice, 'reports_categories', {'main': self.main_food.pk, 'sub': self.cat_dairy.pk})
+        self.assertEqual((products['level'], products['sub_name']), ('products', 'Млечни'))
+        self.assertEqual([(row['product'], row['spent'], row['times']) for row in products['products_table'].rows],
+                         [('Мляко', 10.0, 1)])
+
+    def test_drill_down_cannot_reach_other_users_data(self):
+        data = self.data(self.alice, 'reports_categories', {'main': self.main_food.pk})
+        self.assertEqual(data['spent'], 10.0)       # bob and the household also bought milk
+
+    # -- shops -------------------------------------------------------------------------------------
+    def test_shop_comparison_marks_the_cheapest_shop(self):
+        from shopping.models import Shop
+        cheap, dear = Shop.objects.create(name='Евтин'), Shop.objects.create(name='Скъп')
+        make_purchase(self.bob, self.soap, price=2, quantity=2, on_date=self.day, shop=cheap)
+        make_purchase(self.bob, self.soap, price=3, quantity=2, on_date=self.day, shop=dear)
+        data = self.data(self.bob, 'reports_shops')
+        row = data['comparison_table'].rows[0]
+        self.assertEqual((row['product'], row['Евтин'], row['Скъп'], row['highlight']), ('Сапун', 2.0, 3.0, ['Евтин']))
+        self.assertEqual([shop['name'] for shop in data['shop_choices']], ['Евтин', 'Скъп', 'Тестов магазин'])
+        only = self.data(self.bob, 'reports_shops', {'shop': [cheap.pk]})
+        self.assertEqual((only['spent'], [r['shop'] for r in only['shop_rows']]), (4.0, ['Евтин']))
+
+    # -- prices ------------------------------------------------------------------------------------
     def make_user_basket(self, user, name, product):
         basket = UserInflationBasket.objects.create(user=user, name=name)
         UserInflationBasketItem.objects.create(basket=basket, product=self.user_inventory(user, product))
         return basket
 
-    def test_price_changes_shows_only_own_baskets(self):
+    def basket_names(self, user):
+        return [index['name'] for index in self.data(user, 'reports_prices')['indexes'] if index['basket_id']]
+
+    def test_prices_tab_lists_only_own_products_and_baskets(self):
+        only_bob = Product.objects.create(name='Само на Боб', category=self.cat_dairy)
+        make_purchase(self.bob, only_bob, price=1, on_date=self.day)
         self.make_user_basket(self.alice, 'Кошница на Алис', self.milk)
         self.make_user_basket(self.bob, 'Кошница на Боб', self.milk)
-        response = self.get_as(self.alice, 'price_changes')
-        self.assertEqual([b.name for b in response.context['inflation_baskets']], ['Кошница на Алис'])
+        data = self.data(self.alice, 'reports_prices')
+        self.assertEqual(sorted(product['name'] for product in data['products']), ['Мляко', 'Сапун'])
+        self.assertEqual(self.basket_names(self.alice), ['Кошница на Алис'])
 
-    def test_price_changes_shows_only_own_household_baskets(self):
-        other_home = HouseholdInflationBasket.objects.create(household=self.household, name='Домашна кошница')
+    def test_prices_tab_lists_only_own_household_baskets(self):
+        home_basket = HouseholdInflationBasket.objects.create(household=self.household, name='Домашна кошница')
         HouseholdInflationBasketItem.objects.create(
-            basket=other_home, product=self.household_inventory(self.household, self.milk))
+            basket=home_basket, product=self.household_inventory(self.household, self.milk))
         erin = make_user('erin@example.com', 'Erin')
         erin_home = make_household(erin, 'erin_home')
-        make_purchase(erin, self.milk, price=3, on_date=self.day)
         foreign = HouseholdInflationBasket.objects.create(household=erin_home, name='Чужда домашна кошница')
         HouseholdInflationBasketItem.objects.create(
             basket=foreign, product=self.household_inventory(erin_home, self.milk))
-        response = self.get_as(self.carol, 'price_changes')
-        self.assertEqual([b.name for b in response.context['inflation_baskets']], ['Домашна кошница'])
+        self.assertEqual(self.basket_names(self.carol), ['Домашна кошница'])
+        self.assertEqual(self.basket_names(self.dave), ['Домашна кошница'])
 
+    def test_price_history_and_changes(self):
+        from datetime import timedelta
+        make_purchase(self.alice, self.milk, price=12, on_date=self.day - timedelta(days=40))
+        make_purchase(self.bob, self.milk, price=999, on_date=self.day - timedelta(days=20))
+        data = self.data(self.alice, 'reports_prices', {'product': self.milk.pk})
+        self.assertEqual([point['price'] for point in data['history']['points']], [12.0, 10.0])
+        change = data['changes_table'].rows[0]
+        self.assertEqual((change['product'], change['first'], change['last'], change['pct']), ('Мляко', 12.0, 10.0, -16.7))
+        self.assertEqual([row['product'] for row in data['decreases']], ['Мляко'])
+        foreign = Product.objects.create(name='Чужд продукт')
+        make_purchase(self.bob, foreign, price=1, on_date=self.day)
+        self.assertIsNone(self.data(self.alice, 'reports_prices', {'product': foreign.pk})['history'])
+
+    # -- budget ------------------------------------------------------------------------------------
+    def test_budget_tab_compares_the_periods_share_of_the_plan(self):
+        import calendar
+        from budget.models import Budget, BudgetIncomeItem, BudgetItem
+        from income.models import IncomeType
+        today = date.today()
+        year_days = 366 if calendar.isleap(today.year) else 365
+        budget = Budget.objects.create(name='Годишен', creator=self.alice, currency='EUR', submitted=True,
+                                       date_from=date(today.year, 1, 1), date_to=date(today.year, 12, 31))
+        BudgetItem.objects.create(budget=budget, category=self.main_food, planned_amount=year_days)       # 1 a day
+        BudgetIncomeItem.objects.create(budget=budget, income_type=IncomeType.objects.get(name='Заплата'),
+                                        planned_amount=year_days * 2)
+        foreign = Budget.objects.create(name='На Боб', creator=self.bob, currency='EUR', submitted=True,
+                                        date_from=date(today.year, 1, 1), date_to=date(today.year, 12, 31))
+        BudgetItem.objects.create(budget=foreign, category=self.main_food, planned_amount=999999)
+
+        result = self.data(self.alice, 'reports_budget', {'period': 'this_month'})['result']
+        days = today.day
+        self.assertEqual(result['budget'], budget)
+        rows = {row['category']: row for row in result['rows']}
+        self.assertEqual((rows['Храна']['planned'], rows['Храна']['actual'], rows['Храна']['over']),
+                         (float(days), 10.0, 10.0 > days))
+        self.assertEqual((rows['Дом']['planned'], rows['Дом']['actual'], rows['Дом']['over']), (0.0, 5.0, True))
+        self.assertEqual((result['planned_income'], result['actual_income']), (float(days * 2), 111.0))
+        self.assertIsNone(self.data(self.dave, 'reports_budget')['result'])
+
+    # -- export ------------------------------------------------------------------------------------
+    def test_export_csv_and_xlsx_contain_only_own_rows(self):
+        import io
+
+        from openpyxl import load_workbook
+        self.client.force_login(self.alice)
+        url = reverse('reports_categories')
+        csv_response = self.client.get(url, {'export': 'products', 'format': 'csv'})
+        self.assertEqual(csv_response.status_code, 200)
+        self.assertIn('text/csv', csv_response['Content-Type'])
+        self.assertIn('products.csv', csv_response['Content-Disposition'])
+        lines = csv_response.content.decode('utf-8-sig').strip().splitlines()
+        self.assertEqual(len(lines), 3)                                  # header + milk + soap
+        self.assertIn('Мляко;Млечни;1.0;1;10.0;10.0', lines)
+
+        xlsx_response = self.client.get(url, {'export': 'year_over_year', 'format': 'xlsx'})
+        self.assertIn('spreadsheetml', xlsx_response['Content-Type'])
+        sheet = load_workbook(io.BytesIO(xlsx_response.content)).active
+        rows = list(sheet.iter_rows(values_only=True))
+        self.assertEqual(rows[1][:2], ('Храна', 10))
+        self.assertEqual(rows[-1][:2], ('Общо', 15))
+
+        self.assertEqual(self.client.get(url, {'export': 'nope'}).status_code, 404)
+        for name, table in [('reports_home', 'income_and_spending_by_month'), ('reports_shops', 'shops'),
+                            ('reports_prices', 'price_changes'), ('reports_cash_flow', 'cash_flow'),
+                            ('reports_budget', 'budget_vs_actual')]:
+            with self.subTest(table=table):
+                self.assertEqual(self.client.get(reverse(name), {'export': table}).status_code, 200)
+
+    # -- currency warnings -------------------------------------------------------------------------
+    def test_missing_rate_shows_a_warning_banner_on_every_tab(self):
+        make_purchase(self.alice, self.milk, price=7, currency='USD', on_date=self.day)
+        for name in HUB_TABS:
+            with self.subTest(view=name):
+                self.assertContains(self.get_as(self.alice, name), 'USD → EUR')
+        # the USD purchase is left out, never added 1:1
+        self.assertEqual(self.data(self.alice, 'reports_home')['kpi']['spent'], 15.0)
+        self.assertNotContains(self.get_as(self.bob, 'reports_home'), 'alert-warning')
+
+    def test_amounts_follow_the_selected_currency(self):
+        data = self.data(self.alice, 'reports_home', {'currency': 'BGN'})
+        self.assertEqual(data['kpi']['spent'], 29.34)                    # 15 EUR at the fixed peg
+
+    # -- page -------------------------------------------------------------------------------------
+    def test_hub_page_has_tabs_filters_and_one_pinned_chart_library(self):
+        response = self.get_as(self.alice, 'reports_home', {'period': '6m', 'scope': 'mine'})
+        for text in ['Обзор', 'Категории', 'Магазини', 'Цени и инфлация', 'Паричен поток', 'Бюджет',
+                     'name="scope"', 'name="currency"', 'period=12m', 'highcharts@11.4.8/', 'js/hrp-charts.js',
+                     'export=largest_purchases']:
+            with self.subTest(text=text):
+                self.assertContains(response, text)
+        # links to the other tabs keep the chosen filters
+        self.assertContains(response, reverse('reports_shops') + '?period=6m&amp;scope=mine')
+        self.assertNotContains(response, 'chart.js')
+
+    # -- inflation baskets -------------------------------------------------------------------------
     def test_create_basket_lists_only_own_inventory(self):
         mine = self.user_inventory(self.alice, self.milk)
         self.user_inventory(self.bob, self.soap)
@@ -418,6 +634,25 @@ class ReportIsolationTests(HrpTestCase):
         self.user_inventory(self.bob, self.soap)
         response = self.get_as(self.alice, 'edit_inflation_basket', basket_id=basket.pk)
         self.assertEqual([p.product.name for p in response.context['products']], ['Мляко'])
+        self.assertContains(response, 'checked')
+
+    def test_save_and_edit_basket(self):
+        mine = self.user_inventory(self.alice, self.milk)
+        other = self.user_inventory(self.alice, self.soap)
+        self.client.force_login(self.alice)
+        response = self.client.post(reverse('save_inflation_basket'), {'name': 'Моята', 'product_id[]': [mine.pk]})
+        self.assertRedirects(response, reverse('reports_prices'), fetch_redirect_response=False)
+        basket = UserInflationBasket.objects.get(user=self.alice, name='Моята')
+        self.assertEqual([item.product_id for item in basket.user_basket_items.all()], [mine.pk])
+        self.client.post(reverse('edit_inflation_basket', kwargs={'basket_id': basket.pk}),
+                         {'name': 'Нова', 'product_id[]': [other.pk]})
+        basket.refresh_from_db()
+        self.assertEqual((basket.name, [item.product_id for item in basket.user_basket_items.all()]),
+                         ('Нова', [other.pk]))
+        # a second basket with the same name is refused with a message instead of a server error
+        response = self.client.post(reverse('save_inflation_basket'), {'name': 'Нова'})
+        self.assertRedirects(response, reverse('create_inflation_basket'), fetch_redirect_response=False)
+        self.assertEqual(UserInflationBasket.objects.filter(user=self.alice).count(), 1)
 
     def test_save_basket_rejects_foreign_inventory_products(self):
         foreign = self.user_inventory(self.bob, self.soap)
@@ -425,19 +660,12 @@ class ReportIsolationTests(HrpTestCase):
         self.client.post(reverse('save_inflation_basket'), {'name': 'Чужда', 'product_id[]': [foreign.pk]})
         self.assertFalse(UserInflationBasketItem.objects.filter(product=foreign).exists())
 
-    def test_edit_foreign_basket_is_404(self):
+    def test_foreign_basket_cannot_be_opened_or_changed(self):
         basket = self.make_user_basket(self.bob, 'Кошница на Боб', self.milk)
         self.client.force_login(self.alice)
-        response = self.client.get(reverse('edit_inflation_basket', kwargs={'basket_id': basket.pk}))
-        self.assertEqual(response.status_code, 404)
-
-    def test_edit_foreign_basket_does_not_change_it(self):
-        basket = self.make_user_basket(self.bob, 'Кошница на Боб', self.milk)
-        self.client.force_login(self.alice)
-        try:
-            self.client.post(reverse('edit_inflation_basket', kwargs={'basket_id': basket.pk}), {'name': 'Хак'})
-        except UserInflationBasket.DoesNotExist:
-            pass  # today: unhandled DoesNotExist; Phase 1 turns it into a 404
+        url = reverse('edit_inflation_basket', kwargs={'basket_id': basket.pk})
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url, {'name': 'Хак'}).status_code, 404)
         basket.refresh_from_db()
         self.assertEqual(basket.name, 'Кошница на Боб')
         self.assertEqual(basket.user_basket_items.count(), 1)

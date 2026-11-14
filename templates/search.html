@@ -19,7 +19,7 @@
       <li><span class="ico"><i class="bi bi-bag"></i></span>
         <div class="flex-grow-1"><div class="fw-medium">{{ product.name }}</div>
           <div class="meta"><a href="{% url 'shopping' %}?product_id={{ product.id }}">{% trans "Покупки" %}</a> ·
-            <a href="{% url 'price_changes' %}?product={{ product.id }}&currency=EUR">{% trans "Движение на цената" %}</a></div></div></li>
+            <a href="{% url 'reports_prices' %}?product={{ product.id }}#history">{% trans "Движение на цената" %}</a></div></div></li>
       {% endfor %}
     </ul></div></div>
   {% endif %}

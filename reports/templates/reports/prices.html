@@ -1,0 +1,124 @@
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
+
+{% block report_actions %}
+  <a class="btn btn-outline-primary" href="{% url 'create_inflation_basket' %}"><i class="bi bi-plus-lg me-1"></i>{% trans "Нова кошница" %}</a>
+{% endblock %}
+
+{% block report_body %}
+{% with currency=filters.symbol %}
+<div class="hrp-card mb-3" style="height:auto">
+  <h2>{% trans "Лична инфлация" %}</h2>
+  <div class="hint mb-0">{% trans "Индекс на цените: една и съща кошница (средните ви месечни количества) се оценява по медианната цена за всеки месец; първият месец = 100. Колко купувате не влияе - само цените." %}</div>
+</div>
+
+<div class="row g-3">
+  {% for index in data.indexes %}
+  <div class="col-xl-6">
+    <div class="hrp-card">
+      <div class="d-flex align-items-start gap-2">
+        <div class="flex-grow-1">
+          <h2>{{ index.name }}</h2>
+          <div class="hint">{{ index.hint }}{% if index.products %} · {% blocktrans count n=index.products %}{{ n }} продукт{% plural %}{{ n }} продукта{% endblocktrans %}{% endif %}</div>
+        </div>
+        {% if index.basket_id %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'edit_inflation_basket' index.basket_id %}"><i class="bi bi-pencil me-1"></i>{% trans "Промени" %}</a>{% endif %}
+      </div>
+      {% if index.values %}
+        <div class="kpi mb-2"><div class="value">{% if index.change > 0 %}+{% endif %}{{ index.change|floatformat:1 }} <small>%</small></div>
+          <div class="foot"><span class="note">{% trans "промяна на цените за периода" %}</span></div></div>
+        <div id="index-{{ index.key }}" style="height:240px"></div>
+      {% else %}
+        {% include "includes/empty_state.html" with icon="bi-graph-up-arrow" text=_("Нужни са покупки на продуктите от кошницата в поне два месеца от периода.") %}
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12"><div class="hrp-card" style="height:auto">
+    {% url 'create_inflation_basket' as create_url %}
+    {% include "includes/empty_state.html" with icon="bi-graph-up-arrow" text=_("Няма достатъчно покупки за индекс. Изберете по-дълъг период или създайте кошница.") link_url=create_url link_text=_("Нова кошница") %}
+  </div></div>
+  {% endfor %}
+
+  <div class="col-xl-6">
+    <div class="hrp-card">
+      <h2>{% trans "Най-голямо поскъпване" %}</h2>
+      <div class="hint">{% trans "Първа спрямо последна единична цена в периода" %}</div>
+      {% if data.increases %}
+      <ul class="hrp-list">
+        {% for row in data.increases %}{% if row.pct > 0 %}
+        <li><span class="ico"><i class="bi bi-arrow-up-right"></i></span>
+          <div class="flex-grow-1"><div class="fw-medium"><a href="{{ tab_url }}{{ row.url }}" class="text-reset">{{ row.product }}</a></div>
+            <div class="meta">{{ row.first|floatformat:2 }} → {{ row.last|floatformat:2 }} {{ currency }}</div></div>
+          <span class="delta bad">+{{ row.pct|floatformat:1 }} %</span></li>
+        {% endif %}{% endfor %}
+      </ul>
+      {% else %}{% include "includes/empty_state.html" with icon="bi-arrow-up-right" text=_("Няма продукт с поне две покупки в периода.") %}{% endif %}
+    </div>
+  </div>
+  <div class="col-xl-6">
+    <div class="hrp-card">
+      <h2>{% trans "Най-голямо поевтиняване" %}</h2>
+      <div class="hint">{% trans "Първа спрямо последна единична цена в периода" %}</div>
+      {% if data.decreases %}
+      <ul class="hrp-list">
+        {% for row in data.decreases %}
+        <li><span class="ico"><i class="bi bi-arrow-down-right"></i></span>
+          <div class="flex-grow-1"><div class="fw-medium"><a href="{{ tab_url }}{{ row.url }}" class="text-reset">{{ row.product }}</a></div>
+            <div class="meta">{{ row.first|floatformat:2 }} → {{ row.last|floatformat:2 }} {{ currency }}</div></div>
+          <span class="delta good">{{ row.pct|floatformat:1 }} %</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}{% include "includes/empty_state.html" with icon="bi-arrow-down-right" text=_("Няма поевтинели продукти в периода.") %}{% endif %}
+    </div>
+  </div>
+
+  <div class="col-12" id="history">
+    <div class="hrp-card" style="height:auto">
+      <div class="d-flex align-items-start gap-2 flex-wrap">
+        <div class="flex-grow-1"><h2>{% trans "Движение на цената на продукт" %}</h2>
+          <div class="hint">{% if data.history %}{{ data.history.name }} · {% blocktrans with low=data.history.low|floatformat:2 high=data.history.high|floatformat:2 last=data.history.last|floatformat:2 %}най-ниска {{ low }}, най-висока {{ high }}, последна {{ last }} {{ currency }}{% endblocktrans %}{% else %}{% trans "Изберете продукт" %}{% endif %}</div></div>
+        <form method="get" action="{{ tab_url }}#history" class="d-flex gap-2">
+          {% for key, value in filters.as_params.items %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+          <label for="productSelect" class="visually-hidden">{% trans "Продукт" %}</label>
+          <select id="productSelect" name="product" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px">
+            <option value="">{% trans "-- Изберете продукт --" %}</option>
+            {% for product in data.products %}<option value="{{ product.id }}" {% if product.selected %}selected{% endif %}>{{ product.name }}</option>{% endfor %}
+          </select>
+        </form>
+        {% if data.history %}{% include "reports/_export.html" with table=data.history_table %}{% endif %}
+      </div>
+      {% if data.history %}
+        <div id="historyChart" style="height:280px"></div>
+        <details class="mt-2"><summary class="small">{% trans "Таблица" %}</summary>{% include "reports/_table.html" with table=data.history_table bare=True %}</details>
+      {% elif hidden_params %}
+        {% include "includes/empty_state.html" with icon="bi-graph-up" text=_("Няма покупки на този продукт в избрания период.") %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-12">
+    {% include "reports/_table.html" with table=data.changes_table hint=_("Всички продукти с поне две покупки в различни дни") empty_text=_("Няма продукт с поне две покупки в периода.") %}
+  </div>
+</div>
+{% endwith %}
+
+{{ data.indexes|json_script:"index-data" }}
+{{ data.history|json_script:"history-data" }}
+{% endblock %}
+
+{% block report_js %}
+<script>
+  (function () {
+    (hrpCharts.data('index-data') || []).forEach(function (index) {
+      if (!index.values.length) { return; }
+      hrpCharts.lines('index-' + index.key, {
+        categories: index.months, series: [{ name: index.name, data: index.values }], fromZero: false, decimals: 1
+      });
+    });
+    var history = hrpCharts.data('history-data');
+    if (history) {
+      hrpCharts.timeline('historyChart', { name: history.name, unit: '{{ filters.symbol }}', points: history.points });
+    }
+  })();
+</script>
+{% endblock %}

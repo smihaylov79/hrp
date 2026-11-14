@@ -1,0 +1,82 @@
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
+
+{% block report_body %}
+{% with currency=filters.symbol %}
+<div class="row g-3 mb-3">
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-wallet2"></i>{% trans "Приходи" %}</div>
+    <div class="value">{{ data.income|floatformat:"0g" }} <small>{{ currency }}</small></div><div class="foot"></div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-bag"></i>{% trans "Разходи" %}</div>
+    <div class="value">{{ data.spending|floatformat:"0g" }} <small>{{ currency }}</small></div><div class="foot"></div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-plus-slash-minus"></i>{% trans "Нетно" %}</div>
+    <div class="value">{% if data.net > 0 %}+{% endif %}{{ data.net|floatformat:"0g" }} <small>{{ currency }}</small></div>
+    <div class="foot">{% if data.net < 0 %}<span class="status over"><i class="bi bi-exclamation-circle"></i>{% trans "период на минус" %}</span>{% else %}<span class="status ok"><i class="bi bi-check-circle"></i>{% trans "период на плюс" %}</span>{% endif %}</div></div></div>
+  <div class="col-6 col-xl-3"><div class="hrp-card kpi">
+    <div class="label"><i class="bi bi-percent"></i>{% trans "Спестявания" %}</div>
+    <div class="value">{% if data.savings_rate is not None %}{{ data.savings_rate|floatformat:1 }} <small>%</small>{% else %}–{% endif %}</div>
+    <div class="foot"><span class="note">{% trans "нетно като дял от приходите" %}</span></div></div></div>
+</div>
+
+{% if data.has_data %}
+<div class="row g-3">
+  <div class="col-xl-7">
+    <div class="hrp-card">
+      <h2>{% trans "Приходи и разходи по месеци" %}</h2>
+      <div class="hint">{% blocktrans %}В {{ currency }}{% endblocktrans %}</div>
+      <div id="flowChart" style="height:300px"></div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="hrp-card">
+      <h2>{% trans "Нетно по месеци" %}</h2>
+      <div class="hint">{% trans "Приходи минус разходи; под нулата = месец на минус" %}</div>
+      <div id="netChart" style="height:300px"></div>
+    </div>
+  </div>
+
+  <div class="col-xl-8">
+    {% include "reports/_table.html" with table=data.table hint=_("С натрупване = сбор на нетното от началото на периода") %}
+  </div>
+  <div class="col-xl-4">
+    <div class="hrp-card">
+      <div class="d-flex align-items-start gap-2">
+        <div class="flex-grow-1"><h2>{% trans "Приходи по вид" %}</h2><div class="hint">{% trans "Дял от приходите за периода" %}</div></div>
+        {% if data.income_types %}{% include "reports/_export.html" with table=data.tables.income_by_type %}{% endif %}
+      </div>
+      {% if data.income_types %}
+        <div class="barlist">
+          {% for row in data.income_types %}
+          <div><div class="row-head"><span class="name">{{ row.name }}</span><span class="val">{{ row.value|floatformat:"0g" }} {{ currency }} · {{ row.share|floatformat:0 }} %</span></div>
+            <div class="track"><div class="fill" style="width:{{ row.width|stringformat:'.1f' }}%"></div></div></div>
+          {% endfor %}
+        </div>
+      {% else %}
+        {% url 'register_income' as income_url %}
+        {% include "includes/empty_state.html" with icon="bi-wallet2" text=_("Няма приходи за избрания период.") link_url=income_url link_text=_("Добави приход") %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% else %}
+  <div class="hrp-card" style="height:auto">{% include "includes/empty_state.html" with icon="bi-cash-stack" text=_("Няма приходи и разходи за избрания период.") %}</div>
+{% endif %}
+{% endwith %}
+
+{{ data.chart|json_script:"flow-data" }}
+{% endblock %}
+
+{% block report_js %}
+<script>
+  (function () {
+    var chart = hrpCharts.data('flow-data');
+    hrpCharts.lines('flowChart', {
+      categories: chart.months, unit: '{{ filters.symbol }}',
+      series: [{ name: '{% trans "Приходи" %}', data: chart.income }, { name: '{% trans "Разходи" %}', data: chart.spending }]
+    });
+    hrpCharts.columns('netChart', { categories: chart.months, unit: '{{ filters.symbol }}', name: '{% trans "Нетно" %}', data: chart.net });
+  })();
+</script>
+{% endblock %}

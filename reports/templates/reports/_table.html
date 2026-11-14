@@ -1,0 +1,33 @@
+{% load i18n %}
+{% comment %} A report table with its export menu. Usage:
+     { % include "reports/_table.html" with table=data.products_table hint="…" empty_text="…" % }
+   Pass bare=True to render only the table (no card, no title) - used for the table view of a chart. {% endcomment %}
+{% if not bare %}
+<div class="hrp-card" style="height:auto">
+  <div class="d-flex align-items-start gap-2">
+    <div class="flex-grow-1">
+      <h2>{{ table.title }}</h2>
+      {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+    </div>
+    {% if table.rows %}{% include "reports/_export.html" %}{% endif %}
+  </div>
+{% endif %}
+  {% if table.rows %}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr>{% for column in table.header %}<th scope="col" class="{% if column.numeric %}num{% endif %}">{{ column.label }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        {% for row in table.display_rows %}
+        <tr>{% for cell in row %}<td class="{% if cell.numeric %}num{% endif %}{% if cell.highlight %} fw-semibold{% endif %}">{% if cell.url %}<a href="{{ cell.url }}">{{ cell.text }}</a>{% else %}{{ cell.text }}{% endif %}{% if cell.highlight %} <i class="bi bi-check-circle" style="color:var(--status-good-text)" title="{% trans 'най-ниска цена' %}"></i><span class="visually-hidden">{% trans "най-ниска цена" %}</span>{% endif %}</td>{% endfor %}</tr>
+        {% endfor %}
+      </tbody>
+      {% if table.display_total %}
+      <tfoot><tr>{% for cell in table.display_total %}<th scope="{% if forloop.first %}row{% else %}col{% endif %}" class="{% if cell.numeric %}num{% endif %}">{{ cell.text }}</th>{% endfor %}</tr></tfoot>
+      {% endif %}
+    </table>
+  </div>
+  {% if table.hidden_rows %}<div class="hint mt-2 mb-0">{% blocktrans with n=table.hidden_rows %}Още {{ n }} реда са в експортирания файл.{% endblocktrans %}</div>{% endif %}
+  {% else %}
+    {% include "includes/empty_state.html" with icon="bi-table" text=empty_text|default:_("Няма данни за избрания период.") %}
+  {% endif %}
+{% if not bare %}</div>{% endif %}

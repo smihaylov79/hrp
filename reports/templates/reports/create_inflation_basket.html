@@ -1,60 +1,6 @@
-{% extends 'reports/reports_home.html' %}
-
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
 {% block report_body %}
-
-        <h3>Създай потребителска кошница</h3>
-<form method="POST" action="{% url 'save_inflation_basket' %}">
-    {% csrf_token %}
-    <div class="mb-2">
-        <input type="text" name="name" placeholder="Име на кошницата" class="form-control" required>
-    </div>
-    <h4 class="mt-4 mb-3">🧺 Продукти в кошницата</h4>
-<div class="table-responsive">
-  <table class="table table-bordered align-middle" id="basketTable">
-    <thead class="table-light">
-      <tr>
-        <th>Продукт</th>
-        <th>Премахни</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <select name="product_id[]" class="form-select">
-            <option value="" disabled selected>Избери продукт</option>
-            {% for product in products %}
-              <option value="{{ product.id }}">{{ product.product.name }}</option>
-            {% endfor %}
-          </select>
-        </td>
-        <td>
-          <button type="button" class="removeRow btn btn-sm btn-danger">✖</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-<button type="button" class="btn btn-primary mt-2" onclick="addRow()">➕ Добави продукт</button>
-
-    <button type="submit" class="btn btn-success">Създай</button>
-</form>
-<script>
-  function addRow() {
-    const tableBody = document.querySelector('#basketTable tbody');
-    const newRow = tableBody.rows[0].cloneNode(true);
-    newRow.querySelector('select').selectedIndex = 0;
-    tableBody.appendChild(newRow);
-  }
-
-  document.addEventListener("click", function(e) {
-    if (e.target && e.target.classList.contains("removeRow")) {
-      const row = e.target.closest("tr");
-      const tableBody = document.querySelector('#basketTable tbody');
-      if (tableBody.rows.length > 1) {
-        row.remove();
-      }
-    }
-  });
-</script>
-
+{% url 'save_inflation_basket' as save_url %}
+{% include "reports/_basket_form.html" with form_title=_("Нова кошница") form_action=save_url submit_label=_("Създай") %}
 {% endblock %}

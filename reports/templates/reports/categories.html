@@ -1,0 +1,52 @@
+{% extends "reports/base_reports.html" %}
+{% load i18n %}
+
+{% block report_body %}
+{% with currency=filters.symbol %}
+<nav aria-label="{% trans 'Ниво' %}" class="mb-3">
+  <ol class="breadcrumb mb-0">
+    {% if data.level == 'main' %}
+      <li class="breadcrumb-item active" aria-current="page">{% trans "Всички категории" %}</li>
+    {% else %}
+      <li class="breadcrumb-item"><a href="{{ tab_url }}{{ all_query }}">{% trans "Всички категории" %}</a></li>
+      {% if data.level == 'sub' %}
+        <li class="breadcrumb-item active" aria-current="page">{{ data.main_name|default:"–" }}</li>
+      {% else %}
+        <li class="breadcrumb-item"><a href="{{ tab_url }}{{ main_query }}">{{ data.main_name|default:"–" }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ data.sub_name|default:"–" }}</li>
+      {% endif %}
+    {% endif %}
+  </ol>
+</nav>
+
+<div class="row g-3">
+  <div class="col-xl-5">
+    <div class="hrp-card">
+      <h2>{% if data.level == 'main' %}{% trans "Разходи по основна категория" %}{% elif data.level == 'sub' %}{% trans "Разходи по подкатегория" %}{% else %}{% trans "Разходи по продукт" %}{% endif %}</h2>
+      <div class="hint">{% blocktrans with total=data.spent|floatformat:"2g" per_day=data.per_day|floatformat:"2g" %}Общо {{ total }} {{ currency }} · {{ per_day }} на ден{% endblocktrans %}{% if data.level != 'products' %} · {% trans "изберете ред за детайли" %}{% endif %}</div>
+      {% if data.bars %}
+        <div class="barlist">
+          {% for row in data.bars %}
+          <div><div class="row-head">
+              <span class="name">{% if row.query %}<a href="{{ tab_url }}{{ row.query }}" class="text-reset">{{ row.name }} <i class="bi bi-chevron-right small"></i></a>{% else %}{{ row.name }}{% endif %}</span>
+              <span class="val">{{ row.value|floatformat:"2g" }} {{ currency }} · {{ row.share|floatformat:1 }} %</span></div>
+            <div class="track"><div class="fill" style="width:{{ row.width|stringformat:'.1f' }}%"></div></div></div>
+          {% endfor %}
+        </div>
+        {% if data.bars_hidden %}<div class="hint mt-3 mb-0">{% blocktrans with n=data.bars_hidden %}Още {{ n }} са в таблицата отдясно.{% endblocktrans %}</div>{% endif %}
+      {% else %}
+        {% include "includes/empty_state.html" with icon="bi-diagram-3" text=_("Няма разходи за избрания период.") %}
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    {% include "reports/_table.html" with table=data.yoy_table hint=_("Същите дати една година по-рано; без категория също се брои") %}
+  </div>
+
+  <div class="col-12">
+    {% include "reports/_table.html" with table=data.products_table hint=_("Количество, брой покупки и средна цена за избраното ниво") %}
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

@@ -185,4 +185,4 @@ class PageQueryBudgetTests(HrpTestCase):
         self.assertQueryBudget(reverse('utility_bills'))
 
     def test_spendings_report(self):
-        self.assertQueryBudget(reverse('spendings_history') + '?currency=EUR')
+        self.assertQueryBudget(reverse('reports_home') + '?period=12m')

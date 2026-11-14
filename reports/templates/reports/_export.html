@@ -1,0 +1,10 @@
+{% load i18n %}
+{# Export menu of one table: the same filters, all rows, as CSV or Excel #}
+<div class="dropdown">
+  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-download me-1"></i>{% trans "Експорт" %}</button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><a class="dropdown-item" href="{{ tab_url }}{% if export_query %}{{ export_query }}&amp;{% else %}?{% endif %}export={{ table.key }}&amp;format=csv">CSV</a></li>
+    <li><a class="dropdown-item" href="{{ tab_url }}{% if export_query %}{{ export_query }}&amp;{% else %}?{% endif %}export={{ table.key }}&amp;format=xlsx">Excel (XLSX)</a></li>
+  </ul>
+</div>

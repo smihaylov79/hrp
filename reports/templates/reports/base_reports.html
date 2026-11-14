@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% block title %}{% trans "Отчети" %} · Home Resource Planner{% endblock %}
+
+{% block content %}
+<div class="hrp-page-header">
+  <div>
+    <h1>{% trans "Отчети" %}</h1>
+    {% if show_filters %}<p class="sub">{{ filters.subtitle }}</p>{% endif %}
+  </div>
+  <div class="actions">{% block report_actions %}{% endblock %}</div>
+</div>
+
+<nav class="hrp-tabs" aria-label="{% trans 'Раздели на отчетите' %}">
+  {% for tab in tabs %}
+    <a href="{{ tab.url }}" class="{% if tab.active %}active{% endif %}" {% if tab.active %}aria-current="page"{% endif %}><i class="bi {{ tab.icon }}"></i>{{ tab.label }}</a>
+  {% endfor %}
+</nav>
+
+{% if show_filters %}
+{# One filter bar for every tab; the state lives in the URL so a report can be bookmarked or shared #}
+<form class="hrp-filterbar" method="get" action="{{ tab_url }}" aria-label="{% trans 'Филтри' %}">
+  <div class="btn-group flex-wrap" role="group" aria-label="{% trans 'Период' %}">
+    {% for preset in preset_links %}
+      <a class="btn {% if preset.active %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{{ tab_url }}{{ preset.query }}">{{ preset.label }}</a>
+    {% endfor %}
+    <button type="button" class="btn {% if filters.period == 'custom' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            data-bs-toggle="collapse" data-bs-target="#customPeriod" aria-expanded="{% if filters.period == 'custom' %}true{% else %}false{% endif %}">
+      <i class="bi bi-calendar3 me-1"></i>{% trans "Период…" %}</button>
+  </div>
+
+  <div class="ms-lg-auto d-flex flex-wrap align-items-center gap-3">
+    <div><label for="filterScope">{% trans "Обхват" %}</label>
+      <select id="filterScope" name="scope" class="form-select form-select-sm d-inline-block" onchange="this.form.submit()">
+        {% for scope in filters.scopes %}<option value="{{ scope.key }}" {% if scope.active %}selected{% endif %}>{{ scope.label }}</option>{% endfor %}
+      </select></div>
+    <div><label for="filterCurrency">{% trans "Валута" %}</label>
+      <select id="filterCurrency" name="currency" class="form-select form-select-sm d-inline-block" onchange="this.form.submit()">
+        {% for currency in filters.currencies %}<option value="{{ currency.code }}" {% if currency.active %}selected{% endif %}>{{ currency.code }}</option>{% endfor %}
+      </select></div>
+  </div>
+
+  <input type="hidden" name="period" value="{{ filters.period }}" id="filterPeriod">
+  {% for key, value in hidden_params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+
+  <div class="collapse w-100 {% if filters.period == 'custom' %}show{% endif %}" id="customPeriod">
+    <div class="d-flex flex-wrap align-items-end gap-2 pt-1">
+      <div><label for="filterFrom" class="d-block">{% trans "От" %}</label>
+        <input type="date" id="filterFrom" name="from" class="form-control form-control-sm" value="{{ filters.start|date:'Y-m-d' }}" {% if filters.period != 'custom' %}disabled{% endif %}></div>
+      <div><label for="filterTo" class="d-block">{% trans "До" %}</label>
+        <input type="date" id="filterTo" name="to" class="form-control form-control-sm" value="{{ filters.end|date:'Y-m-d' }}" {% if filters.period != 'custom' %}disabled{% endif %}></div>
+      <button type="submit" class="btn btn-sm btn-primary" name="period" value="custom" id="applyCustom">{% trans "Приложи" %}</button>
+    </div>
+  </div>
+</form>
+{% endif %}
+
+{% include "reports/_rate_warnings.html" %}
+
+{% block report_body %}{% endblock %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/highcharts@11.4.8/highcharts.js"
+        integrity="sha384-XxsZMNol0nU0LnC2cYsyhRNbfyK7CPmF7WrlFvZDdlCKn9hzVkXsHxCHVaKwkl76" crossorigin="anonymous"></script>
+<script src="{% static 'js/hrp-charts.js' %}"></script>
+<script>
+  // the custom date inputs only take part in the form once the "Period…" panel is opened
+  (function () {
+    var panel = document.getElementById('customPeriod');
+    if (!panel) { return; }
+    panel.addEventListener('show.bs.collapse', function () {
+      panel.querySelectorAll('input[type=date]').forEach(function (input) { input.disabled = false; });
+    });
+  })();
+</script>
+{% block report_js %}{% endblock %}
+{% endblock %}
